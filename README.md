@@ -1,1 +1,2 @@
 # lartpcalgo-optimize
+This repository is for storing/sharing code for investigating ways to optimize and speed up the reconstruction algorithms used in Liquid Argon TPC detectors.  As a starting point, it will focus on code from the LArSoft toolkit that currently take up a significant amount of processing time in the typical offline computing workloads of Fermilab's neutrino experiments and for which such improvements would have the greatest impact.
