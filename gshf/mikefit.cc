@@ -1,5 +1,5 @@
 #include <iostream> 
-#include <math.h>
+#include <cmath>
 
 const int NPMX = 15;
 const int NDMX = 5000;
