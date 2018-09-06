@@ -1,15 +1,10 @@
 #include <iostream> 
 #include <math.h>
 
-const int NPMX = 15;
-const int NDMX = 5000;
-double res[NDMX];
-double beta[NPMX],alpha[NPMX][NPMX],dp[NPMX],dydp[NDMX][NPMX];
-
-/* multi-Gaussian function with npar Gaussians */
-void fgauss(double yd[], double p[], int npar, int ndat){
+/* multi-Gaussian function, number of Gaussians is npar divided by 3 */
+void fgauss(double yd[], double p[], int npar, int ndat, double res[]){
   int i,j;
-  double yf[NDMX];
+  double yf[ndat];
   for(i=0;i<ndat;i++){
     yf[i]=0.;
     for(j=0;j<npar;j+=3){
@@ -20,7 +15,7 @@ void fgauss(double yd[], double p[], int npar, int ndat){
 }
 
 /* analytic derivatives for multi-Gaussian function in fgauss */
-void dgauss(double p[], int npar, int ndat){
+void dgauss(double p[], int npar, int ndat, double dydp[]){
   int i,j;
   double xmu,xmu_sg,xmu_sg2;
   for(i=0;i<ndat;i++){
@@ -28,15 +23,15 @@ void dgauss(double p[], int npar, int ndat){
       xmu=double(i)-p[j+1];
       xmu_sg=xmu/p[j+2];
       xmu_sg2=xmu_sg*xmu_sg;
-      dydp[i][j]  =exp(-0.5*xmu_sg2);
-      dydp[i][j+1]=p[j]*dydp[i][j]*xmu_sg/p[j+2];
-      dydp[i][j+2]=dydp[i][j+1]*xmu_sg;
+      dydp[i*npar+j]  =exp(-0.5*xmu_sg2);
+      dydp[i*npar+j+1]=p[j]*dydp[i*npar+j]*xmu_sg/p[j+2];
+      dydp[i*npar+j+2]=dydp[i*npar+j+1]*xmu_sg;
     }
   }
 }
 
 /* calculate ChiSquared */
-double cal_xi2(int ndat){
+double cal_xi2(double res[], int ndat){
   int i;
   double xi2;
   xi2=0.;
@@ -46,8 +41,8 @@ double cal_xi2(int ndat){
   return xi2;  
 }
 
-/* setup the beta and alpha (curvature) matrices */
-void setup_matrix(int npar, int ndat)
+/* setup the beta and  (curvature) matrices */
+void setup_matrix(double res[], double dydp[], int npar, int ndat, double beta[], double alpha[])
 {
   int i,j,k;
   
@@ -55,33 +50,33 @@ void setup_matrix(int npar, int ndat)
   for(j=0;j<npar;j++){
     beta[j]=0.0;
     for(i=0;i<ndat;i++){
-      beta[j]+=res[i]*dydp[i][j];
+      beta[j]+=res[i]*dydp[i*npar+j];
     }
   }
 
   /* ... Calculate alpha */
   for (j = 0; j < npar; j++){
     for (k = j; k < npar; k++){
-      alpha[j][k]=0.0;
+      alpha[j*npar+k]=0.0;
       for(i=0;i<ndat;i++){
-        alpha[j][k]+=dydp[i][j]*dydp[i][k];
+        alpha[j*npar+k]+=dydp[i*npar+j]*dydp[i*npar+k];
       }
-      if(k!=j)alpha[k][j]=alpha[j][k];
+      if(k!=j)alpha[k*npar+j]=alpha[j*npar+k];
     }
   }
 }
 
 /* solve system of linear equations */
-void solve_matrix(int npar)
+void solve_matrix(double beta[], double alpha[], int npar, double dp[])
 {
   int i,j,k,imax;
-  double hmax,hsav,h[NPMX][NPMX+1];
+  double hmax,hsav,h[npar][npar+1];
 
   /* ... set up augmented N x N+1 matrix */
   for(i=0;i<npar;i++){
     h[i][npar]=beta[i];
     for(j=0;j<npar;j++){
-      h[i][j]=alpha[i][j];
+      h[i][j]=alpha[i*npar+j];
     }
   }
 
@@ -117,7 +112,7 @@ void solve_matrix(int npar)
 
 }
 
-double invrt_matrix(int npar)
+double invrt_matrix(double alpha[], int npar)
 {
   /*
      Inverts the curvature matrix alpha using Gauss-Jordan elimination and 
@@ -128,7 +123,7 @@ double invrt_matrix(int npar)
      Program Description Manual (GH20-0586-0).  This only needs to be called
      once after the fit has converged if the parameter errors are desired.
   */
-  int i, j, k, ik[NPMX], jk[NPMX];
+  int i, j, k, ik[npar], jk[npar];
   double aMax, save, det;
 	
   det = 0;
@@ -137,8 +132,8 @@ double invrt_matrix(int npar)
     aMax = 0;
     for (i = k; i < npar; i++){
       for (j = k; j < npar;j++){
-  	if  (fabs(alpha[i][j]) > fabs(aMax)){
-  	  aMax = alpha[i][j];
+  	if  (fabs(alpha[i*npar+j]) > fabs(aMax)){
+  	  aMax = alpha[i*npar+j];
   	  ik[k] = i;
   	  jk[k] = j;
   	}
@@ -150,33 +145,33 @@ double invrt_matrix(int npar)
     i = ik[k];
     if (i > k){
       for (j = 0;j < npar;j++){
-  	save = alpha[k][j];
-  	alpha[k][j] = alpha[i][j];
-  	alpha[i][j] = -save;
+  	save = alpha[k*npar+j];
+  	alpha[k*npar+j] = alpha[i*npar+j];
+  	alpha[i*npar+j] = -save;
       }
     }
     /* ... interchange columns if necessary to put aMax in diag */
     j = jk[k];
     if (j > k){
       for (i = 0; i < npar; i++){
-  	save = alpha[i][k];
-  	alpha[i][k] = alpha[i][j];
-  	alpha[i][j] = -save;
+  	save = alpha[i*npar+k];
+  	alpha[i*npar+k] = alpha[i*npar+j];
+  	alpha[i*npar+j] = -save;
       }
     }
     /* ... accumulate elements of inverse matrix */
     for (i = 0; i < npar; i++){
-      if (i != k) alpha[i][k] = -alpha[i][k]/aMax;
+      if (i != k) alpha[i*npar+k] = -alpha[i*npar+k]/aMax;
     }
     for (i = 0; i < npar; i++){
       for (j = 0; j < npar;j++){
-  	if ((i != k)&&(j!= k))alpha[i][j]=alpha[i][j]+alpha[i][k]*alpha[k][j];
+  	if ((i != k)&&(j!= k))alpha[i*npar+j]=alpha[i*npar+j]+alpha[i*npar+k]*alpha[k*npar+j];
       }
     }
     for (j = 0; j < npar;j++){
-      if (j != k)  alpha[k][j] = alpha[k][j]/aMax;
+      if (j != k)  alpha[k*npar+j] = alpha[k*npar+j]/aMax;
     }
-    alpha[k][k] = 1/aMax;
+    alpha[k*npar+k] = 1/aMax;
     det = det * aMax;
   }
 
@@ -185,17 +180,17 @@ double invrt_matrix(int npar)
     j = ik[k];
     if (j > k) {
       for (i = 0; i < npar; i++){
-  	save	    = alpha[i][k];
-  	alpha[i][k] = -alpha[i][j];
-  	alpha[i][j] = save;
+  	save	    = alpha[i*npar+k];
+  	alpha[i*npar+k] = -alpha[i*npar+j];
+  	alpha[i*npar+j] = save;
       }
     }
     i = jk[k];
     if (i > k){
       for (j = 0; j < npar;j++){
-  	save	    =  alpha[k][j];
-  	alpha[k][j] = -alpha[i][j];
-  	alpha[i][j] =  save;
+  	save	    =  alpha[k*npar+j];
+  	alpha[k*npar+j] = -alpha[i*npar+j];
+  	alpha[i*npar+j] =  save;
       }
     }
   }
@@ -207,36 +202,23 @@ int cal_perr(double p[], double y[], int nParam, int nData, double perr[])
 {
   int i,j,k;
   double det;
-  double alpsav[NPMX][NPMX],c[NPMX][NPMX];
+  double res[nData],dydp[nData*nParam],beta[nParam],alpha[nParam*nParam],alpsav[nParam][nParam];
   
-  fgauss(y, p, nParam, nData);
-  dgauss(p, nParam, nData);
-  setup_matrix(nParam, nData);
+  fgauss(y, p, nParam, nData, res);
+  dgauss(p, nParam, nData, dydp);
+  setup_matrix(res, dydp, nParam, nData, beta,alpha);
   for(i=0;i<nParam;i++){
     for(j=0;j<nParam;j++){
-      alpsav[i][j]=alpha[i][j];
+      alpsav[i][j]=alpha[i*nParam+j];
     }
   }
-  det=invrt_matrix(nParam);
+  det=invrt_matrix(alpha, nParam);
   if(det==0)return 1;
-  /*for(i=0;i<nParam;i++){
-    for(k=0;k<nParam;k++){
-      c[i][k]=0.;
-      for(j=0;j<nParam;j++){
-        c[i][k]=c[i][k]+alpsav[i][j]*alpha[j][k];
-      }
-    }
-  }
   for(i=0;i<nParam;i++){
-    for(j=0;j<nParam;j++){
-      printf("c[%d][%d]=%f\n",i,j,c[i][j]);
-    }
-  }*/
-  for(i=0;i<nParam;i++){
-    if(alpha[i][i]>=0.){
-      perr[i]=sqrt(alpha[i][i]);
+    if(alpha[i*nParam+i]>=0.){
+      perr[i]=sqrt(alpha[i*nParam+i]);
     }else{
-      perr[i]=alpha[i][i];
+      perr[i]=alpha[i*nParam+i];
     }
   }
   return 0;
@@ -246,24 +228,24 @@ int mrqdtfit(double &lambda, double p[], double y[], int nParam, int nData, doub
 {
   int i,j;
   double nu,rho,lzmlh,amax,chiSq0;
-  double alpsav[nParam],psav[nParam];
+  double res[nData],beta[nParam],dp[nParam],alpsav[nParam],psav[nParam],dydp[nData*nParam],alpha[nParam*nParam];
 
-  fgauss(y, p, nParam, nData);
-  chiSq0=cal_xi2(nData);
-  dgauss(p, nParam, nData);
-  setup_matrix(nParam, nData);
+  fgauss(y, p, nParam, nData, res);
+  chiSq0=cal_xi2(res, nData);
+  dgauss(p, nParam, nData, dydp);
+  setup_matrix(res, dydp, nParam, nData, beta, alpha);
   if(lambda<0.){
     amax=-999.;
     for(j = 0; j < nParam; j++){
-      if(alpha[j][j]>amax)amax=alpha[j][j];
+      if(alpha[j*nParam+j]>amax)amax=alpha[j*nParam+j];
     }
     lambda=0.001*amax;
   }
   for(j = 0; j < nParam; j++){
-    alpsav[j]=alpha[j][j];
-    alpha[j][j]=alpsav[j]+lambda;
+    alpsav[j]=alpha[j*nParam+j];
+    alpha[j*nParam+j]=alpsav[j]+lambda;
   }
-  solve_matrix(nParam);
+  solve_matrix(beta, alpha, nParam, dp);
 
   nu=2.;
   rho=-1.;
@@ -273,8 +255,8 @@ int mrqdtfit(double &lambda, double p[], double y[], int nParam, int nData, doub
       psav[j] = p[j];
       p[j] = p[j] + dp[j];
     }
-    fgauss(y, p, nParam, nData);
-    chiSqr = cal_xi2(nData);
+    fgauss(y, p, nParam, nData, res);
+    chiSqr = cal_xi2(res, nData);
 
     lzmlh=0.;
     for(j=0;j<nParam;j++){
@@ -287,9 +269,9 @@ int mrqdtfit(double &lambda, double p[], double y[], int nParam, int nData, doub
       lambda = nu*lambda;
       nu=2.*nu;
       for(j = 0; j < nParam; j++){
-        alpha[j][j]=alpsav[j]+lambda;
+        alpha[j*nParam+j]=alpsav[j]+lambda;
       }
-      solve_matrix(nParam);
+      solve_matrix(beta, alpha, nParam, dp);
     }
   } while(rho<0.);
   lambda=lambda*fmax(0.333333,1.-pow(2.*rho-1.,3));  
