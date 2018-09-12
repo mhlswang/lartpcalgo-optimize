@@ -4,6 +4,8 @@
 #include <cstring>
 #include <iomanip>
 
+#include <omp.h>
+
 using namespace std;
 
 int mrqdtfit(double &lambda, double p[], double y[], int nParam, int nData, double &chiSqr, double &dchiSqr);
@@ -319,17 +321,37 @@ int main(int argc, char **argv)
   struct merged_hc mhc;
   struct merged_hpp mhpp;
   struct ppgroup mpp[100];
-  
+
+  double t0 = omp_get_wtime();
+  double tottime = 0;
+  double tottimeread = 0;
+  double tottimeprint = 0;
+  double tottimefindc = 0;
+  double tottimemergec = 0;
+  double tottimefindpl = 0;
+
   /* loop over events */
   for(n=1;n<=114001;n++){
     fhc.nhc=0;
+
+    double ti = omp_get_wtime();
     istat = getHit(0,wd, vw);           /* get the hit */
+    tottimeread += (omp_get_wtime()-ti);
+
+    ti = omp_get_wtime();
     printf("hit #%d: nticks=%d\n",n,wd.ntck);
+    tottimeprint += (omp_get_wtime()-ti);
 
     roiThreshold=MinSigVec[vw];
+    ti = omp_get_wtime();
     findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
-    mergeHitCandidates(fhc, mhc);
+    tottimefindc += (omp_get_wtime()-ti);
 
+    ti = omp_get_wtime();
+    mergeHitCandidates(fhc, mhc);
+    tottimemergec += (omp_get_wtime()-ti);
+
+    ti = omp_get_wtime();
     ngausshits=0;
     mhpp.nmpp=0;
     for(i=0;i<mhc.nmh;i++){
@@ -352,9 +374,16 @@ int main(int argc, char **argv)
           ngausshits++;
 	}
       }
+      tottimefindpl += (omp_get_wtime()-ti);
     }
   }
   if(istat>=0)istat = getHit(1,wd,vw);           /* close the file */
+
+  tottime = omp_get_wtime() - t0;
+
+  std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
+	    << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
+	    << std::endl;
 
   return 0;
 }
