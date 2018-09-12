@@ -374,8 +374,8 @@ int main(int argc, char **argv)
           ngausshits++;
 	}
       }
-      tottimefindpl += (omp_get_wtime()-ti);
     }
+    tottimefindpl += (omp_get_wtime()-ti);
   }
   if(istat>=0)istat = getHit(1,wd,vw);           /* close the file */
 
