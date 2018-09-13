@@ -322,7 +322,7 @@ int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgrou
 
 int main(int argc, char **argv)
 {
-  int i,j,n=0,istat,NDF,fitStat,ngausshits;
+  int i,j,n=0,istat,NDF,fitStat;
   double roiThreshold,chi2PerNDF;
   vector<struct wiredata> wd_vec(maxhits);
   struct found_hc fhc;
@@ -348,54 +348,61 @@ int main(int argc, char **argv)
     notdone = getHits(fname, wd_vec); // read maxhits hits from file
     tottimeread += (omp_get_wtime()-ti);
 
-#pragma omp for schedule(static,10)  
-    for (int ii=0; ii < wd_vec.size(); ii++) {
-//struct wiredata wd = *wdit;
-      struct wiredata &wd = wd_vec[ii];
+#pragma omp parallel 
+    {
+#pragma omp single  
+      {
+        for (int ii=0; ii < wd_vec.size(); ii++) {
+          struct wiredata &wd = wd_vec[ii];
+#pragma omp task firstprivate(wd)
+         {
 
-      fhc.nhc=0;
+            fhc.nhc=0;
 #if DEBUG
-      ti = omp_get_wtime();
-      printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
-      tottimeprint += (omp_get_wtime()-ti);
+            ti = omp_get_wtime();
+            printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
+            tottimeprint += (omp_get_wtime()-ti);
 #endif
       
-      roiThreshold=MinSigVec[wd.vw];
-      ti = omp_get_wtime();
-      findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
-      tottimefindc += (omp_get_wtime()-ti);
+            roiThreshold=MinSigVec[wd.vw];
+            ti = omp_get_wtime();
+            findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
+            tottimefindc += (omp_get_wtime()-ti);
 
-      ti = omp_get_wtime();
-      mergeHitCandidates(fhc, mhc);
-      tottimemergec += (omp_get_wtime()-ti);
+            ti = omp_get_wtime();
+            mergeHitCandidates(fhc, mhc);
+            tottimemergec += (omp_get_wtime()-ti);
 
-      ti = omp_get_wtime();
-      int ngausshits=0;
-      mhpp.nmpp=0;
-      for(i=0;i<mhc.nmh;i++){
+            ti = omp_get_wtime();
+            int ngausshits=0;
+            mhpp.nmpp=0;
+            for(i=0;i<mhc.nmh;i++){
 
-        int nhg=mhc.mh[i].nh;
+              int nhg=mhc.mh[i].nh;
+            
+              int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
+              int ihc2=mhc.mh[i].h[nhg-1];  /* last hit in this hit group */
+              int startTick=fhc.hc[ihc1].starttck;
+              int endTick=fhc.hc[ihc2].stoptck;
+              if(endTick - startTick < 5)continue;
+
+              double chi2PerNDF=0.;
+              fitStat=-1;
       
-        int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
-        int ihc2=mhc.mh[i].h[nhg-1];  /* last hit in this hit group */
-        int startTick=fhc.hc[ihc1].starttck;
-        int endTick=fhc.hc[ihc2].stoptck;
-        if(endTick - startTick < 5)continue;
-
-        double chi2PerNDF=0.;
-        fitStat=-1;
-      
-        if(mhc.mh[i].nh <= MaxMultiHit){
-  
-          fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF,NDF);
-          if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
-            ngausshits++;
+              if(mhc.mh[i].nh <= MaxMultiHit){
+        
+                fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF,NDF);
+                if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
+                  ngausshits++;
+                }
+              }
+            }
+            tottimefindpl += (omp_get_wtime()-ti);
+            n++;
           }
         }
-      }
-      tottimefindpl += (omp_get_wtime()-ti);
-      n++;
-    }
+      } // end of single
+    } // end of parallel
   } // while (notdone)
   tottime = omp_get_wtime() - t0;
 
