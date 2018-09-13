@@ -51,17 +51,17 @@ struct hitcand {
 
 struct found_hc {
   int nhc;
-  struct hitcand hc[100];
+  struct hitcand hc[80];
 };
 
 struct hitgroup {
   int nh;
-  int h[100];
+  int h[80];
 };
 
 struct merged_hc {
   int nmh;
-  struct hitgroup mh[100];
+  struct hitgroup mh[20];
 };
 
 struct peakparams {
@@ -75,12 +75,12 @@ struct peakparams {
 
 struct ppgroup {
   int npp;
-  struct peakparams pp[50];
+  struct peakparams pp[80];
 };
 
 struct merged_hpp {
   int nmpp;
-  struct ppgroup mpp[50];
+  struct ppgroup mpp[20];
 };
 
 /* Global Constants */
