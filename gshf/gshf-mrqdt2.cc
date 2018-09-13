@@ -9,8 +9,11 @@
 #include <cstring>
 #include <iomanip>
 
+#include <omp.h>
+
 #define DEBUG 1
 
+//#define IODEBUG 1
 #ifdef IODEBUG
 #define DPRINT(str) cout << str << endl;
 #else
@@ -80,13 +83,17 @@ struct merged_hpp {
 };
 
 /* Global Constants */
-double MinSigVec[3]={2.6,3.4,3.4};
-double MaxMultiHit=4;
-double MinWidth=0.5;
-double MaxWidthMult=3.0;
-double PeakRange=2.0;
-double AmpRange=2.0;
-double Chi2NDF=50;
+const double MinSigVec[3]={2.6,3.4,3.4};
+const double MaxMultiHit=4;
+const double MinWidth=0.5;
+const double MaxWidthMult=3.0;
+const double PeakRange=2.0;
+const double AmpRange=2.0;
+const double Chi2NDF=50;
+const int maxhits=100;
+
+ifstream iStream;
+streampos currentPos;
 
 int getHits(string fname, vector<struct wiredata> &wd_vec) {
   /* Read the entire file, assuming it fits in memory. */
@@ -94,33 +101,52 @@ int getHits(string fname, vector<struct wiredata> &wd_vec) {
   int vw,lineLen,wr,mult,multmc,starttck,endtck,nroiadc,nhitadc,nrwadc;
   double simx,simtck,recx,rectck,rms,sigma,delx,deltck,bktrkx;
   struct wiredata wd;
+
+  wd_vec.clear();  // capacity is unchanged
   
   DPRINT("Reading file " + fname);
   
-  std::ifstream iStream(fname);
-  std::string content((std::istreambuf_iterator<char>(iStream)), std::istreambuf_iterator<char>());
-  std::string line;
-  std::stringstream scontent(content);
+  if (! iStream.is_open()) {
+    iStream.open(fname);
+    currentPos = iStream.tellg();
+  } 
+  //std::string content((std::istreambuf_iterator<char>(iStream)), std::istreambuf_iterator<char>());
+  //std::stringstream scontent(content);
 
-  while (std::getline(scontent, line)) {
+  int hitCounter = 0; bool hitdata=false, hit = false;
+  std::string line;
+  while ( getline(iStream,line) ) {
     //line = *line_it;
     if (line.find("hit") == 0) {
+      hit = true;
+      if (hitdata) { 
+	wd_vec.push_back(wd); //printf("adding hit data, vw = %d\n" , wd.vw); 
+      }
+      hitdata = false;
+      if (hitCounter >= maxhits) {
+        hitCounter = 0;
+	iStream.seekg(currentPos,ios::beg);
+	DPRINT("Returning from getHits");
+	return true;
+      }
+      hitCounter++;
       DPRINT(line);
-      sscanf(line.c_str(),"view=%d wire=%d mult=%d multMC=%d simX=%lf simTick=%lf recX=%lf recTick=%lf RMS=%lf sigma=%lf startTick=%d endTick=%d deltaX=%lf deltaTicks=%lf nRoiADCs=%d nHitADCs=%d nRawADCs=%d backtrackerX=%lf",
+      sscanf(line.c_str(),"hit view=%d wire=%d mult=%d multMC=%d simX=%lf simTick=%lf recX=%lf recTick=%lf RMS=%lf sigma=%lf startTick=%d endTick=%d deltaX=%lf deltaTicks=%lf nRoiADCs=%d nHitADCs=%d nRawADCs=%d backtrackerX=%lf",
              &vw,&wr,&mult,&multmc,&simx,&simtck,&recx,&rectck,&rms,&sigma,&starttck,
              &endtck,&delx,&deltck,&nroiadc,&nhitadc,&nrwadc,&bktrkx);
       wd.ntck = 0;
-
+      wd.vw = vw;
     } else {
       // Read hit data
       sscanf(line.c_str(),"tick=%d ADC=%lf",&wd.wv[wd.ntck].tck,&wd.wv[wd.ntck].adc);
       wd.ntck++;
-      wd.vw = vw;
-      wd_vec.push_back(wd);
+      if (hit) hitdata = true;
     }
+    currentPos = iStream.tellg();
   }
-  // The file will be closed here at the end iStream's scope
-  return 0;
+  if (hitdata) { wd_vec.push_back(wd); DPRINT("adding hit data"); }
+  iStream.close();
+  return false;
 }
 
 void findHitCandidates(struct wiredata &wd, struct found_hc &fhc, int i1, int i2, double roiThreshold)
@@ -296,56 +322,88 @@ int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgrou
 
 int main(int argc, char **argv)
 {
-  int i,j,n,vw,istat,nhg,ihc1,ihc2,startTick,endTick,NDF,fitStat,ngausshits;
+  int i,j,n=0,istat,NDF,fitStat,ngausshits;
   double roiThreshold,chi2PerNDF;
-  vector<struct wiredata> wd_vec;
+  vector<struct wiredata> wd_vec(maxhits);
   struct found_hc fhc;
   struct merged_hc mhc;
   struct merged_hpp mhpp;
   struct ppgroup mpp[100];
   string fname = "gc-hitfinder.txt";
+
+  double t0 = omp_get_wtime();
+  double tottime = 0;
+  double tottimeread = 0;
+  double tottimeprint = 0;
+  double tottimefindc = 0;
+  double tottimemergec = 0;
+  double tottimefindpl = 0;
   
+
   if( argc == 2 ) fname = argv[1];
-  
-  istat = getHits(fname, wd_vec);
-  
-  for (auto wdit = wd_vec.begin(); wdit != wd_vec.end(); wdit++) { // loop over wires
-    struct wiredata wd = *wdit;
-    for(n=1;n<=114001;n++){  // loop over events
+ 
+  bool notdone = true;
+  while ( notdone ) {
+    double ti = omp_get_wtime();
+    notdone = getHits(fname, wd_vec); // read maxhits hits from file
+    tottimeread += (omp_get_wtime()-ti);
+
+#pragma omp for schedule(static,10)  
+    for (int ii=0; ii < wd_vec.size(); ii++) {
+//struct wiredata wd = *wdit;
+      struct wiredata &wd = wd_vec[ii];
+
       fhc.nhc=0;
 #if DEBUG
-        printf("hit #%d: nticks=%d\n",n,wd.ntck);
+      ti = omp_get_wtime();
+      printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
+      tottimeprint += (omp_get_wtime()-ti);
 #endif
       
       roiThreshold=MinSigVec[wd.vw];
+      ti = omp_get_wtime();
       findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
+      tottimefindc += (omp_get_wtime()-ti);
+
+      ti = omp_get_wtime();
       mergeHitCandidates(fhc, mhc);
-      
-      ngausshits=0;
+      tottimemergec += (omp_get_wtime()-ti);
+
+      ti = omp_get_wtime();
+      int ngausshits=0;
       mhpp.nmpp=0;
       for(i=0;i<mhc.nmh;i++){
-        
-        nhg=mhc.mh[i].nh;
-        
-        ihc1=mhc.mh[i].h[0];	/*  1st hit in this hit group */
-        ihc2=mhc.mh[i].h[nhg-1];	/* last hit in this hit group */
-        startTick=fhc.hc[ihc1].starttck;
-        endTick=fhc.hc[ihc2].stoptck;
+
+        int nhg=mhc.mh[i].nh;
+      
+        int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
+        int ihc2=mhc.mh[i].h[nhg-1];  /* last hit in this hit group */
+        int startTick=fhc.hc[ihc1].starttck;
+        int endTick=fhc.hc[ihc2].stoptck;
         if(endTick - startTick < 5)continue;
-        
-        chi2PerNDF=0.;
+
+        double chi2PerNDF=0.;
         fitStat=-1;
-        
+      
         if(mhc.mh[i].nh <= MaxMultiHit){
-          
+  
           fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF,NDF);
           if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
             ngausshits++;
           }
         }
       }
+      tottimefindpl += (omp_get_wtime()-ti);
+      n++;
     }
-  }
+  } // while (notdone)
+  tottime = omp_get_wtime() - t0;
+
+  std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
+            << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
+            << std::endl;
+  std::cout << "time without I/O=" << tottime - tottimeread - tottimeprint << endl;
+
   
   return 0;
 }
