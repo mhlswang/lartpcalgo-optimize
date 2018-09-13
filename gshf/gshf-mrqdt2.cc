@@ -12,7 +12,7 @@
 
 #include <omp.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 //#define IODEBUG 1
 #ifdef IODEBUG
@@ -255,7 +255,7 @@ int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgrou
   nParams = 0;
   for(int i=0;i<hg.nh;i++){
     int ih = hg.h[i];
-    double peakMean   = fhc.hc[ih].cen - (float)startTime;
+    double peakMean   = fhc.hc[ih].cen - (double)startTime;
     double peakWidth  = fhc.hc[ih].sig;
     double amplitude  = fhc.hc[ih].hgt;
     double meanLowLim = fmax(peakMean - PeakRange * peakWidth, 	     0.);
@@ -302,7 +302,7 @@ int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgrou
       for(int i=0;i<hg.nh;i++){
         mhpp.mpp[nmpp].pp[i].peakAmplitude      = p[parIdx + 0];
         mhpp.mpp[nmpp].pp[i].peakAmplitudeError = perr[parIdx + 0];
-        mhpp.mpp[nmpp].pp[i].peakCenter	        = p[parIdx + 1] + 0.5 + float(startTime);
+        mhpp.mpp[nmpp].pp[i].peakCenter	        = p[parIdx + 1] + 0.5 + double(startTime);
         mhpp.mpp[nmpp].pp[i].peakCenterError    = perr[parIdx + 1];
         mhpp.mpp[nmpp].pp[i].peakSigma	        = p[parIdx + 2];
         mhpp.mpp[nmpp].pp[i].peakSigmaError     = perr[parIdx + 2];
@@ -337,12 +337,14 @@ int main(int argc, char **argv)
     notdone = getHits(fname, wd_vec); // read maxhits hits from file
     tottimeread += (omp_get_wtime()-ti);
 
+    omp_set_num_threads(2);
+
 #pragma omp parallel 
     {
 #pragma omp single  
       {
         for (int ii=0; ii < wd_vec.size(); ii++) {
-          struct wiredata &wd = wd_vec[ii];
+          struct wiredata wd = wd_vec[ii];
 #pragma omp task firstprivate(wd)
          {
 

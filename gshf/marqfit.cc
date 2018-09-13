@@ -4,12 +4,11 @@
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
 void fgauss(double yd[], double p[], int npar, int ndat, double res[]){
-  int i,j;
   double yf[ndat];
 #pragma simd
-  for(i=0;i<ndat;i++){
+  for(int i=0;i<ndat;i++){
     yf[i]=0.;
-    for(j=0;j<npar;j+=3){
+    for(int j=0;j<npar;j+=3){
       yf[i] = yf[i] + p[j]*std::exp(-0.5*std::pow((double(i)-p[j+1])/p[j+2],2));
     }
     res[i]=yd[i]-yf[i];
@@ -18,15 +17,13 @@ void fgauss(double yd[], double p[], int npar, int ndat, double res[]){
 
 /* analytic derivatives for multi-Gaussian function in fgauss */
 void dgauss(double p[], int npar, int ndat, double dydp[]){
-  int i,j;
-  double xmu,xmu_sg,xmu_sg2;
 #pragma ivdep
 #pragma simd
-  for(i=0;i<ndat;i++){
-    for(j=0;j<npar;j+=3){
-      xmu=double(i)-p[j+1];
-      xmu_sg=xmu/p[j+2];
-      xmu_sg2=xmu_sg*xmu_sg;
+  for(int i=0;i<ndat;i++){
+    for(int j=0;j<npar;j+=3){
+      const double xmu=double(i)-p[j+1];
+      const double xmu_sg=xmu/p[j+2];
+      const double xmu_sg2=xmu_sg*xmu_sg;
       dydp[i*npar+j] = std::exp(-0.5*xmu_sg2);
       dydp[i*npar+j+1]=p[j]*dydp[i*npar+j]*xmu_sg/p[j+2];
       dydp[i*npar+j+2]=dydp[i*npar+j+1]*xmu_sg;
