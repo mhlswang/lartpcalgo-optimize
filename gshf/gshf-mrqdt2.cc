@@ -8,6 +8,7 @@
 #include <math.h>
 #include <cstring>
 #include <iomanip>
+#include <limits>
 
 #include <omp.h>
 
@@ -238,32 +239,27 @@ void mergeHitCandidates(struct found_hc &fhc, struct merged_hc &mhc)
   }
 }
 
-int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgroup &hg, struct merged_hpp &mhpp, double &chi2PerNDF, int &NDF)
+int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgroup &hg, struct merged_hpp &mhpp, double &chi2PerNDF)
 {
-  int i,ih,num,idx,startTime,endTime,roiSize,parIdx,fitResult,fitResult2,nmpp,fitStat;
-  double peakMean,peakWidth,amplitude,meanLowLim,meanHiLim;
-  char eqtn[85],str[9],cnum[5];
-  
-  double adc;
-  double chiCut   = 1e-3;
+  const double chiCut   = 1e-3;
   double lambda   = 0.001;	/* Marquardt damping parameter */
-  double  chiSqr, dchiSqr;
-  int trial, j, nParams=0, ret;
+  double  chiSqr = std::numeric_limits<double>::max(), dchiSqr = std::numeric_limits<double>::max();
+  int nParams=0;
   double y[1000],p[15],pmin[15],pmax[15],perr[15];
   
-  startTime = fhc.hc[hg.h[0]].starttck;
-  endTime = fhc.hc[hg.h[hg.nh-1]].stoptck;
-  roiSize = endTime - startTime;
+  int startTime = fhc.hc[hg.h[0]].starttck;
+  int endTime = fhc.hc[hg.h[hg.nh-1]].stoptck;
+  int roiSize = endTime - startTime;
   
   /* choose the fit function and set the parameters */
   nParams = 0;
-  for(i=0;i<hg.nh;i++){
-    ih = hg.h[i];
-    peakMean   = fhc.hc[ih].cen - (float)startTime;
-    peakWidth  = fhc.hc[ih].sig;
-    amplitude  = fhc.hc[ih].hgt;
-    meanLowLim = fmax(peakMean - PeakRange * peakWidth, 	     0.);
-    meanHiLim  = fmin(peakMean + PeakRange * peakWidth, (double)roiSize);
+  for(int i=0;i<hg.nh;i++){
+    int ih = hg.h[i];
+    double peakMean   = fhc.hc[ih].cen - (float)startTime;
+    double peakWidth  = fhc.hc[ih].sig;
+    double amplitude  = fhc.hc[ih].hgt;
+    double meanLowLim = fmax(peakMean - PeakRange * peakWidth, 	     0.);
+    double meanHiLim  = fmin(peakMean + PeakRange * peakWidth, (double)roiSize);
     p[0+nParams]=amplitude;
     p[1+nParams]=peakMean;
     p[2+nParams]=peakWidth;
@@ -276,16 +272,16 @@ int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgrou
     nParams += 3;
   }
   
-  fitResult=-1;
+  int fitResult=-1;
   
   /* set the bin content */
-  for (idx = 0;idx< roiSize; idx++){
-    adc=wd.wv[startTime+idx].adc;
+  for (int idx = 0;idx< roiSize; idx++){
+    double adc=wd.wv[startTime+idx].adc;
     if(adc<=0.)adc=0.;
     y[idx]=adc;
   }
   
-  trial=0;
+  int trial=0;
   lambda=-1.;	/* initialize lambda on first call */
   do{
     fitResult=mrqdtfit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
@@ -294,16 +290,16 @@ int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgrou
   }
   while (fabs(dchiSqr) >= chiCut);
   
-  nmpp=mhpp.nmpp;
+  int nmpp=mhpp.nmpp;
   mhpp.mpp[nmpp].npp=0;
-  fitStat=-1;
+  int fitStat=-1;
   if (!fitResult){
-    fitResult2=cal_perr(p,y,nParams,roiSize,perr);
+    int fitResult2=cal_perr(p,y,nParams,roiSize,perr);
     if (!fitResult2){
-      NDF = roiSize - nParams;
+      double NDF = roiSize - nParams;
       chi2PerNDF = chiSqr / NDF;
-      parIdx = 0;
-      for(i=0;i<hg.nh;i++){
+      int parIdx = 0;
+      for(int i=0;i<hg.nh;i++){
         mhpp.mpp[nmpp].pp[i].peakAmplitude      = p[parIdx + 0];
         mhpp.mpp[nmpp].pp[i].peakAmplitudeError = perr[parIdx + 0];
         mhpp.mpp[nmpp].pp[i].peakCenter	        = p[parIdx + 1] + 0.5 + float(startTime);
@@ -322,13 +318,8 @@ int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgrou
 
 int main(int argc, char **argv)
 {
-  int i,j,n=0,istat,NDF,fitStat;
-  double roiThreshold,chi2PerNDF;
   vector<struct wiredata> wd_vec(maxhits);
-  struct found_hc fhc;
-  struct merged_hc mhc;
   struct merged_hpp mhpp;
-  struct ppgroup mpp[100];
   string fname = "gc-hitfinder.txt";
 
   double t0 = omp_get_wtime();
@@ -339,7 +330,6 @@ int main(int argc, char **argv)
   double tottimemergec = 0;
   double tottimefindpl = 0;
   
-
   if( argc == 2 ) fname = argv[1];
  
   bool notdone = true;
@@ -357,6 +347,9 @@ int main(int argc, char **argv)
 #pragma omp task firstprivate(wd)
          {
 
+	    int n=0;
+	    struct found_hc fhc;
+	    struct merged_hc mhc;
             fhc.nhc=0;
 #if DEBUG
             ti = omp_get_wtime();
@@ -364,7 +357,7 @@ int main(int argc, char **argv)
             tottimeprint += (omp_get_wtime()-ti);
 #endif
       
-            roiThreshold=MinSigVec[wd.vw];
+            double roiThreshold=MinSigVec[wd.vw];
             ti = omp_get_wtime();
             findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
             tottimefindc += (omp_get_wtime()-ti);
@@ -376,7 +369,7 @@ int main(int argc, char **argv)
             ti = omp_get_wtime();
             int ngausshits=0;
             mhpp.nmpp=0;
-            for(i=0;i<mhc.nmh;i++){
+            for(int i=0;i<mhc.nmh;i++){
 
               int nhg=mhc.mh[i].nh;
             
@@ -387,11 +380,11 @@ int main(int argc, char **argv)
               if(endTick - startTick < 5)continue;
 
               double chi2PerNDF=0.;
-              fitStat=-1;
+              int fitStat=-1;
       
               if(mhc.mh[i].nh <= MaxMultiHit){
         
-                fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF,NDF);
+                fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF);
                 if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
                   ngausshits++;
                 }
