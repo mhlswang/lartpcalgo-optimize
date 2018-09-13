@@ -75,12 +75,12 @@ struct peakparams {
 
 struct ppgroup {
   int npp;
-  struct peakparams pp[100];
+  struct peakparams pp[50];
 };
 
 struct merged_hpp {
   int nmpp;
-  struct ppgroup mpp[100];
+  struct ppgroup mpp[50];
 };
 
 /* Global Constants */
@@ -319,7 +319,6 @@ int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgrou
 int main(int argc, char **argv)
 {
   vector<struct wiredata> wd_vec(maxhits);
-  struct merged_hpp mhpp;
   string fname = "gc-hitfinder.txt";
 
   double t0 = omp_get_wtime();
@@ -350,6 +349,7 @@ int main(int argc, char **argv)
 	    int n=0;
 	    struct found_hc fhc;
 	    struct merged_hc mhc;
+	    struct merged_hpp mhpp;
             fhc.nhc=0;
 #if DEBUG
             ti = omp_get_wtime();
@@ -358,15 +358,15 @@ int main(int argc, char **argv)
 #endif
       
             double roiThreshold=MinSigVec[wd.vw];
-            ti = omp_get_wtime();
+            //ti = omp_get_wtime();
             findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
-            tottimefindc += (omp_get_wtime()-ti);
+            //tottimefindc += (omp_get_wtime()-ti);
 
-            ti = omp_get_wtime();
+            //ti = omp_get_wtime();
             mergeHitCandidates(fhc, mhc);
-            tottimemergec += (omp_get_wtime()-ti);
+            //tottimemergec += (omp_get_wtime()-ti);
 
-            ti = omp_get_wtime();
+            //ti = omp_get_wtime();
             int ngausshits=0;
             mhpp.nmpp=0;
             for(int i=0;i<mhc.nmh;i++){
@@ -390,7 +390,7 @@ int main(int argc, char **argv)
                 }
               }
             }
-            tottimefindpl += (omp_get_wtime()-ti);
+            //tottimefindpl += (omp_get_wtime()-ti);
             n++;
           }
         }
