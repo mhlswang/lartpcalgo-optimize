@@ -83,6 +83,20 @@ struct merged_hpp {
   struct ppgroup mpp[20];
 };
 
+struct outdata {
+  int n;
+  int imh;
+  int ipp;
+  double mytck;
+  double mysigma;
+};
+
+struct refdata {
+  double simtck;
+  double rectck;
+  double rms;
+};
+
 /* Global Constants */
 const double MinSigVec[3]={2.6,3.4,3.4};
 const double MaxMultiHit=4;
@@ -96,14 +110,16 @@ const int maxhits=1000;
 ifstream iStream;
 streampos currentPos;
 
-int getHits(string fname, vector<struct wiredata> &wd_vec) {
+int getHits(string fname, vector<struct wiredata> &wd_vec, vector<struct refdata> &rd_vec) {
   /* Read the entire file, assuming it fits in memory. */
   
   int vw,lineLen,wr,mult,multmc,starttck,endtck,nroiadc,nhitadc,nrwadc;
   double simx,simtck,recx,rectck,rms,sigma,delx,deltck,bktrkx;
   struct wiredata wd;
+  struct refdata rd;
 
   wd_vec.clear();  // capacity is unchanged
+  rd_vec.clear();
   
   DPRINT("Reading file " + fname);
   
@@ -121,7 +137,8 @@ int getHits(string fname, vector<struct wiredata> &wd_vec) {
     if (line.find("hit") == 0) {
       hit = true;
       if (hitdata) { 
-	wd_vec.push_back(wd); //printf("adding hit data, vw = %d\n" , wd.vw); 
+	wd_vec.push_back(wd); //printf("adding hit data, vw = %d\n" , wd.vw);
+	rd_vec.push_back(rd);
       }
       hitdata = false;
       if (hitCounter >= maxhits) {
@@ -137,6 +154,9 @@ int getHits(string fname, vector<struct wiredata> &wd_vec) {
              &endtck,&delx,&deltck,&nroiadc,&nhitadc,&nrwadc,&bktrkx);
       wd.ntck = 0;
       wd.vw = vw;
+      rd.simtck = simtck;
+      rd.rectck = rectck;
+      rd.rms = rms;
     } else {
       // Read hit data
       sscanf(line.c_str(),"tick=%d ADC=%lf",&wd.wv[wd.ntck].tck,&wd.wv[wd.ntck].adc);
@@ -145,7 +165,7 @@ int getHits(string fname, vector<struct wiredata> &wd_vec) {
     }
     currentPos = iStream.tellg();
   }
-  if (hitdata) { wd_vec.push_back(wd); DPRINT("adding hit data"); }
+  if (hitdata) { wd_vec.push_back(wd); rd_vec.push_back(rd); DPRINT("adding hit data"); }
   iStream.close();
   return false;
 }
@@ -319,7 +339,11 @@ int findPeakParameters(struct wiredata &wd, struct found_hc &fhc, struct hitgrou
 int main(int argc, char **argv)
 {
   vector<struct wiredata> wd_vec(maxhits);
+  vector<struct refdata> rd_vec(maxhits);
+  vector<vector<struct outdata> > od_vec(maxhits);
   string fname = "gc-hitfinder.txt";
+
+  FILE* fout = fopen("result.txt","w");
 
   double t0 = omp_get_wtime();
   double tottime = 0;
@@ -334,7 +358,7 @@ int main(int argc, char **argv)
   bool notdone = true;
   while ( notdone ) {
     double ti = omp_get_wtime();
-    notdone = getHits(fname, wd_vec); // read maxhits hits from file
+    notdone = getHits(fname, wd_vec, rd_vec); // read maxhits hits at a time from file
     tottimeread += (omp_get_wtime()-ti);
 
     // prefered method is to set the OMP_NUM_THREADS env variable 
@@ -347,7 +371,8 @@ int main(int argc, char **argv)
         for (int ii=0; ii < wd_vec.size(); ii++) {
 #pragma omp task 
          {
-            struct wiredata wd = wd_vec[ii];
+	    struct wiredata &wd = wd_vec[ii];
+	    vector<struct outdata>& od = od_vec[ii];
 	    int n=0;
 	    struct found_hc fhc;
 	    struct merged_hc mhc;
@@ -389,6 +414,24 @@ int main(int argc, char **argv)
                 fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF);
                 if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
                   ngausshits++;
+		  // fill output here
+		  int impp=mhpp.nmpp-1;
+		  for(int j=0;j<mhpp.mpp[impp].npp;j++){
+		    /* temporary fix for the discontinuous ticks */
+		    int imax=int(mhpp.mpp[impp].pp[j].peakCenter);
+		    double delta=mhpp.mpp[impp].pp[j].peakCenter-double(imax);
+		    double mytck=wd.wv[imax].tck+delta;
+		    mytck=double(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
+		    double mysigma=mhpp.mpp[impp].pp[j].peakSigma;
+		    struct outdata outd;
+		    outd.n=n;
+		    outd.imh=i;
+		    outd.ipp=j;
+		    outd.mytck=mytck;
+		    outd.mysigma=mysigma;
+		    od.push_back(outd);
+		    //
+		  }
                 }
               }
             }
@@ -398,6 +441,24 @@ int main(int argc, char **argv)
         }
       } // end of single
     } // end of parallel
+    ti = omp_get_wtime();
+    for (int iv=0; iv<od_vec.size(); iv++) {
+      int ic_min = -1;
+      double mindiff=999999.;
+      for (int ic=0; ic<od_vec[iv].size(); ic++) {
+	double diff=fabs(od_vec[iv][ic].mytck-rd_vec[iv].simtck);
+	if(diff<mindiff){
+	  mindiff=diff;
+	  ic_min=ic;
+	}
+      }
+      fprintf(fout,"%d %d %d %lf %lf %lf %lf %lf\n",
+	      od_vec[iv][ic_min].n,od_vec[iv][ic_min].imh,od_vec[iv][ic_min].ipp,
+	      rd_vec[iv].simtck,rd_vec[iv].rectck,rd_vec[iv].rms,
+	      od_vec[iv][ic_min].mytck,od_vec[iv][ic_min].mysigma);
+      od_vec[iv].clear();
+    }
+    tottimeprint += (omp_get_wtime()-ti);
   } // while (notdone)
   tottime = omp_get_wtime() - t0;
 
@@ -406,7 +467,6 @@ int main(int argc, char **argv)
             << std::endl;
   std::cout << "time without I/O=" << tottime - tottimeread - tottimeprint << endl;
 
-  
   return 0;
 }
 
