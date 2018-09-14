@@ -91,7 +91,7 @@ const double MaxWidthMult=3.0;
 const double PeakRange=2.0;
 const double AmpRange=2.0;
 const double Chi2NDF=50;
-const int maxhits=1000;
+const int maxhits=114001;
 
 ifstream iStream;
 streampos currentPos;
