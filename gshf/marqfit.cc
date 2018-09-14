@@ -1,5 +1,5 @@
 #include <iostream> 
-#include <math.h>
+//#include <math.h>
 #include <cmath>
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */

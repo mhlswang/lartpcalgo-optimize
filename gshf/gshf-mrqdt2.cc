@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
-#include <math.h>
+#include <cmath>
 #include <cstring>
 #include <iomanip>
 #include <limits>
@@ -91,7 +91,7 @@ const double MaxWidthMult=3.0;
 const double PeakRange=2.0;
 const double AmpRange=2.0;
 const double Chi2NDF=50;
-const int maxhits=100;
+const int maxhits=1000;
 
 ifstream iStream;
 streampos currentPos;
@@ -337,17 +337,17 @@ int main(int argc, char **argv)
     notdone = getHits(fname, wd_vec); // read maxhits hits from file
     tottimeread += (omp_get_wtime()-ti);
 
-    omp_set_num_threads(2);
+    // prefered method is to set the OMP_NUM_THREADS env variable 
+    //omp_set_num_threads(2);
 
 #pragma omp parallel 
     {
 #pragma omp single  
       {
         for (int ii=0; ii < wd_vec.size(); ii++) {
-          struct wiredata wd = wd_vec[ii];
-#pragma omp task firstprivate(wd)
+#pragma omp task 
          {
-
+            struct wiredata wd = wd_vec[ii];
 	    int n=0;
 	    struct found_hc fhc;
 	    struct merged_hc mhc;
