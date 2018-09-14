@@ -105,7 +105,7 @@ const double MaxWidthMult=3.0;
 const double PeakRange=2.0;
 const double AmpRange=2.0;
 const double Chi2NDF=50;
-const int maxhits=114001;
+const int maxhits=1000;
 
 ifstream iStream;
 streampos currentPos;
@@ -354,6 +354,11 @@ int main(int argc, char **argv)
   double tottimefindpl = 0;
   
   if( argc == 2 ) fname = argv[1];
+
+#pragma omp parallel 
+    {
+#pragma omp single  
+      {
  
   bool notdone = true;
   while ( notdone ) {
@@ -361,13 +366,15 @@ int main(int argc, char **argv)
     notdone = getHits(fname, wd_vec, rd_vec); // read maxhits hits at a time from file
     tottimeread += (omp_get_wtime()-ti);
 
+    // std::cout << "while iteration on thread=" << omp_get_thread_num() << std::endl;
+
     // prefered method is to set the OMP_NUM_THREADS env variable 
     //omp_set_num_threads(2);
 
-#pragma omp parallel 
-    {
-#pragma omp single  
-      {
+// #pragma omp parallel 
+//     {
+// #pragma omp single  
+//       {
         for (int ii=0; ii < wd_vec.size(); ii++) {
 #pragma omp task 
          {
@@ -439,8 +446,8 @@ int main(int argc, char **argv)
             n++;
           }
         }
-      } // end of single
-    } // end of parallel
+    //   } // end of single
+    // } // end of parallel
     ti = omp_get_wtime();
     for (int iv=0; iv<od_vec.size(); iv++) {
       int ic_min = -1;
@@ -460,6 +467,8 @@ int main(int argc, char **argv)
     }
     tottimeprint += (omp_get_wtime()-ti);
   } // while (notdone)
+      } // end of single
+    } // end of parallel
   tottime = omp_get_wtime() - t0;
 
   std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
