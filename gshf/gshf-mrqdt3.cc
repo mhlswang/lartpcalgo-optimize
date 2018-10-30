@@ -373,7 +373,7 @@ int main(int argc, char **argv)
 //       {
 	
           for (int ii=0; ii < wd_vec.size(); ii++) {
-#pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii)
+#pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii) shared(od_vec)
 	    {
               int my_tid = omp_get_thread_num();
 	      const struct wiredata &wd = wd_vec[ii];
