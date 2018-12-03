@@ -260,6 +260,31 @@ void mergeHitCandidates(const struct found_hc &fhc, struct merged_hc &mhc)
   }
 }
 
+void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<struct outdata> > &od_vec, FILE* fout){
+  
+  for (int iv=0; iv<od_vec.size(); iv++) {
+    int ic_min = -1;
+    double mindiff=999999.;
+    for (int ic=0; ic<od_vec[iv].size(); ic++) {
+      double diff=fabs(od_vec[iv][ic].mytck-rd_vec[iv].simtck);
+      if (diff<mindiff){
+	mindiff=diff;
+	ic_min=ic;
+      }
+    }
+    
+    if (ic_min==-1) continue;
+    
+    fprintf(fout,"%d %d %d %lf %lf %lf %lf %lf\n", 
+	    od_vec[iv][ic_min].n,od_vec[iv][ic_min].imh,od_vec[iv][ic_min].ipp,
+	    rd_vec[iv].simtck,rd_vec[iv].rectck,rd_vec[iv].rms,
+	    od_vec[iv][ic_min].mytck,od_vec[iv][ic_min].mysigma);
+    
+    od_vec[iv].clear();
+  }
+}
+
+
 int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct hitgroup &hg, struct merged_hpp &mhpp, double &chi2PerNDF)
 {
   const double chiCut   = 1e-3;
@@ -343,7 +368,7 @@ int main(int argc, char **argv)
   vector<struct refdata> rd_vec(maxhits);
   vector<vector<struct outdata> > od_vec(maxhits);
   string fname = "gc-hitfinder.txt";
-
+  
   FILE* fout = fopen("result.txt","w");
 
   double t0 = omp_get_wtime();
@@ -353,130 +378,136 @@ int main(int argc, char **argv)
   double tottimefindc = 0;
   double tottimemergec = 0;
   double tottimefindpl = 0;
+  double tp = 0;
+  int itcounter = 0;
+  
   
   if( argc == 2 ) fname = argv[1];
-
+  
 #pragma omp parallel 
   {
 #pragma omp single  
     {
- 
+      
       bool notdone = true;
-      int itcounter = 0;
+      
       while ( notdone ) {
-        double ti = omp_get_wtime();
+	
+	//Print to file in sets of maxhits, for each loop through while(notdone) (except the first)
+	if(itcounter>0){
+	  double tpi = omp_get_wtime();
+	  printHitCandidates(rd_vec,od_vec,fout);
+	  tottimeprint += (omp_get_wtime()-tpi);
+	}
+	
+	double ti = omp_get_wtime();
         notdone = getHits(fname, wd_vec, rd_vec); // read maxhits hits at a time from file
         tottimeread += (omp_get_wtime()-ti);
-
-//#pragma omp parallel 
-//     {
-//#pragma omp single  
-//       {
 	
-          for (int ii=0; ii < wd_vec.size(); ii++) {
-	     const struct wiredata wd = wd_vec[ii]; 
-             double roiThreshold=MinSigVec[wd.vw];
+	//#pragma omp parallel 
+	//     {
+	//#pragma omp single  
+	//       {
+	
+	for (int ii=0; ii < wd_vec.size(); ii++) {
+	  const struct wiredata wd = wd_vec[ii]; 
+	  double roiThreshold=MinSigVec[wd.vw];
 #pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold) 
-	    {
-              int my_tid = omp_get_thread_num();
-	      vector<struct outdata> od; 
-	      int n=0;
-	      struct found_hc fhc;
-	      struct merged_hc mhc;
-	      struct merged_hpp mhpp;
-              fhc.nhc=0;
+	  {
+	    int my_tid = omp_get_thread_num();
+	    vector<struct outdata> od; 
+	    int n=0;
+	    struct found_hc fhc;
+	    struct merged_hc mhc;
+	    struct merged_hpp mhpp;
+	    fhc.nhc=0;
 #if DEBUG
-              ti = omp_get_wtime();
-              printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
-              tottimeprint += (omp_get_wtime()-ti);
+	    ti = omp_get_wtime();
+	    printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
+	    tottimeprint += (omp_get_wtime()-ti);
 #endif
-      
-              //ti = omp_get_wtime();
-              findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
-              //tottimefindc += (omp_get_wtime()-ti);
-
-              //ti = omp_get_wtime();
-              mergeHitCandidates(fhc, mhc);
-              //tottimemergec += (omp_get_wtime()-ti);
-  
-              //ti = omp_get_wtime();
-              int ngausshits=0;
-              mhpp.nmpp=0;
-              for(int i=0;i<mhc.nmh;i++){
-
-                int nhg=mhc.mh[i].nh;
-            
-                int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
-                int ihc2=mhc.mh[i].h[nhg-1];  /* last hit in this hit group */
-                int startTick=fhc.hc[ihc1].starttck;
-                int endTick=fhc.hc[ihc2].stoptck;
-                if(endTick - startTick < 5)continue;
-
-                double chi2PerNDF=0.;
-                int fitStat=-1;
-      
-                if(mhc.mh[i].nh <= MaxMultiHit){
-        
-                  fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF);
-                  if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
-                    ngausshits++;
-		    // fill output here
-		    int impp=mhpp.nmpp-1;
-		    for(int j=0;j<mhpp.mpp[impp].npp;j++){
-		      /* temporary fix for the discontinuous ticks */
-		      int imax=int(mhpp.mpp[impp].pp[j].peakCenter);
-		      double delta=mhpp.mpp[impp].pp[j].peakCenter-double(imax);
-		      double mytck=wd.wv[imax].tck+delta;
-		      mytck=double(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
-		      double mysigma=mhpp.mpp[impp].pp[j].peakSigma;
-		      struct outdata outd;
-		      outd.n=n;
-		      outd.imh=i;
-		      outd.ipp=j;
-		      outd.mytck=mytck;
-		      outd.mysigma=mysigma;
-		      od_vec[ii].push_back(outd);
-		      //
-		    }
-                  }
-                }
-              } // for (int i
+	    
+	    //ti = omp_get_wtime();
+	    findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
+	    //tottimefindc += (omp_get_wtime()-ti);
+	    
+	    //ti = omp_get_wtime();
+	    mergeHitCandidates(fhc, mhc);
+	    //tottimemergec += (omp_get_wtime()-ti);
+	    
+	    //ti = omp_get_wtime();
+	    int ngausshits=0;
+	    mhpp.nmpp=0;
+	    for(int i=0;i<mhc.nmh;i++){
+	      
+	      int nhg=mhc.mh[i].nh;
+	      
+	      int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
+	      int ihc2=mhc.mh[i].h[nhg-1];  /* last hit in this hit group */
+	      int startTick=fhc.hc[ihc1].starttck;
+	      int endTick=fhc.hc[ihc2].stoptck;
+	      if(endTick - startTick < 5)continue;
+	      
+	      double chi2PerNDF=0.;
+	      int fitStat=-1;
+	      
+	      if(mhc.mh[i].nh <= MaxMultiHit){
+		
+		fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF);
+		if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
+		  ngausshits++;
+		  // fill output here
+		  int impp=mhpp.nmpp-1;
+		  for(int j=0;j<mhpp.mpp[impp].npp;j++){
+		    /* temporary fix for the discontinuous ticks */
+		    int imax=int(mhpp.mpp[impp].pp[j].peakCenter);
+		    double delta=mhpp.mpp[impp].pp[j].peakCenter-double(imax);
+		    double mytck=wd.wv[imax].tck+delta;
+		    mytck=double(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
+		    double mysigma=mhpp.mpp[impp].pp[j].peakSigma;
+		    struct outdata outd;
+		    outd.n=n;
+		    outd.imh=i;
+		    outd.ipp=j;
+		    outd.mytck=mytck;
+		    outd.mysigma=mysigma;
+		    od_vec[ii].push_back(outd);
+		    
+		  }//for j
+		}//if !fit stat
+	      }//if max mult hit
+	    } // for (int i
               //tottimefindpl += (omp_get_wtime()-ti);
-              n++;
-        } // omp task
-
-      } // for (int ii
-#pragma omp taskwait
-       
-      // The code below is executed by a single thread
-      ti = omp_get_wtime();
-      for (int iv=0; iv<od_vec.size(); iv++) {
-        int ic_min = -1;
-        double mindiff=999999.;
-        for (int ic=0; ic<od_vec[iv].size(); ic++) {
-          double diff=fabs(od_vec[iv][ic].mytck-rd_vec[iv].simtck);
-          if (diff<mindiff){
-            mindiff=diff;
-	    ic_min=ic;
-	   }
-         }
-         fprintf(fout,"%d %d %d %lf %lf %lf %lf %lf\n", 
-	            od_vec[iv][ic_min].n,od_vec[iv][ic_min].imh,od_vec[iv][ic_min].ipp,
-	            rd_vec[iv].simtck,rd_vec[iv].rectck,rd_vec[iv].rms,
-	            od_vec[iv][ic_min].mytck,od_vec[iv][ic_min].mysigma);
-         //od_vec[iv].clear();
-        }
-        tottimeprint += (omp_get_wtime()-ti);
+	    n++;
+	  } // omp task
+	  
+	} // for (int ii
+	itcounter++;
+	
       } // while (notdone)
     } // end of single
   } // end of parallel
+  
+  
+    // The code below is executed by a single thread
+  
+  //print last set of hits
+  
+  tp = omp_get_wtime();
+  
+  printHitCandidates(rd_vec,od_vec,fout);
+  
+  tottimeprint += (omp_get_wtime()-tp);
+  
+  //final timing information
+  
   tottime = omp_get_wtime() - t0;
-
+  
   std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
             << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
             << std::endl;
   std::cout << "time without I/O=" << tottime - tottimeread - tottimeprint << endl;
-
+  
   return 0;
 }
 
