@@ -12,6 +12,8 @@
 
 #include <omp.h>
 
+#include "Event.h"
+
 #define DEBUG 0
 
 //#define IODEBUG 1
@@ -22,21 +24,10 @@
 #endif
 
 using namespace std;
+using namespace gshf;
 
 int mrqdtfit(double &lambda, double p[], double y[], int nParam, int nData, double &chiSqr, double &dchiSqr);
 int cal_perr(double p[], double y[], int nParam, int nData, double perr[]);
-
-struct waveform {
-  int tck;
-  double adc;
-};
-
-struct wiredata {
-public:
-  unsigned short ntck;
-  unsigned short vw;
-  struct waveform wv[1000];
-};
 
 struct hitcand {
   int starttck;
@@ -84,20 +75,6 @@ struct merged_hpp {
   struct ppgroup mpp[20];
 };
 
-struct outdata {
-  int n;
-  int imh;
-  int ipp;
-  double mytck;
-  double mysigma;
-};
-
-struct refdata {
-  double simtck;
-  double rectck;
-  double rms;
-};
-
 /* Global Constants */
 const double MinSigVec[3]={2.6,3.4,3.4};
 const double MaxMultiHit=4;
@@ -110,66 +87,6 @@ const int maxhits=2000;
 
 ifstream iStream;
 streampos currentPos;
-
-int getHits(string fname, vector<struct wiredata> &wd_vec, vector<struct refdata> &rd_vec) {
-  /* Read the entire file, assuming it fits in memory. */
-  
-  int vw,lineLen,wr,mult,multmc,starttck,endtck,nroiadc,nhitadc,nrwadc;
-  double simx,simtck,recx,rectck,rms,sigma,delx,deltck,bktrkx;
-  struct wiredata wd;
-  struct refdata rd;
-
-  wd_vec.clear();  // capacity is unchanged
-  rd_vec.clear();
-  
-  DPRINT("Reading file " + fname);
-  
-  if (! iStream.is_open()) {
-    iStream.open(fname);
-    currentPos = iStream.tellg();
-  } 
-  //std::string content((std::istreambuf_iterator<char>(iStream)), std::istreambuf_iterator<char>());
-  //std::stringstream scontent(content);
-
-  int hitCounter = 0; bool hitdata=false, hit = false;
-  std::string line;
-  while ( getline(iStream,line) ) {
-    //line = *line_it;
-    if (line.find("hit") == 0) {
-      hit = true;
-      if (hitdata) { 
-	wd_vec.push_back(wd); //printf("adding hit data, vw = %d\n" , wd.vw);
-	rd_vec.push_back(rd);
-      }
-      hitdata = false;
-      if (hitCounter >= maxhits) {
-        hitCounter = 0;
-	iStream.seekg(currentPos,ios::beg);
-	DPRINT("Returning from getHits");
-	return true;
-      }
-      hitCounter++;
-      DPRINT(line);
-      sscanf(line.c_str(),"hit view=%d wire=%d mult=%d multMC=%d simX=%lf simTick=%lf recX=%lf recTick=%lf RMS=%lf sigma=%lf startTick=%d endTick=%d deltaX=%lf deltaTicks=%lf nRoiADCs=%d nHitADCs=%d nRawADCs=%d backtrackerX=%lf",
-             &vw,&wr,&mult,&multmc,&simx,&simtck,&recx,&rectck,&rms,&sigma,&starttck,
-             &endtck,&delx,&deltck,&nroiadc,&nhitadc,&nrwadc,&bktrkx);
-      wd.ntck = 0;
-      wd.vw = vw;
-      rd.simtck = simtck;
-      rd.rectck = rectck;
-      rd.rms = rms;
-    } else {
-      // Read hit data
-      sscanf(line.c_str(),"tick=%d ADC=%lf",&wd.wv[wd.ntck].tck,&wd.wv[wd.ntck].adc);
-      wd.ntck++;
-      if (hit) hitdata = true;
-    }
-    currentPos = iStream.tellg();
-  }
-  if (hitdata) { wd_vec.push_back(wd); rd_vec.push_back(rd); DPRINT("adding hit data"); }
-  iStream.close();
-  return false;
-}
 
 void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, int i2, double roiThreshold)
 {
@@ -364,12 +281,12 @@ int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct h
 
 int main(int argc, char **argv)
 {
-  vector<struct wiredata> wd_vec(maxhits);
-  vector<struct refdata> rd_vec(maxhits);
-  vector<vector<struct outdata> > od_vec(maxhits);
-  string fname = "gc-hitfinder.txt";
   
   FILE* fout = fopen("result.txt","w");
+
+  DataFile in;
+  string fname = "gc-hitfinder.bin";
+  Event ev(0);
 
   double t0 = omp_get_wtime();
   double tottime = 0;
@@ -380,37 +297,39 @@ int main(int argc, char **argv)
   double tottimefindpl = 0;
   double tp = 0;
   int itcounter = 0;
-  
-  
+
   if( argc == 2 ) fname = argv[1];
+
+  const int Nevents = in.OpenRead(fname);
   
 #pragma omp parallel 
   {
 #pragma omp single  
     {
       
-      bool notdone = true;
-      
-      while ( notdone ) {
-	
-	//Print to file in sets of maxhits, for each loop through while(notdone) (except the first)
+      for (int evt = 0; evt < Nevents; ++evt) {
+
+	bool notdone = true;
+
+	//Print to file per each event (except the last)
 	if(itcounter>0){
 	  double tpi = omp_get_wtime();
-	  printHitCandidates(rd_vec,od_vec,fout);
+	  printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
 	  tottimeprint += (omp_get_wtime()-tpi);
 	}
 	
 	double ti = omp_get_wtime();
-        notdone = getHits(fname, wd_vec, rd_vec); // read maxhits hits at a time from file
+	ev.Reset(evt);
+	ev.read_in(in);
+	//std::cout << "read event with nhits=" << ev.wd_vec_.size() << std::endl;
         tottimeread += (omp_get_wtime()-ti);
+
+	std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
+	od_vec.resize(ev.wd_vec_.size());
+
+	for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
+	  const struct wiredata wd = ev.wd_vec_[ii];
 	
-	//#pragma omp parallel 
-	//     {
-	//#pragma omp single  
-	//       {
-	
-	for (int ii=0; ii < wd_vec.size(); ii++) {
-	  const struct wiredata wd = wd_vec[ii]; 
 	  double roiThreshold=MinSigVec[wd.vw];
 #pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold) 
 	  {
@@ -472,7 +391,6 @@ int main(int argc, char **argv)
 		    outd.mytck=mytck;
 		    outd.mysigma=mysigma;
 		    od_vec[ii].push_back(outd);
-		    
 		  }//for j
 		}//if !fit stat
 	      }//if max mult hit
@@ -483,8 +401,8 @@ int main(int argc, char **argv)
 	  
 	} // for (int ii
 	itcounter++;
-	
-      } // while (notdone)
+
+      } // event loop
     } // end of single
   } // end of parallel
   
@@ -492,10 +410,10 @@ int main(int argc, char **argv)
     // The code below is executed by a single thread
   
   //print last set of hits
-  
+
   tp = omp_get_wtime();
   
-  printHitCandidates(rd_vec,od_vec,fout);
+  printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
   
   tottimeprint += (omp_get_wtime()-tp);
   
