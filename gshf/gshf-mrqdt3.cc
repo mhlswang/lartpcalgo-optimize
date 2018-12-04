@@ -302,10 +302,10 @@ int main(int argc, char **argv)
 
   const int Nevents = in.OpenRead(fname);
 
-#pragma omp parallel
-  {
-#pragma omp single
-    {
+// #pragma omp parallel
+//   {
+// #pragma omp single
+//     {
 
       for (int evt = 0; evt < Nevents; ++evt) {
 
@@ -327,12 +327,13 @@ int main(int argc, char **argv)
         std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
         od_vec.resize(ev.wd_vec_.size());
 
+#pragma omp parallel for
 	for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
 	  const struct wiredata wd = ev.wd_vec_[ii];
 
 	  double roiThreshold=MinSigVec[wd.vw];
-#pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold)
-	  {
+// #pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold)
+// 	  {
 	    int my_tid = omp_get_thread_num();
 	    vector<struct outdata> od;
 	    int n=0;
@@ -397,17 +398,18 @@ int main(int argc, char **argv)
 	    } // for (int i
               //tottimefindpl += (omp_get_wtime()-ti);
 	    n++;
-	  } // omp task
+	  // } // omp task
 
 	} // for (int ii
+// #pragma omp taskwait
 	itcounter++;
 
       } // event loop
-    } // end of single
-  } // end of parallel
+  //   } // end of single
+  // } // end of parallel
 
 
-    // The code below is executed by a single thread
+  // The code below is executed by a single thread
 
   //print last set of hits
 
