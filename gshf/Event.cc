@@ -38,7 +38,7 @@ namespace gshf {
       fwrite(&wd_vec_[iw].ntck, sizeof(unsigned short), 1, fp);
       fwrite(&wd_vec_[iw].vw, sizeof(unsigned short), 1, fp);
       for (int it=0; it<nt; ++it) {
-	fwrite(&wd_vec_[iw].wv[it], sizeof(waveform), 1, fp);
+        fwrite(&wd_vec_[iw].wv[it], sizeof(waveform), 1, fp);
       }
       evsize += 2*sizeof(unsigned short) + nt*sizeof(waveform);
     }
@@ -58,9 +58,9 @@ namespace gshf {
   void Event::read_in(DataFile &data_file, FILE *in_fp)
   {
     FILE *fp = in_fp ? in_fp : data_file.f_fp;
-    
+
     data_file.AdvancePosToNextEvent(fp);
-    
+
     int nw;
     fread(&nw, sizeof(int), 1, fp);
     wd_vec_.reserve(nw);
@@ -81,7 +81,7 @@ namespace gshf {
       wd.wv = wf;
       wd_vec_.push_back(wd);
     }
-    
+
     int nr;
     fread(&nr, sizeof(int), 1, fp);
     rd_vec_.resize(nr);

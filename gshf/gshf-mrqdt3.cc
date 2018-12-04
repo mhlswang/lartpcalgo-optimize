@@ -92,9 +92,9 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, 
 {
   int i,maxIndex,ifirst,ilast,nhc;
   double maxValue,x;
-  
-  if((i2-i1)<5)return;	/* require minimum number of ticks */
-  
+
+  if((i2-i1)<5)return;  /* require minimum number of ticks */
+
   /* find highest peak within given range */
   maxValue=wd.wv[i1].adc;
   maxIndex=i1;
@@ -105,7 +105,7 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, 
     }
   }
   if(maxValue>roiThreshold){
-    
+
     /* first go backwards of max to see if there are other hits */
     ifirst = (maxIndex-i1) > 2 ? maxIndex - 1 : i1;
     while(ifirst!=i1){
@@ -114,10 +114,10 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, 
          (wd.wv[ifirst].adc <= wd.wv[ifirst-1].adc))break; /* look for rising edge */
       ifirst--;
     }
-    
+
     /* recursive call */
     findHitCandidates(wd, fhc, i1,ifirst+1,roiThreshold);
-    
+
     /* now go forward of max to see if there are other hits */
     ilast = (i2-maxIndex) > 2 ? maxIndex + 1 : i2 - 1;
     while(ilast!=(i2-1)){
@@ -126,7 +126,7 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, 
          (wd.wv[ilast].adc <  wd.wv[ilast-1].adc))break;  /* look for falling edge */
       ilast++;
     }
-    
+
     /* add the new hit to the list of candidates */
     nhc=fhc.nhc;
     fhc.hc[nhc].starttck = ifirst;
@@ -139,7 +139,7 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, 
     fhc.hc[nhc].sig = fmax(2.,(double)((ilast-ifirst)/6.));
     fhc.hc[nhc].hgt = maxValue;
     fhc.nhc++;
-    
+
     /* recursive */
     findHitCandidates(wd, fhc, ilast+1,i2,roiThreshold);
   }
@@ -150,7 +150,7 @@ void mergeHitCandidates(const struct found_hc &fhc, struct merged_hc &mhc)
 {
   int i,j,ih,lastTick;
   int g[100];
-  
+
   lastTick = fhc.hc[0].stoptck;
   ih = 0;
   mhc.nmh = 0;
@@ -178,25 +178,25 @@ void mergeHitCandidates(const struct found_hc &fhc, struct merged_hc &mhc)
 }
 
 void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<struct outdata> > &od_vec, FILE* fout){
-  
+
   for (int iv=0; iv<od_vec.size(); iv++) {
     int ic_min = -1;
     double mindiff=999999.;
     for (int ic=0; ic<od_vec[iv].size(); ic++) {
       double diff=fabs(od_vec[iv][ic].mytck-rd_vec[iv].simtck);
       if (diff<mindiff){
-	mindiff=diff;
-	ic_min=ic;
+        mindiff=diff;
+        ic_min=ic;
       }
     }
-    
+
     if (ic_min==-1) continue;
-    
-    fprintf(fout,"%d %d %d %lf %lf %lf %lf %lf\n", 
-	    od_vec[iv][ic_min].n,od_vec[iv][ic_min].imh,od_vec[iv][ic_min].ipp,
-	    rd_vec[iv].simtck,rd_vec[iv].rectck,rd_vec[iv].rms,
-	    od_vec[iv][ic_min].mytck,od_vec[iv][ic_min].mysigma);
-    
+
+    fprintf(fout,"%d %d %d %lf %lf %lf %lf %lf\n",
+            od_vec[iv][ic_min].n,od_vec[iv][ic_min].imh,od_vec[iv][ic_min].ipp,
+            rd_vec[iv].simtck,rd_vec[iv].rectck,rd_vec[iv].rms,
+            od_vec[iv][ic_min].mytck,od_vec[iv][ic_min].mysigma);
+
     od_vec[iv].clear();
   }
 }
@@ -205,15 +205,15 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
 int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct hitgroup &hg, struct merged_hpp &mhpp, double &chi2PerNDF)
 {
   const double chiCut   = 1e-3;
-  double lambda   = 0.001;	/* Marquardt damping parameter */
+  double lambda   = 0.001;      /* Marquardt damping parameter */
   double  chiSqr = std::numeric_limits<double>::max(), dchiSqr = std::numeric_limits<double>::max();
   int nParams=0;
   double y[1000],p[15],pmin[15],pmax[15],perr[15];
-  
+
   int startTime = fhc.hc[hg.h[0]].starttck;
   int endTime = fhc.hc[hg.h[hg.nh-1]].stoptck;
   int roiSize = endTime - startTime;
-  
+
   /* choose the fit function and set the parameters */
   nParams = 0;
   for(int i=0;i<hg.nh;i++){
@@ -221,7 +221,7 @@ int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct h
     double peakMean   = fhc.hc[ih].cen - (double)startTime;
     double peakWidth  = fhc.hc[ih].sig;
     double amplitude  = fhc.hc[ih].hgt;
-    double meanLowLim = fmax(peakMean - PeakRange * peakWidth, 	     0.);
+    double meanLowLim = fmax(peakMean - PeakRange * peakWidth,       0.);
     double meanHiLim  = fmin(peakMean + PeakRange * peakWidth, (double)roiSize);
     p[0+nParams]=amplitude;
     p[1+nParams]=peakMean;
@@ -234,25 +234,25 @@ int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct h
     pmax[2+nParams]=MaxWidthMult * peakWidth;
     nParams += 3;
   }
-  
+
   int fitResult=-1;
-  
+
   /* set the bin content */
   for (int idx = 0;idx< roiSize; idx++){
     double adc=wd.wv[startTime+idx].adc;
     if(adc<=0.)adc=0.;
     y[idx]=adc;
   }
-  
+
   int trial=0;
-  lambda=-1.;	/* initialize lambda on first call */
+  lambda=-1.;   /* initialize lambda on first call */
   do{
     fitResult=mrqdtfit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
     trial++;
     if(fitResult||(trial>100))break;
   }
   while (fabs(dchiSqr) >= chiCut);
-  
+
   int nmpp=mhpp.nmpp;
   mhpp.mpp[nmpp].npp=0;
   int fitStat=-1;
@@ -265,9 +265,9 @@ int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct h
       for(int i=0;i<hg.nh;i++){
         mhpp.mpp[nmpp].pp[i].peakAmplitude      = p[parIdx + 0];
         mhpp.mpp[nmpp].pp[i].peakAmplitudeError = perr[parIdx + 0];
-        mhpp.mpp[nmpp].pp[i].peakCenter	        = p[parIdx + 1] + 0.5 + double(startTime);
+        mhpp.mpp[nmpp].pp[i].peakCenter         = p[parIdx + 1] + 0.5 + double(startTime);
         mhpp.mpp[nmpp].pp[i].peakCenterError    = perr[parIdx + 1];
-        mhpp.mpp[nmpp].pp[i].peakSigma	        = p[parIdx + 2];
+        mhpp.mpp[nmpp].pp[i].peakSigma          = p[parIdx + 2];
         mhpp.mpp[nmpp].pp[i].peakSigmaError     = perr[parIdx + 2];
         parIdx += 3;
         mhpp.mpp[nmpp].npp++;
@@ -281,7 +281,7 @@ int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct h
 
 int main(int argc, char **argv)
 {
-  
+
   FILE* fout = fopen("result.txt","w");
 
   DataFile in;
@@ -301,40 +301,40 @@ int main(int argc, char **argv)
   if( argc == 2 ) fname = argv[1];
 
   const int Nevents = in.OpenRead(fname);
-  
-#pragma omp parallel 
+
+#pragma omp parallel
   {
-#pragma omp single  
+#pragma omp single
     {
-      
+
       for (int evt = 0; evt < Nevents; ++evt) {
 
-	bool notdone = true;
+        bool notdone = true;
 
-	//Print to file per each event (except the last)
-	if(itcounter>0){
-	  double tpi = omp_get_wtime();
-	  printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
-	  tottimeprint += (omp_get_wtime()-tpi);
-	}
-	
-	double ti = omp_get_wtime();
-	ev.Reset(evt);
-	ev.read_in(in);
-	//std::cout << "read event with nhits=" << ev.wd_vec_.size() << std::endl;
+        //Print to file per each event (except the last)
+        if(itcounter>0){
+          double tpi = omp_get_wtime();
+          printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
+          tottimeprint += (omp_get_wtime()-tpi);
+        }
+
+        double ti = omp_get_wtime();
+        ev.Reset(evt);
+        ev.read_in(in);
+        //std::cout << "read event with nhits=" << ev.wd_vec_.size() << std::endl;
         tottimeread += (omp_get_wtime()-ti);
 
-	std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
-	od_vec.resize(ev.wd_vec_.size());
+        std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
+        od_vec.resize(ev.wd_vec_.size());
 
 	for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
 	  const struct wiredata wd = ev.wd_vec_[ii];
-	
+
 	  double roiThreshold=MinSigVec[wd.vw];
-#pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold) 
+#pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold)
 	  {
 	    int my_tid = omp_get_thread_num();
-	    vector<struct outdata> od; 
+	    vector<struct outdata> od;
 	    int n=0;
 	    struct found_hc fhc;
 	    struct merged_hc mhc;
@@ -345,33 +345,33 @@ int main(int argc, char **argv)
 	    printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
 	    tottimeprint += (omp_get_wtime()-ti);
 #endif
-	    
+
 	    //ti = omp_get_wtime();
 	    findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
 	    //tottimefindc += (omp_get_wtime()-ti);
-	    
+
 	    //ti = omp_get_wtime();
 	    mergeHitCandidates(fhc, mhc);
 	    //tottimemergec += (omp_get_wtime()-ti);
-	    
+
 	    //ti = omp_get_wtime();
 	    int ngausshits=0;
 	    mhpp.nmpp=0;
 	    for(int i=0;i<mhc.nmh;i++){
-	      
+
 	      int nhg=mhc.mh[i].nh;
-	      
+
 	      int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
 	      int ihc2=mhc.mh[i].h[nhg-1];  /* last hit in this hit group */
 	      int startTick=fhc.hc[ihc1].starttck;
 	      int endTick=fhc.hc[ihc2].stoptck;
 	      if(endTick - startTick < 5)continue;
-	      
+
 	      double chi2PerNDF=0.;
 	      int fitStat=-1;
-	      
+
 	      if(mhc.mh[i].nh <= MaxMultiHit){
-		
+
 		fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF);
 		if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
 		  ngausshits++;
@@ -398,34 +398,33 @@ int main(int argc, char **argv)
               //tottimefindpl += (omp_get_wtime()-ti);
 	    n++;
 	  } // omp task
-	  
+
 	} // for (int ii
 	itcounter++;
 
       } // event loop
     } // end of single
   } // end of parallel
-  
-  
+
+
     // The code below is executed by a single thread
-  
+
   //print last set of hits
 
   tp = omp_get_wtime();
-  
+
   printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
-  
+
   tottimeprint += (omp_get_wtime()-tp);
-  
+
   //final timing information
-  
+
   tottime = omp_get_wtime() - t0;
-  
+
   std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
             << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
             << std::endl;
   std::cout << "time without I/O=" << tottime - tottimeread - tottimeprint << endl;
-  
+
   return 0;
 }
-

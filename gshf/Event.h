@@ -38,7 +38,7 @@ namespace gshf {
     int f_format_version = 0;
     int f_n_events = -1;
   };
- 
+
   struct DataFile
   {
 
@@ -64,17 +64,17 @@ namespace gshf {
   {
   public:
     explicit Event(int evtID);
-    
+
     void Reset(int evtID);
-    
+
     int  evtID() const {return evtID_;}
-    
+
     void write_out(DataFile &data_file);
     void read_in  (DataFile &data_file, FILE *in_fp=0);
-    
+
   private:
     int  evtID_;
-    
+
   public:
     std::vector<wiredata> wd_vec_;
     std::vector<refdata>  rd_vec_;
@@ -83,4 +83,3 @@ namespace gshf {
 
 }
 #endif
-
