@@ -32,6 +32,7 @@ struct waveform {
 };
 
 struct wiredata {
+public:
   unsigned short ntck;
   unsigned short vw;
   struct waveform wv[1000];
@@ -105,7 +106,7 @@ const double MaxWidthMult=3.0;
 const double PeakRange=2.0;
 const double AmpRange=2.0;
 const double Chi2NDF=50;
-const int maxhits=1000;
+const int maxhits=2000;
 
 ifstream iStream;
 streampos currentPos;
@@ -228,7 +229,7 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, 
   return;
 }
 
-void mergeHitCandidates(struct found_hc &fhc, struct merged_hc &mhc)
+void mergeHitCandidates(const struct found_hc &fhc, struct merged_hc &mhc)
 {
   int i,j,ih,lastTick;
   int g[100];
@@ -352,9 +353,14 @@ int main(int argc, char **argv)
   double tottimefindc = 0;
   double tottimemergec = 0;
   double tottimefindpl = 0;
+  double partime = 0,tp0=0;
   
   if( argc == 2 ) fname = argv[1];
 
+#pragma omp parallel 
+  {
+#pragma omp single  
+    {
  
       bool notdone = true;
       int itcounter = 0;
@@ -363,10 +369,17 @@ int main(int argc, char **argv)
         notdone = getHits(fname, wd_vec, rd_vec); // read maxhits hits at a time from file
         tottimeread += (omp_get_wtime()-ti);
 
-#pragma omp parallel for lastprivate(tottimeprint) firstprivate(ti) shared(od_vec) ordered
+//#pragma omp parallel 
+//     {
+//#pragma omp single  
+//       {
+	
           for (int ii=0; ii < wd_vec.size(); ii++) {
+	     const struct wiredata wd = wd_vec[ii]; 
+             double roiThreshold=MinSigVec[wd.vw];
+#pragma omp task shared(od_vec,partime) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold) 
+	    {
               int my_tid = omp_get_thread_num();
-	      const struct wiredata &wd = wd_vec[ii];
 	      vector<struct outdata> od; 
 	      int n=0;
 	      struct found_hc fhc;
@@ -378,8 +391,8 @@ int main(int argc, char **argv)
               printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
               tottimeprint += (omp_get_wtime()-ti);
 #endif
+              tp0 = omp_get_wtime();
       
-              double roiThreshold=MinSigVec[wd.vw];
               //ti = omp_get_wtime();
               findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
               //tottimefindc += (omp_get_wtime()-ti);
@@ -432,7 +445,11 @@ int main(int argc, char **argv)
               } // for (int i
               //tottimefindpl += (omp_get_wtime()-ti);
               n++;
+           partime = omp_get_wtime() - tp0;
+        } // omp task
+
       } // for (int ii
+#pragma omp taskwait
        
       // The code below is executed by a single thread
       ti = omp_get_wtime();
@@ -454,10 +471,13 @@ int main(int argc, char **argv)
         }
         tottimeprint += (omp_get_wtime()-ti);
       } // while (notdone)
+    } // end of single
+  } // end of parallel
   tottime = omp_get_wtime() - t0;
 
   std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
             << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
+	    << " partime=" << partime 
             << std::endl;
   std::cout << "time without I/O=" << tottime - tottimeread - tottimeprint << endl;
 

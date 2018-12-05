@@ -1,0 +1,269 @@
+LOOP BEGIN at gshf-mrqdt3.cc(310,7)
+   remark #15541: outer loop was not auto-vectorized: consider using SIMD directive
+
+   LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_uninitialized.h(526,8) inlined into gshf-mrqdt3.cc(328,16)
+      remark #15382: vectorization support: call to function std::vector<gshf::outdata, std::allocator<gshf::outdata>>::vector(std::vector<gshf::outdata, std::allocator<gshf::outdata>> *) cannot be vectorized   [ /usr/include/c++/7.3.0/bits/stl_construct.h(75,7) ]
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #25456: Number of Array Refs Scalar Replaced In Loop: 1
+   LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_uninitialized.h(526,8) inlined into gshf-mrqdt3.cc(328,16)
+      remark #15382: vectorization support: call to function std::vector<gshf::outdata, std::allocator<gshf::outdata>>::vector(std::vector<gshf::outdata, std::allocator<gshf::outdata>> *) cannot be vectorized   [ /usr/include/c++/7.3.0/bits/stl_construct.h(75,7) ]
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_uninitialized.h(82,23) inlined into gshf-mrqdt3.cc(328,16)
+      remark #15523: loop was not vectorized: loop control variable __cur was found, but loop iteration count cannot be computed before executing the loop
+      remark #25456: Number of Array Refs Scalar Replaced In Loop: 2
+   LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_construct.h(107,4) inlined into gshf-mrqdt3.cc(328,16)
+      remark #15382: vectorization support: call to function operator delete(void *) cannot be vectorized   [ /usr/include/c++/7.3.0/ext/new_allocator.h(125,2) ]
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_construct.h(107,4) inlined into gshf-mrqdt3.cc(328,16)
+      remark #15382: vectorization support: call to function operator delete(void *) cannot be vectorized   [ /usr/include/c++/7.3.0/ext/new_allocator.h(125,2) ]
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+LOOP BEGIN at gshf-mrqdt3.cc(182,28) inlined into gshf-mrqdt3.cc(418,3)
+   remark #15523: loop was not vectorized: loop control variable iv was found, but loop iteration count cannot be computed before executing the loop
+
+   LOOP BEGIN at gshf-mrqdt3.cc(185,34) inlined into gshf-mrqdt3.cc(418,3)
+      remark #15523: loop was not vectorized: loop control variable ic was found, but loop iteration count cannot be computed before executing the loop
+      remark #25478: While Loop Unrolled by 8
+LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_construct.h(107,4) inlined into gshf-mrqdt3.cc(431,3)
+   remark #15382: vectorization support: call to function operator delete(void *) cannot be vectorized   [ /usr/include/c++/7.3.0/ext/new_allocator.h(125,2) ]
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_construct.h(107,4) inlined into gshf-mrqdt3.cc(431,3)
+   remark #15382: vectorization support: call to function operator delete(void *) cannot be vectorized   [ /usr/include/c++/7.3.0/ext/new_allocator.h(125,2) ]
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+LOOP BEGIN at gshf-mrqdt3.cc(331,47)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at gshf-mrqdt3.cc(158,3) inlined into gshf-mrqdt3.cc(355,6)
+      remark #25084: Preprocess Loopnests: Moving Out Store    [ gshf-mrqdt3.cc(165,7) ]
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+      remark #25015: Estimate of max trip count of loop=80
+
+      LOOP BEGIN at gshf-mrqdt3.cc(162,7) inlined into gshf-mrqdt3.cc(355,6)
+         remark #25399: memcopy generated
+         remark #15542: loop was not vectorized: inner loop was already vectorized
+         remark #25015: Estimate of max trip count of loop=100
+
+         LOOP BEGIN at gshf-mrqdt3.cc(162,7) inlined into gshf-mrqdt3.cc(355,6)
+            remark #15388: vectorization support: reference mhc.mhc.mhc[mhc.mhc][j] has aligned access   [ gshf-mrqdt3.cc(163,9) ]
+            remark #15388: vectorization support: reference g[j] has aligned access   [ gshf-mrqdt3.cc(163,32) ]
+            remark #15305: vectorization support: vector length 4
+            remark #15309: vectorization support: normalized vectorization overhead 1.333
+            remark #15300: LOOP WAS VECTORIZED
+            remark #15448: unmasked aligned unit stride loads: 1
+            remark #15449: unmasked aligned unit stride stores: 1
+            remark #15475: --- begin vector cost summary ---
+            remark #15476: scalar cost: 4
+            remark #15477: vector cost: 0.750
+            remark #15478: estimated potential speedup: 4.360
+            remark #15488: --- end vector cost summary ---
+            remark #25015: Estimate of max trip count of loop=6
+         LOOP BEGIN at gshf-mrqdt3.cc(162,7) inlined into gshf-mrqdt3.cc(355,6)
+         <Alternate Alignment Vectorized Loop>
+            remark #25015: Estimate of max trip count of loop=6
+         LOOP BEGIN at gshf-mrqdt3.cc(162,7) inlined into gshf-mrqdt3.cc(355,6)
+         <Remainder loop for vectorization>
+            remark #25015: Estimate of max trip count of loop=24
+   LOOP BEGIN at gshf-mrqdt3.cc(173,5) inlined into gshf-mrqdt3.cc(355,6)
+      remark #25399: memcopy generated
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+      remark #25015: Estimate of max trip count of loop=100
+
+      LOOP BEGIN at gshf-mrqdt3.cc(173,5) inlined into gshf-mrqdt3.cc(355,6)
+         remark #15388: vectorization support: reference mhc.mhc.mhc[mhc.mhc][j] has aligned access   [ gshf-mrqdt3.cc(174,7) ]
+         remark #15388: vectorization support: reference g[j] has aligned access   [ gshf-mrqdt3.cc(174,30) ]
+         remark #15305: vectorization support: vector length 4
+         remark #15309: vectorization support: normalized vectorization overhead 1.333
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15448: unmasked aligned unit stride loads: 1
+         remark #15449: unmasked aligned unit stride stores: 1
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 4
+         remark #15477: vector cost: 0.750
+         remark #15478: estimated potential speedup: 4.360
+         remark #15488: --- end vector cost summary ---
+         remark #25015: Estimate of max trip count of loop=6
+      LOOP BEGIN at gshf-mrqdt3.cc(173,5) inlined into gshf-mrqdt3.cc(355,6)
+      <Alternate Alignment Vectorized Loop>
+         remark #25015: Estimate of max trip count of loop=6
+      LOOP BEGIN at gshf-mrqdt3.cc(173,5) inlined into gshf-mrqdt3.cc(355,6)
+      <Remainder loop for vectorization>
+         remark #25015: Estimate of max trip count of loop=24
+   LOOP BEGIN at gshf-mrqdt3.cc(361,6)
+      remark #15541: outer loop was not auto-vectorized: consider using SIMD directive
+
+      LOOP BEGIN at gshf-mrqdt3.cc(381,5)
+         remark #15523: loop was not vectorized: loop control variable j was found, but loop iteration count cannot be computed before executing the loop
+LOOP BEGIN at gshf-mrqdt3.cc(92,1)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at gshf-mrqdt3.cc(101,3)
+      remark #15328: vectorization support: non-unit strided load was emulated for the variable <maxValue->adc[i]>, stride is 2   [ gshf-mrqdt3.cc(102,13) ]
+      remark #15328: vectorization support: non-unit strided load was emulated for the variable <maxValue->adc[i]>, stride is 2   [ gshf-mrqdt3.cc(103,21) ]
+      remark #15305: vectorization support: vector length 2
+      remark #15399: vectorization support: unroll factor set to 4
+      remark #15309: vectorization support: normalized vectorization overhead 0.297
+      remark #15417: vectorization support: number of FP up converts: single precision to double precision 1   [ gshf-mrqdt3.cc(102,21) ]
+      remark #15417: vectorization support: number of FP up converts: single precision to double precision 1   [ gshf-mrqdt3.cc(94,3) ]
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15452: unmasked strided loads: 2
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 22
+      remark #15477: vector cost: 21.500
+      remark #15478: estimated potential speedup: 1.010
+      remark #15487: type converts: 2
+      remark #15488: --- end vector cost summary ---
+   LOOP BEGIN at gshf-mrqdt3.cc(101,3)
+   <Remainder loop for vectorization>
+   LOOP BEGIN at gshf-mrqdt3.cc(111,5)
+      remark #15520: loop was not vectorized: loop with multiple exits cannot be vectorized unless it meets search loop idiom criteria   [ gshf-mrqdt3.cc(115,7) ]
+   LOOP BEGIN at gshf-mrqdt3.cc(123,5)
+      remark #15520: loop was not vectorized: loop with multiple exits cannot be vectorized unless it meets search loop idiom criteria   [ gshf-mrqdt3.cc(127,7) ]
+LOOP BEGIN at gshf-mrqdt3.cc(219,3)
+   remark #15389: vectorization support: reference hg->h[i] has unaligned access   [ gshf-mrqdt3.cc(220,14) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15335: loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override
+   remark #15328: vectorization support: irregularly indexed load was emulated for the variable <fhc->cen[ih]>, part of index is read from memory   [ gshf-mrqdt3.cc(221,25) ]
+   remark #15328: vectorization support: irregularly indexed load was emulated for the variable <fhc->sig[ih]>, part of index is read from memory   [ gshf-mrqdt3.cc(222,25) ]
+   remark #15329: vectorization support: non-unit strided store was emulated for the variable <p[nParams]>, stride is 3   [ gshf-mrqdt3.cc(226,5) ]
+   remark #15328: vectorization support: irregularly indexed load was emulated for the variable <fhc->hgt[ih]>, part of index is read from memory   [ gshf-mrqdt3.cc(223,25) ]
+   remark #15329: vectorization support: non-unit strided store was emulated for the variable <p[nParams+1]>, stride is 3   [ gshf-mrqdt3.cc(227,5) ]
+   remark #15329: vectorization support: non-unit strided store was emulated for the variable <p[nParams+2]>, stride is 3   [ gshf-mrqdt3.cc(228,5) ]
+   remark #15305: vectorization support: vector length 2
+   remark #15309: vectorization support: normalized vectorization overhead 0.118
+   remark #15450: unmasked unaligned unit stride loads: 1
+   remark #15453: unmasked strided stores: 3
+   remark #15462: unmasked indexed (or gather) loads: 3
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 28
+   remark #15477: vector cost: 38.000
+   remark #15478: estimated potential speedup: 0.740
+   remark #15487: type converts: 1
+   remark #15488: --- end vector cost summary ---
+   remark #25456: Number of Array Refs Scalar Replaced In Loop: 1
+   remark #25015: Estimate of max trip count of loop=5
+LOOP BEGIN at gshf-mrqdt3.cc(241,3)
+   remark #15388: vectorization support: reference y[idx] has aligned access   [ gshf-mrqdt3.cc(244,5) ]
+   remark #15328: vectorization support: non-unit strided load was emulated for the variable <wd->_M_start->adc[startTime+idx]>, stride is 2   [ gshf-mrqdt3.cc(242,21) ]
+   remark #15305: vectorization support: vector length 2
+   remark #15399: vectorization support: unroll factor set to 4
+   remark #15417: vectorization support: number of FP up converts: single precision to double precision 1   [ gshf-mrqdt3.cc(244,5) ]
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15449: unmasked aligned unit stride stores: 1
+   remark #15452: unmasked strided loads: 1
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 11
+   remark #15477: vector cost: 10.000
+   remark #15478: estimated potential speedup: 1.100
+   remark #15487: type converts: 1
+   remark #15488: --- end vector cost summary ---
+   remark #25015: Estimate of max trip count of loop=125
+LOOP BEGIN at gshf-mrqdt3.cc(241,3)
+<Remainder loop for vectorization>
+   remark #25015: Estimate of max trip count of loop=1000
+LOOP BEGIN at gshf-mrqdt3.cc(252,5)
+   remark #15523: loop was not vectorized: loop control variable trial was found, but loop iteration count cannot be computed before executing the loop
+LOOP BEGIN at gshf-mrqdt3.cc(265,7)
+<Distributed chunk1>
+   remark #25426: Loop Distributed (2 way)
+   remark #15335: loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override
+   remark #15329: vectorization support: non-unit strided store was emulated for the variable <mhpp->peakAmplitude[nmpp][i]>, stride is 6   [ gshf-mrqdt3.cc(266,9) ]
+   remark #15328: vectorization support: non-unit strided load was emulated for the variable <p[parIdx]>, stride is 3   [ gshf-mrqdt3.cc(266,51) ]
+   remark #15329: vectorization support: non-unit strided store was emulated for the variable <mhpp->peakAmplitudeError[nmpp][i]>, stride is 6   [ gshf-mrqdt3.cc(267,9) ]
+   remark #15328: vectorization support: non-unit strided load was emulated for the variable <perr[parIdx]>, stride is 3   [ gshf-mrqdt3.cc(267,51) ]
+   remark #15329: vectorization support: non-unit strided store was emulated for the variable <mhpp->peakCenter[nmpp][i]>, stride is 6   [ gshf-mrqdt3.cc(268,9) ]
+   remark #15328: vectorization support: non-unit strided load was emulated for the variable <p[parIdx+1]>, stride is 3   [ gshf-mrqdt3.cc(268,51) ]
+   remark #15329: vectorization support: non-unit strided store was emulated for the variable <mhpp->peakCenterError[nmpp][i]>, stride is 6   [ gshf-mrqdt3.cc(269,9) ]
+   remark #15328: vectorization support: non-unit strided load was emulated for the variable <perr[parIdx+1]>, stride is 3   [ gshf-mrqdt3.cc(269,51) ]
+   remark #15329: vectorization support: non-unit strided store was emulated for the variable <mhpp->peakSigma[nmpp][i]>, stride is 6   [ gshf-mrqdt3.cc(270,9) ]
+   remark #15328: vectorization support: non-unit strided load was emulated for the variable <p[parIdx+2]>, stride is 3   [ gshf-mrqdt3.cc(270,51) ]
+   remark #15329: vectorization support: non-unit strided store was emulated for the variable <mhpp->peakSigmaError[nmpp][i]>, stride is 6   [ gshf-mrqdt3.cc(271,9) ]
+   remark #15328: vectorization support: non-unit strided load was emulated for the variable <perr[parIdx+2]>, stride is 3   [ gshf-mrqdt3.cc(271,51) ]
+   remark #15305: vectorization support: vector length 2
+   remark #15399: vectorization support: unroll factor set to 2
+   remark #15309: vectorization support: normalized vectorization overhead 0.014
+   remark #15452: unmasked strided loads: 6
+   remark #15453: unmasked strided stores: 6
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 28
+   remark #15477: vector cost: 37.000
+   remark #15478: estimated potential speedup: 0.780
+   remark #15488: --- end vector cost summary ---
+   remark #25015: Estimate of max trip count of loop=5
+LOOP BEGIN at gshf-mrqdt3.cc(265,7)
+<Distributed chunk2>
+   remark #15335: loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override
+   remark #15305: vectorization support: vector length 4
+   remark #15309: vectorization support: normalized vectorization overhead 6.200
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 5
+   remark #15477: vector cost: 1.250
+   remark #15478: estimated potential speedup: 0.600
+   remark #15488: --- end vector cost summary ---
+   remark #25439: unrolled with remainder by 2
+   remark #25456: Number of Array Refs Scalar Replaced In Loop: 4
+   remark #25457: Number of partial sums replaced: 1
+   remark #25015: Estimate of max trip count of loop=5
+LOOP BEGIN at gshf-mrqdt3.cc(265,7)
+<Remainder, Distributed chunk2>
+   remark #25015: Estimate of max trip count of loop=5
+LOOP BEGIN at gshf-mrqdt3.cc(182,28)
+   remark #15523: loop was not vectorized: loop control variable iv was found, but loop iteration count cannot be computed before executing the loop
+
+   LOOP BEGIN at gshf-mrqdt3.cc(185,34)
+      remark #15523: loop was not vectorized: loop control variable ic was found, but loop iteration count cannot be computed before executing the loop
+      remark #25478: While Loop Unrolled by 8
+LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_construct.h(107,4) inlined into Event.h(64,9)
+   remark #15382: vectorization support: call to function operator delete(void *) cannot be vectorized   [ /usr/include/c++/7.3.0/ext/new_allocator.h(125,2) ]
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   remark #15346: vector dependence: assumed ANTI dependence between __first->_M_start (162:9) and call:operator delete(void *) (125:2)
+   remark #15346: vector dependence: assumed FLOW dependence between call:operator delete(void *) (125:2) and __first->_M_start (162:9)
+LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_construct.h(107,4) inlined into Event.h(64,9)
+   remark #15382: vectorization support: call to function operator delete(void *) cannot be vectorized   [ /usr/include/c++/7.3.0/ext/new_allocator.h(125,2) ]
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   remark #15346: vector dependence: assumed ANTI dependence between __first->_M_start (162:9) and call:operator delete(void *) (125:2)
+   remark #15346: vector dependence: assumed FLOW dependence between call:operator delete(void *) (125:2) and __first->_M_start (162:9)
+LOOP BEGIN at gshf-mrqdt3.cc(158,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at gshf-mrqdt3.cc(162,7)
+      remark #15389: vectorization support: reference mhc->h[mhc->nmh][j] has unaligned access   [ gshf-mrqdt3.cc(163,9) ]
+      remark #15388: vectorization support: reference g[j] has aligned access   [ gshf-mrqdt3.cc(163,32) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 4
+      remark #15309: vectorization support: normalized vectorization overhead 0.500
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 1
+      remark #15451: unmasked unaligned unit stride stores: 1
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 6
+      remark #15477: vector cost: 1.500
+      remark #15478: estimated potential speedup: 3.920
+      remark #15488: --- end vector cost summary ---
+      remark #25015: Estimate of max trip count of loop=25
+   LOOP BEGIN at gshf-mrqdt3.cc(162,7)
+   <Remainder loop for vectorization>
+      remark #25015: Estimate of max trip count of loop=100
+LOOP BEGIN at gshf-mrqdt3.cc(173,5)
+   remark #15388: vectorization support: reference mhc->h[mhc->nmh][j] has aligned access   [ gshf-mrqdt3.cc(174,7) ]
+   remark #15388: vectorization support: reference g[j] has aligned access   [ gshf-mrqdt3.cc(174,30) ]
+   remark #15305: vectorization support: vector length 4
+   remark #15309: vectorization support: normalized vectorization overhead 1.333
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15448: unmasked aligned unit stride loads: 1
+   remark #15449: unmasked aligned unit stride stores: 1
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 6
+   remark #15477: vector cost: 0.750
+   remark #15478: estimated potential speedup: 7.590
+   remark #15488: --- end vector cost summary ---
+   remark #25015: Estimate of max trip count of loop=25
+LOOP BEGIN at gshf-mrqdt3.cc(173,5)
+<Alternate Alignment Vectorized Loop>
+   remark #25015: Estimate of max trip count of loop=25
+LOOP BEGIN at gshf-mrqdt3.cc(173,5)
+<Remainder loop for vectorization>
+   remark #25015: Estimate of max trip count of loop=100
+LOOP BEGIN at /usr/include/c++/7.3.0/bits/stl_construct.h(107,4)
+   remark #15382: vectorization support: call to function operator delete(void *) cannot be vectorized   [ /usr/include/c++/7.3.0/ext/new_allocator.h(125,2) ]
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   remark #15346: vector dependence: assumed ANTI dependence between __first->_M_start (162:9) and call:operator delete(void *) (125:2)
+   remark #15346: vector dependence: assumed FLOW dependence between call:operator delete(void *) (125:2) and __first->_M_start (162:9)

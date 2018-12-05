@@ -5,7 +5,7 @@
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
 void fgauss(double yd[], double p[], int npar, int ndat, double res[]){
   double yf[ndat];
-#pragma simd
+#pragma omp simd
   for(int i=0;i<ndat;i++){
     yf[i]=0.;
     for(int j=0;j<npar;j+=3){
@@ -18,7 +18,7 @@ void fgauss(double yd[], double p[], int npar, int ndat, double res[]){
 /* analytic derivatives for multi-Gaussian function in fgauss */
 void dgauss(double p[], int npar, int ndat, double dydp[]){
 #pragma ivdep
-#pragma simd
+#pragma omp simd 
   for(int i=0;i<ndat;i++){
     for(int j=0;j<npar;j+=3){
       const double xmu=double(i)-p[j+1];

@@ -375,6 +375,7 @@ int main(int argc, char **argv)
 //     {
 // #pragma omp single  
 //       {
+#pragma vector
         for (int ii=0; ii < wd_vec.size(); ii++) {
 #pragma omp task 
          {
