@@ -1,3 +1,5 @@
+Intel(R) Advisor can now assist with vectorization and show optimization
+    Report from: Loop nest, Vector & Auto-parallelization optimizations [loop, vec, par]
 LOOP BEGIN at marqfit.cc(9,3)
    remark #25096: Loop Interchange not done due to: Imperfect Loop Nest (Either at Source or due to other Compiler Transformations)
    remark #25451: Advice: Loop Interchange, if possible, might help loopnest. Suggested Permutation : ( 1 2 ) --> ( 2 1 )
@@ -31,6 +33,7 @@ LOOP BEGIN at marqfit.cc(9,3)
 
    LOOP BEGIN at marqfit.cc(11,5)
       remark #25460: No loop optimizations reported
+    Report from: Loop nest, Vector & Auto-parallelization optimizations [loop, vec, par]
 LOOP BEGIN at marqfit.cc(22,3)
    remark #15329: vectorization support: non-unit strided store was emulated for the variable <dydp[i*npar+j]>, stride is unknown to compiler   [ marqfit.cc(27,7) ]
    remark #15329: vectorization support: non-unit strided store was emulated for the variable <dydp[i*npar+j+1]>, stride is unknown to compiler   [ marqfit.cc(28,7) ]
@@ -58,6 +61,7 @@ LOOP BEGIN at marqfit.cc(22,3)
 
    LOOP BEGIN at marqfit.cc(23,5)
       remark #25460: No loop optimizations reported
+    Report from: Loop nest, Vector & Auto-parallelization optimizations [loop, vec, par]
 LOOP BEGIN at marqfit.cc(39,3)
 <Peeled loop for vectorization>
    remark #25015: Estimate of max trip count of loop=1
@@ -77,6 +81,7 @@ LOOP BEGIN at marqfit.cc(39,3)
    remark #15488: --- end vector cost summary ---
 LOOP BEGIN at marqfit.cc(39,3)
 <Remainder loop for vectorization>
+    Report from: Loop nest, Vector & Auto-parallelization optimizations [loop, vec, par]
 LOOP BEGIN at marqfit.cc(51,3)
    remark #25096: Loop Interchange not done due to: Imperfect Loop Nest (Either at Source or due to other Compiler Transformations)
    remark #25451: Advice: Loop Interchange, if possible, might help loopnest. Suggested Permutation : ( 1 2 ) --> ( 2 1 )
@@ -110,6 +115,7 @@ LOOP BEGIN at marqfit.cc(59,3)
          remark #25439: unrolled with remainder by 2
       LOOP BEGIN at marqfit.cc(62,7)
       <Remainder>
+    Report from: Loop nest, Vector & Auto-parallelization optimizations [loop, vec, par]
 LOOP BEGIN at marqfit.cc(77,3)
    remark #15542: loop was not vectorized: inner loop was already vectorized
 
@@ -279,6 +285,7 @@ LOOP BEGIN at marqfit.cc(110,3)
    remark #15488: --- end vector cost summary ---
 LOOP BEGIN at marqfit.cc(110,3)
 <Remainder loop for vectorization>
+    Report from: Loop nest, Vector & Auto-parallelization optimizations [loop, vec, par]
 LOOP BEGIN at marqfit.cc(9,3) inlined into marqfit.cc(234,3)
    remark #25096: Loop Interchange not done due to: Imperfect Loop Nest (Either at Source or due to other Compiler Transformations)
    remark #25451: Advice: Loop Interchange, if possible, might help loopnest. Suggested Permutation : ( 1 2 ) --> ( 2 1 )
@@ -1053,6 +1060,7 @@ LOOP BEGIN at marqfit.cc(74,33) inlined into marqfit.cc(275,7)
       remark #15488: --- end vector cost summary ---
    LOOP BEGIN at marqfit.cc(110,3) inlined into marqfit.cc(275,7)
    <Remainder loop for vectorization>
+    Report from: Loop nest, Vector & Auto-parallelization optimizations [loop, vec, par]
 LOOP BEGIN at marqfit.cc(132,3)
    remark #15542: loop was not vectorized: inner loop was already vectorized
 
@@ -1335,6 +1343,7 @@ LOOP BEGIN at marqfit.cc(180,3)
       remark #25439: unrolled with remainder by 2
    LOOP BEGIN at marqfit.cc(191,7)
    <Remainder, Multiversioned v2>
+    Report from: Loop nest, Vector & Auto-parallelization optimizations [loop, vec, par]
 LOOP BEGIN at marqfit.cc(9,3) inlined into marqfit.cc(208,3)
    remark #25096: Loop Interchange not done due to: Imperfect Loop Nest (Either at Source or due to other Compiler Transformations)
    remark #25451: Advice: Loop Interchange, if possible, might help loopnest. Suggested Permutation : ( 1 2 ) --> ( 2 1 )
