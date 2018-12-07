@@ -296,7 +296,7 @@ int main(int argc, char **argv)
   double tottimemergec = 0;
   double tottimefindpl = 0;
   double tp = 0;
-  int itcounter = 0;
+  //int itcounter = 0;
 
   if( argc == 2 ) fname = argv[1];
 
@@ -311,13 +311,6 @@ int main(int argc, char **argv)
 
         bool notdone = true;
 
-        //Print to file per each event (except the last)
-        if(itcounter>0){
-          double tpi = omp_get_wtime();
-          printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
-          tottimeprint += (omp_get_wtime()-tpi);
-        }
-
         double ti = omp_get_wtime();
         ev.Reset(evt);
         ev.read_in(in);
@@ -329,7 +322,7 @@ int main(int argc, char **argv)
 
 #pragma omp parallel for
 	for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
-	  const struct wiredata wd = ev.wd_vec_[ii];
+	  const struct wiredata &wd = ev.wd_vec_[ii];
 
 	  double roiThreshold=MinSigVec[wd.vw];
 // #pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold)
@@ -392,6 +385,7 @@ int main(int argc, char **argv)
 		    outd.mytck=mytck;
 		    outd.mysigma=mysigma;
 		    od_vec[ii].push_back(outd);
+
 		  }//for j
 		}//if !fit stat
 	      }//if max mult hit
@@ -400,9 +394,14 @@ int main(int argc, char **argv)
 	    n++;
 	  // } // omp task
 
-	} // for (int ii
+	} // omp for (int ii -- 
 // #pragma omp taskwait
-	itcounter++;
+
+
+	//itcounter++;
+	double tpi = omp_get_wtime();
+	printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
+	tottimeprint += (omp_get_wtime()-tpi);
 
       } // event loop
   //   } // end of single
@@ -410,14 +409,6 @@ int main(int argc, char **argv)
 
 
   // The code below is executed by a single thread
-
-  //print last set of hits
-
-  tp = omp_get_wtime();
-
-  printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
-
-  tottimeprint += (omp_get_wtime()-tp);
 
   //final timing information
 
