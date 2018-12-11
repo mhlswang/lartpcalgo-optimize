@@ -3,27 +3,28 @@
 #include <cmath>
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
-void fgauss(double yd[], double p[], int npar, int ndat, double res[]){
-  double yf[ndat];
+void fgauss(float yd[], float p[], int npar, int ndat, float res[]){
+  float yf[ndat];
 #pragma omp simd
   for(int i=0;i<ndat;i++){
     yf[i]=0.;
     for(int j=0;j<npar;j+=3){
-      yf[i] = yf[i] + p[j]*std::exp(-0.5*std::pow((double(i)-p[j+1])/p[j+2],2));
+      yf[i] = yf[i] + p[j]*std::exp(-0.5*std::pow((float(i)-p[j+1])/p[j+2],2));
+
     }
     res[i]=yd[i]-yf[i];
   }
 }
 
 /* analytic derivatives for multi-Gaussian function in fgauss */
-void dgauss(double p[], int npar, int ndat, double dydp[]){
+void dgauss(float p[], int npar, int ndat, float dydp[]){
 #pragma ivdep
 #pragma omp simd 
   for(int i=0;i<ndat;i++){
     for(int j=0;j<npar;j+=3){
-      const double xmu=double(i)-p[j+1];
-      const double xmu_sg=xmu/p[j+2];
-      const double xmu_sg2=xmu_sg*xmu_sg;
+      const float xmu=float(i)-p[j+1];
+      const float xmu_sg=xmu/p[j+2];
+      const float xmu_sg2=xmu_sg*xmu_sg;
       dydp[i*npar+j] = std::exp(-0.5*xmu_sg2);
       dydp[i*npar+j+1]=p[j]*dydp[i*npar+j]*xmu_sg/p[j+2];
       dydp[i*npar+j+2]=dydp[i*npar+j+1]*xmu_sg;
@@ -32,9 +33,9 @@ void dgauss(double p[], int npar, int ndat, double dydp[]){
 }
 
 /* calculate ChiSquared */
-double cal_xi2(double res[], int ndat){
+float cal_xi2(float res[], int ndat){
   int i;
-  double xi2;
+  float xi2;
   xi2=0.;
   for(i=0;i<ndat;i++){
     xi2+=res[i]*res[i];
@@ -43,7 +44,7 @@ double cal_xi2(double res[], int ndat){
 }
 
 /* setup the beta and  (curvature) matrices */
-void setup_matrix(double res[], double dydp[], int npar, int ndat, double beta[], double alpha[])
+void setup_matrix(float res[], float dydp[], int npar, int ndat, float beta[], float alpha[])
 {
   int i,j,k;
   
@@ -68,11 +69,11 @@ void setup_matrix(double res[], double dydp[], int npar, int ndat, double beta[]
 }
 
 /* solve system of linear equations */
-void solve_matrix(double beta[], double alpha[], int npar, double dp[])
+void solve_matrix(float beta[], float alpha[], int npar, float dp[])
 {
   int i,j,k,imax;
-  double hmax,hsav,h[npar][npar+1];
-
+  float hmax,hsav,h[npar][npar+1];
+  
   /* ... set up augmented N x N+1 matrix */
   for(i=0;i<npar;i++){
     h[i][npar]=beta[i];
@@ -113,7 +114,7 @@ void solve_matrix(double beta[], double alpha[], int npar, double dp[])
 
 }
 
-double invrt_matrix(double alpha[], int npar)
+float invrt_matrix(float alphaf[], int npar)
 {
   /*
      Inverts the curvature matrix alpha using Gauss-Jordan elimination and 
@@ -124,15 +125,23 @@ double invrt_matrix(double alpha[], int npar)
      Program Description Manual (GH20-0586-0).  This only needs to be called
      once after the fit has converged if the parameter errors are desired.
   */
+
+  //turn input alphas into doubles
+
+  double alpha[npar*npar];
   int i, j, k, ik[npar], jk[npar];
   double aMax, save, det;
-	
+  float detf;
+ 
   det = 0;
   /* ... search for the largest element which we will then put in the diagonal */
   for (k = 0; k < npar; k++){
     aMax = 0;
     for (i = k; i < npar; i++){
       for (j = k; j < npar;j++){
+
+	alpha[i*npar+j]=alphaf[i*npar+j];
+	
   	if  (fabs(alpha[i*npar+j]) > fabs(aMax)){
   	  aMax = alpha[i*npar+j];
   	  ik[k] = i;
@@ -146,6 +155,8 @@ double invrt_matrix(double alpha[], int npar)
     i = ik[k];
     if (i > k){
       for (j = 0;j < npar;j++){
+
+	
   	save = alpha[k*npar+j];
   	alpha[k*npar+j] = alpha[i*npar+j];
   	alpha[i*npar+j] = -save;
@@ -155,6 +166,8 @@ double invrt_matrix(double alpha[], int npar)
     j = jk[k];
     if (j > k){
       for (i = 0; i < npar; i++){
+
+	
   	save = alpha[i*npar+k];
   	alpha[i*npar+k] = alpha[i*npar+j];
   	alpha[i*npar+j] = -save;
@@ -195,15 +208,19 @@ double invrt_matrix(double alpha[], int npar)
       }
     }
   }
-  return(det);
+
+  detf=det;
+
+  return(detf);
+  
 }
 
 /* Calculate parameter errors */
-int cal_perr(double p[], double y[], int nParam, int nData, double perr[])
+int cal_perr(float p[], float y[], int nParam, int nData, float perr[])
 {
   int i,j,k;
-  double det;
-  double res[nData],dydp[nData*nParam],beta[nParam],alpha[nParam*nParam],alpsav[nParam][nParam];
+  float det;
+  float res[nData],dydp[nData*nParam],beta[nParam],alpha[nParam*nParam],alpsav[nParam][nParam];
   
   fgauss(y, p, nParam, nData, res);
   dgauss(p, nParam, nData, dydp);
@@ -214,6 +231,7 @@ int cal_perr(double p[], double y[], int nParam, int nData, double perr[])
     }
   }
   det=invrt_matrix(alpha, nParam);
+
   if(det==0)return 1;
   for(i=0;i<nParam;i++){
     if(alpha[i*nParam+i]>=0.){
@@ -222,14 +240,15 @@ int cal_perr(double p[], double y[], int nParam, int nData, double perr[])
       perr[i]=alpha[i*nParam+i];
     }
   }
+  
   return 0;
 }
 
-int mrqdtfit(double &lambda, double p[], double y[], int nParam, int nData, double &chiSqr, double &dchiSqr)
+int mrqdtfit(float &lambda, float p[], float y[], int nParam, int nData, float &chiSqr, float &dchiSqr)
 {
   int i,j;
-  double nu,rho,lzmlh,amax,chiSq0;
-  double res[nData],beta[nParam],dp[nParam],alpsav[nParam],psav[nParam],dydp[nData*nParam],alpha[nParam*nParam];
+  float nu,rho,lzmlh,amax,chiSq0;
+  float res[nData],beta[nParam],dp[nParam],alpsav[nParam],psav[nParam],dydp[nData*nParam],alpha[nParam*nParam];
 
   fgauss(y, p, nParam, nData, res);
   chiSq0=cal_xi2(res, nData);
