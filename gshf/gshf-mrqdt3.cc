@@ -26,19 +26,19 @@
 using namespace std;
 using namespace gshf;
 
-int mrqdtfit(double &lambda, double p[], double y[], int nParam, int nData, double &chiSqr, double &dchiSqr);
-int cal_perr(double p[], double y[], int nParam, int nData, double perr[]);
+int mrqdtfit(float &lambda, float p[], float y[], int nParam, int nData, float &chiSqr, float &dchiSqr);
+int cal_perr(float p[], float y[], int nParam, int nData, float perr[]);
 
 struct hitcand {
   int starttck;
   int stoptck;
   int maxtck;
   int mintck;
-  double maxdrv;
-  double mindrv;
+  float maxdrv;
+  float mindrv;
   int cen;
-  double sig;
-  double hgt;
+  float sig;
+  float hgt;
 };
 
 struct found_hc {
@@ -57,12 +57,12 @@ struct merged_hc {
 };
 
 struct peakparams {
-  double peakAmplitude;
-  double peakAmplitudeError;
-  double peakCenter;
-  double peakCenterError;
-  double peakSigma;
-  double peakSigmaError;
+  float peakAmplitude;
+  float peakAmplitudeError;
+  float peakCenter;
+  float peakCenterError;
+  float peakSigma;
+  float peakSigmaError;
 };
 
 struct ppgroup {
@@ -76,22 +76,22 @@ struct merged_hpp {
 };
 
 /* Global Constants */
-const double MinSigVec[3]={2.6,3.4,3.4};
-const double MaxMultiHit=4;
-const double MinWidth=0.5;
-const double MaxWidthMult=3.0;
-const double PeakRange=2.0;
-const double AmpRange=2.0;
-const double Chi2NDF=50;
+const float MinSigVec[3]={2.6,3.4,3.4};
+const float MaxMultiHit=4;
+const float MinWidth=0.5;
+const float MaxWidthMult=3.0;
+const float PeakRange=2.0;
+const float AmpRange=2.0;
+const float Chi2NDF=50;
 const int maxhits=2000;
 
 ifstream iStream;
 streampos currentPos;
 
-void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, int i2, double roiThreshold)
+void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, int i2, float roiThreshold)
 {
   int i,maxIndex,ifirst,ilast,nhc;
-  double maxValue,x;
+  float maxValue,x;
 
   if((i2-i1)<5)return;  /* require minimum number of ticks */
 
@@ -136,7 +136,7 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, 
     fhc.hc[nhc].maxdrv = wd.wv[ifirst].adc;
     fhc.hc[nhc].mindrv = wd.wv[ilast].adc;
     fhc.hc[nhc].cen = maxIndex;
-    fhc.hc[nhc].sig = fmax(2.,(double)((ilast-ifirst)/6.));
+    fhc.hc[nhc].sig = fmax(2.,(float)((ilast-ifirst)/6.));
     fhc.hc[nhc].hgt = maxValue;
     fhc.nhc++;
 
@@ -181,9 +181,9 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
 
   for (int iv=0; iv<od_vec.size(); iv++) {
     int ic_min = -1;
-    double mindiff=999999.;
+    float mindiff=999999.;
     for (int ic=0; ic<od_vec[iv].size(); ic++) {
-      double diff=fabs(od_vec[iv][ic].mytck-rd_vec[iv].simtck);
+      float diff=fabs(od_vec[iv][ic].mytck-rd_vec[iv].simtck);
       if (diff<mindiff){
         mindiff=diff;
         ic_min=ic;
@@ -202,13 +202,13 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
 }
 
 
-int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct hitgroup &hg, struct merged_hpp &mhpp, double &chi2PerNDF)
+int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct hitgroup &hg, struct merged_hpp &mhpp, float &chi2PerNDF)
 {
-  const double chiCut   = 1e-3;
-  double lambda   = 0.001;      /* Marquardt damping parameter */
-  double  chiSqr = std::numeric_limits<double>::max(), dchiSqr = std::numeric_limits<double>::max();
+  const float chiCut   = 1e-3;
+  float lambda   = 0.001;      /* Marquardt damping parameter */
+  float  chiSqr = std::numeric_limits<float>::max(), dchiSqr = std::numeric_limits<float>::max();
   int nParams=0;
-  double y[1000],p[15],pmin[15],pmax[15],perr[15];
+  float y[1000],p[15],pmin[15],pmax[15],perr[15];
 
   int startTime = fhc.hc[hg.h[0]].starttck;
   int endTime = fhc.hc[hg.h[hg.nh-1]].stoptck;
@@ -218,11 +218,11 @@ int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct h
   nParams = 0;
   for(int i=0;i<hg.nh;i++){
     int ih = hg.h[i];
-    double peakMean   = fhc.hc[ih].cen - (double)startTime;
-    double peakWidth  = fhc.hc[ih].sig;
-    double amplitude  = fhc.hc[ih].hgt;
-    double meanLowLim = fmax(peakMean - PeakRange * peakWidth,       0.);
-    double meanHiLim  = fmin(peakMean + PeakRange * peakWidth, (double)roiSize);
+    float peakMean   = fhc.hc[ih].cen - (float)startTime;
+    float peakWidth  = fhc.hc[ih].sig;
+    float amplitude  = fhc.hc[ih].hgt;
+    float meanLowLim = fmax(peakMean - PeakRange * peakWidth,       0.);
+    float meanHiLim  = fmin(peakMean + PeakRange * peakWidth, (float)roiSize);
     p[0+nParams]=amplitude;
     p[1+nParams]=peakMean;
     p[2+nParams]=peakWidth;
@@ -239,7 +239,7 @@ int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct h
 
   /* set the bin content */
   for (int idx = 0;idx< roiSize; idx++){
-    double adc=wd.wv[startTime+idx].adc;
+    float adc=wd.wv[startTime+idx].adc;
     if(adc<=0.)adc=0.;
     y[idx]=adc;
   }
@@ -259,13 +259,13 @@ int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct h
   if (!fitResult){
     int fitResult2=cal_perr(p,y,nParams,roiSize,perr);
     if (!fitResult2){
-      double NDF = roiSize - nParams;
+      float NDF = roiSize - nParams;
       chi2PerNDF = chiSqr / NDF;
       int parIdx = 0;
       for(int i=0;i<hg.nh;i++){
         mhpp.mpp[nmpp].pp[i].peakAmplitude      = p[parIdx + 0];
         mhpp.mpp[nmpp].pp[i].peakAmplitudeError = perr[parIdx + 0];
-        mhpp.mpp[nmpp].pp[i].peakCenter         = p[parIdx + 1] + 0.5 + double(startTime);
+        mhpp.mpp[nmpp].pp[i].peakCenter         = p[parIdx + 1] + 0.5 + float(startTime);
         mhpp.mpp[nmpp].pp[i].peakCenterError    = perr[parIdx + 1];
         mhpp.mpp[nmpp].pp[i].peakSigma          = p[parIdx + 2];
         mhpp.mpp[nmpp].pp[i].peakSigmaError     = perr[parIdx + 2];
@@ -324,7 +324,7 @@ int main(int argc, char **argv)
 	for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
 	  const struct wiredata &wd = ev.wd_vec_[ii];
 
-	  double roiThreshold=MinSigVec[wd.vw];
+	  float roiThreshold=MinSigVec[wd.vw];
 // #pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold)
 // 	  {
 	    int my_tid = omp_get_thread_num();
@@ -361,30 +361,35 @@ int main(int argc, char **argv)
 	      int endTick=fhc.hc[ihc2].stoptck;
 	      if(endTick - startTick < 5)continue;
 
-	      double chi2PerNDF=0.;
+	      float chi2PerNDF=0.;
 	      int fitStat=-1;
 
 	      if(mhc.mh[i].nh <= MaxMultiHit){
 
 		fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF);
 		if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
+
 		  ngausshits++;
+		  
 		  // fill output here
 		  int impp=mhpp.nmpp-1;
 		  for(int j=0;j<mhpp.mpp[impp].npp;j++){
+		    
 		    /* temporary fix for the discontinuous ticks */
 		    int imax=int(mhpp.mpp[impp].pp[j].peakCenter);
-		    double delta=mhpp.mpp[impp].pp[j].peakCenter-double(imax);
-		    double mytck=wd.wv[imax].tck+delta;
-		    mytck=double(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
-		    double mysigma=mhpp.mpp[impp].pp[j].peakSigma;
+		    float delta=mhpp.mpp[impp].pp[j].peakCenter-float(imax);
+		    float mytck=wd.wv[imax].tck+delta;
+		    mytck=float(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
+		    float mysigma=mhpp.mpp[impp].pp[j].peakSigma;
 		    struct outdata outd;
+
 		    outd.n=n;
 		    outd.imh=i;
 		    outd.ipp=j;
 		    outd.mytck=mytck;
 		    outd.mysigma=mysigma;
 		    od_vec[ii].push_back(outd);
+
 
 		  }//for j
 		}//if !fit stat
@@ -411,6 +416,7 @@ int main(int argc, char **argv)
   // The code below is executed by a single thread
 
   //final timing information
+      //cout<<"printing final timing info"<<endl;
 
   tottime = omp_get_wtime() - t0;
 
