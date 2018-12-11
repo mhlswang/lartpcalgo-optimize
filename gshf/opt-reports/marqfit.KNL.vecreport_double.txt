@@ -1,0 +1,1729 @@
+Intel(R) Advisor can now assist with vectorization and show optimization
+  report messages with your source code.
+See "https://software.intel.com/en-us/intel-advisor-xe" for details.
+
+Intel(R) C Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 17.0.3.191 Build 20170404
+
+Compiler options: -std=c++11 -O3 -xmic-avx512 -m64 -fopenmp -qopt-report-phase=vec -qopt-report=5 -o gshf-mrqdt3
+
+Begin optimization report for: fgauss(double *, double *, int, int, double *)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at marqfit.cc(9,3)
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(10,5) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,7) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,15) ]
+   remark #15389: vectorization support: reference res[i] has unaligned access   [ marqfit.cc(14,5) ]
+   remark #15389: vectorization support: reference yd[i] has unaligned access   [ marqfit.cc(14,12) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(14,18) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.163
+   remark #15301: OpenMP SIMD LOOP WAS VECTORIZED
+   remark #15448: unmasked aligned unit stride loads: 1 
+   remark #15449: unmasked aligned unit stride stores: 2 
+   remark #15450: unmasked unaligned unit stride loads: 1 
+   remark #15451: unmasked unaligned unit stride stores: 1 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 158 
+   remark #15477: vector cost: 16.870 
+   remark #15478: estimated potential speedup: 8.960 
+   remark #15482: vectorized math library calls: 1 
+   remark #15486: divides: 1 
+   remark #15487: type converts: 1 
+   remark #15488: --- end vector cost summary ---
+
+   LOOP BEGIN at marqfit.cc(11,5)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(9,3)
+<Remainder loop for vectorization>
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(10,5) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,7) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,15) ]
+   remark #15389: vectorization support: reference res[i] has unaligned access   [ marqfit.cc(14,5) ]
+   remark #15389: vectorization support: reference yd[i] has unaligned access   [ marqfit.cc(14,12) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(14,18) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.156
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+
+   LOOP BEGIN at marqfit.cc(11,5)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+===========================================================================
+
+Begin optimization report for: dgauss(double *, int, int, double *)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at marqfit.cc(22,3)
+   remark #15416: vectorization support: non-unit strided store was generated for the variable <dydp[i*npar+j]>, stride is unknown to compiler   [ marqfit.cc(27,7) ]
+   remark #15416: vectorization support: non-unit strided store was generated for the variable <dydp[i*npar+j+1]>, stride is unknown to compiler   [ marqfit.cc(28,7) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <dydp[i*npar+j]>, stride is unknown to compiler   [ marqfit.cc(28,29) ]
+   remark #15416: vectorization support: non-unit strided store was generated for the variable <dydp[i*npar+j+2]>, stride is unknown to compiler   [ marqfit.cc(29,7) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <dydp[i*npar+j+1]>, stride is unknown to compiler   [ marqfit.cc(29,24) ]
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.065
+   remark #15301: OpenMP SIMD LOOP WAS VECTORIZED
+   remark #15452: unmasked strided loads: 2 
+   remark #15453: unmasked strided stores: 3 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 186 
+   remark #15477: vector cost: 34.620 
+   remark #15478: estimated potential speedup: 5.150 
+   remark #15482: vectorized math library calls: 1 
+   remark #15486: divides: 2 
+   remark #15487: type converts: 1 
+   remark #15488: --- end vector cost summary ---
+
+   LOOP BEGIN at marqfit.cc(23,5)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(22,3)
+<Remainder loop for vectorization>
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.095
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+
+   LOOP BEGIN at marqfit.cc(23,5)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+===========================================================================
+
+Begin optimization report for: cal_xi2(double *, int)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at marqfit.cc(39,3)
+<Peeled loop for vectorization>
+   remark #15389: vectorization support: reference res[i] has unaligned access   [ marqfit.cc(40,10) ]
+   remark #15389: vectorization support: reference res[i] has unaligned access   [ marqfit.cc(40,17) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15335: peel loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 1.955
+LOOP END
+
+LOOP BEGIN at marqfit.cc(39,3)
+   remark #15389: vectorization support: reference res[i] has unaligned access   [ marqfit.cc(40,10) ]
+   remark #15389: vectorization support: reference res[i] has unaligned access   [ marqfit.cc(40,17) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 16
+   remark #15309: vectorization support: normalized vectorization overhead 2.714
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15442: entire loop may be executed in remainder
+   remark #15450: unmasked unaligned unit stride loads: 1 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 8 
+   remark #15477: vector cost: 0.870 
+   remark #15478: estimated potential speedup: 6.930 
+   remark #15488: --- end vector cost summary ---
+LOOP END
+
+LOOP BEGIN at marqfit.cc(39,3)
+<Remainder loop for vectorization>
+   remark #15389: vectorization support: reference res[i] has unaligned access   [ marqfit.cc(40,10) ]
+   remark #15389: vectorization support: reference res[i] has unaligned access   [ marqfit.cc(40,17) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 1.955
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+LOOP END
+===========================================================================
+
+Begin optimization report for: setup_matrix(double *, double *, int, int, double *, double *)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at marqfit.cc(51,3)
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   remark #15346: vector dependence: assumed FLOW dependence between beta[j] (52:5) and res[i] (54:7)
+   remark #15346: vector dependence: assumed ANTI dependence between res[i] (54:7) and beta[j] (52:5)
+
+   LOOP BEGIN at marqfit.cc(53,5)
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed FLOW dependence between beta[j] (54:7) and res[i] (54:7)
+      remark #15346: vector dependence: assumed ANTI dependence between res[i] (54:7) and beta[j] (54:7)
+      remark #15346: vector dependence: assumed ANTI dependence between beta[j] (54:7) and beta[j] (54:7)
+      remark #15346: vector dependence: assumed FLOW dependence between beta[j] (54:7) and beta[j] (54:7)
+      remark #15346: vector dependence: assumed FLOW dependence between beta[j] (54:7) and beta[j] (54:7)
+      remark #15346: vector dependence: assumed ANTI dependence between beta[j] (54:7) and beta[j] (54:7)
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(53,5)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(59,3)
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   remark #15346: vector dependence: assumed OUTPUT dependence between alpha[j*npar+k] (61:7) and alpha[k*npar+j] (65:15)
+   remark #15346: vector dependence: assumed OUTPUT dependence between alpha[k*npar+j] (65:15) and alpha[j*npar+k] (61:7)
+
+   LOOP BEGIN at marqfit.cc(60,5)
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed OUTPUT dependence between alpha[j*npar+k] (61:7) and alpha[k*npar+j] (65:15)
+      remark #15346: vector dependence: assumed OUTPUT dependence between alpha[k*npar+j] (65:15) and alpha[j*npar+k] (61:7)
+
+      LOOP BEGIN at marqfit.cc(62,7)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed FLOW dependence between alpha[j*npar+k] (63:9) and dydp[i*npar+j] (63:9)
+         remark #15346: vector dependence: assumed ANTI dependence between dydp[i*npar+j] (63:9) and alpha[j*npar+k] (63:9)
+         remark #15346: vector dependence: assumed ANTI dependence between alpha[j*npar+k] (63:9) and alpha[j*npar+k] (63:9)
+         remark #15346: vector dependence: assumed FLOW dependence between alpha[j*npar+k] (63:9) and alpha[j*npar+k] (63:9)
+         remark #15346: vector dependence: assumed FLOW dependence between alpha[j*npar+k] (63:9) and alpha[j*npar+k] (63:9)
+         remark #15346: vector dependence: assumed ANTI dependence between alpha[j*npar+k] (63:9) and alpha[j*npar+k] (63:9)
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(62,7)
+      <Remainder>
+      LOOP END
+   LOOP END
+LOOP END
+===========================================================================
+
+Begin optimization report for: solve_matrix(double *, double *, int, double *)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at marqfit.cc(77,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(79,5)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(79,5)
+         remark #15389: vectorization support: reference h[i][j] has unaligned access   [ marqfit.cc(80,7) ]
+         remark #15389: vectorization support: reference alpha[i*npar+j] has unaligned access   [ marqfit.cc(80,15) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15309: vectorization support: normalized vectorization overhead 1.000
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15450: unmasked unaligned unit stride loads: 1 
+         remark #15451: unmasked unaligned unit stride stores: 1 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 4 
+         remark #15477: vector cost: 0.750 
+         remark #15478: estimated potential speedup: 2.000 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(79,5)
+      <Remainder loop for vectorization>
+         remark #15389: vectorization support: reference h[i][j] has unaligned access   [ marqfit.cc(80,7) ]
+         remark #15389: vectorization support: reference alpha[i*npar+j] has unaligned access   [ marqfit.cc(80,15) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15335: remainder loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+         remark #15305: vectorization support: vector length 2
+         remark #15309: vectorization support: normalized vectorization overhead 1.000
+      LOOP END
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(85,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(88,5)
+      remark #15415: vectorization support: non-unit strided load was generated for the variable <h[j][i]>, stride is unknown to compiler   [ marqfit.cc(89,10) ]
+      remark #15415: vectorization support: non-unit strided load was generated for the variable <h[j][i]>, stride is unknown to compiler   [ marqfit.cc(90,14) ]
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.864
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15452: unmasked strided loads: 2 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 13 
+      remark #15477: vector cost: 5.500 
+      remark #15478: estimated potential speedup: 2.120 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(88,5)
+   <Remainder loop for vectorization>
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 1.100
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(95,7)
+   <Peeled loop for vectorization>
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(96,14) ]
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(97,2) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(97,10) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(98,2) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15335: peel loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+      remark #15305: vectorization support: vector length 2
+      remark #15309: vectorization support: normalized vectorization overhead 0.216
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(95,7)
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(96,14) ]
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(97,2) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(97,10) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(98,2) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.810
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15450: unmasked unaligned unit stride loads: 2 
+      remark #15451: unmasked unaligned unit stride stores: 2 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 10 
+      remark #15477: vector cost: 1.310 
+      remark #15478: estimated potential speedup: 6.260 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(95,7)
+   <Remainder loop for vectorization>
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(96,14) ]
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(97,2) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(97,10) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(98,2) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15335: remainder loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+      remark #15305: vectorization support: vector length 2
+      remark #15309: vectorization support: normalized vectorization overhead 0.216
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(101,5)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(103,7)
+      <Peeled loop for vectorization>
+         remark #15389: vectorization support: reference h[j][k+1] has unaligned access   [ marqfit.cc(104,9) ]
+         remark #15389: vectorization support: reference h[j][k+1] has unaligned access   [ marqfit.cc(104,9) ]
+         remark #15389: vectorization support: reference h[i][k+1] has unaligned access   [ marqfit.cc(104,20) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15309: vectorization support: normalized vectorization overhead 0.483
+         remark #15301: PEEL LOOP WAS VECTORIZED
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(103,7)
+         remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+         remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+         remark #15389: vectorization support: reference h[i][k+1] has unaligned access   [ marqfit.cc(104,20) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15399: vectorization support: unroll factor set to 2
+         remark #15309: vectorization support: normalized vectorization overhead 0.262
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15448: unmasked aligned unit stride loads: 1 
+         remark #15449: unmasked aligned unit stride stores: 1 
+         remark #15450: unmasked unaligned unit stride loads: 1 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 35 
+         remark #15477: vector cost: 5.000 
+         remark #15478: estimated potential speedup: 6.470 
+         remark #15486: divides: 1 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(103,7)
+      <Remainder loop for vectorization>
+         remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+         remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+         remark #15389: vectorization support: reference h[i][k+1] has unaligned access   [ marqfit.cc(104,20) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15309: vectorization support: normalized vectorization overhead 0.404
+         remark #15301: REMAINDER LOOP WAS VECTORIZED
+      LOOP END
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(110,3)
+<Peeled loop for vectorization>
+   remark #15389: vectorization support: reference dp[i] has unaligned access   [ marqfit.cc(111,5) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.155
+   remark #15301: PEEL LOOP WAS VECTORIZED
+LOOP END
+
+LOOP BEGIN at marqfit.cc(110,3)
+   remark #15388: vectorization support: reference dp[i] has aligned access   [ marqfit.cc(111,5) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <h[i][npar]>, stride is unknown to compiler   [ marqfit.cc(111,11) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <h[i][i]>, stride is unknown to compiler   [ marqfit.cc(111,22) ]
+   remark #15305: vectorization support: vector length 8
+   remark #15399: vectorization support: unroll factor set to 2
+   remark #15309: vectorization support: normalized vectorization overhead 0.061
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15442: entire loop may be executed in remainder
+   remark #15449: unmasked aligned unit stride stores: 1 
+   remark #15452: unmasked strided loads: 2 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 31 
+   remark #15477: vector cost: 10.250 
+   remark #15478: estimated potential speedup: 2.820 
+   remark #15486: divides: 1 
+   remark #15488: --- end vector cost summary ---
+LOOP END
+
+LOOP BEGIN at marqfit.cc(110,3)
+<Remainder loop for vectorization>
+   remark #15389: vectorization support: reference dp[i] has unaligned access   [ marqfit.cc(111,5) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.155
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+LOOP END
+===========================================================================
+
+Begin optimization report for: mrqdtfit(double &, double *, double *, int, int, double &, double &)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at marqfit.cc(9,3) inlined into marqfit.cc(234,3)
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(10,5) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,7) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,15) ]
+   remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(14,5) ]
+   remark #15389: vectorization support: reference y[i] has unaligned access   [ marqfit.cc(14,12) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(14,18) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.143
+   remark #15301: OpenMP SIMD LOOP WAS VECTORIZED
+   remark #15448: unmasked aligned unit stride loads: 1 
+   remark #15449: unmasked aligned unit stride stores: 3 
+   remark #15450: unmasked unaligned unit stride loads: 1 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 158 
+   remark #15477: vector cost: 16.620 
+   remark #15478: estimated potential speedup: 9.100 
+   remark #15482: vectorized math library calls: 1 
+   remark #15486: divides: 1 
+   remark #15487: type converts: 1 
+   remark #15488: --- end vector cost summary ---
+
+   LOOP BEGIN at marqfit.cc(11,5) inlined into marqfit.cc(234,3)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(9,3) inlined into marqfit.cc(234,3)
+<Remainder loop for vectorization>
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(10,5) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,7) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,15) ]
+   remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(14,5) ]
+   remark #15389: vectorization support: reference y[i] has unaligned access   [ marqfit.cc(14,12) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(14,18) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.176
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+
+   LOOP BEGIN at marqfit.cc(11,5) inlined into marqfit.cc(234,3)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(39,3) inlined into marqfit.cc(235,10)
+   remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(40,10) ]
+   remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(40,17) ]
+   remark #15305: vectorization support: vector length 16
+   remark #15309: vectorization support: normalized vectorization overhead 2.000
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15448: unmasked aligned unit stride loads: 1 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 8 
+   remark #15477: vector cost: 0.870 
+   remark #15478: estimated potential speedup: 7.790 
+   remark #15488: --- end vector cost summary ---
+LOOP END
+
+LOOP BEGIN at marqfit.cc(39,3) inlined into marqfit.cc(235,10)
+<Remainder loop for vectorization>
+   remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(40,10) ]
+   remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(40,17) ]
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 1.850
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+LOOP END
+
+LOOP BEGIN at marqfit.cc(22,3) inlined into marqfit.cc(236,3)
+   remark #15416: vectorization support: non-unit strided store was generated for the variable <dydp[i*nParam+j]>, stride is unknown to compiler   [ marqfit.cc(27,7) ]
+   remark #15416: vectorization support: non-unit strided store was generated for the variable <dydp[i*nParam+j+1]>, stride is unknown to compiler   [ marqfit.cc(28,7) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <dydp[i*nParam+j]>, stride is unknown to compiler   [ marqfit.cc(28,29) ]
+   remark #15416: vectorization support: non-unit strided store was generated for the variable <dydp[i*nParam+j+2]>, stride is unknown to compiler   [ marqfit.cc(29,7) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <dydp[i*nParam+j+1]>, stride is unknown to compiler   [ marqfit.cc(29,24) ]
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.065
+   remark #15301: OpenMP SIMD LOOP WAS VECTORIZED
+   remark #15452: unmasked strided loads: 2 
+   remark #15453: unmasked strided stores: 3 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 186 
+   remark #15477: vector cost: 34.500 
+   remark #15478: estimated potential speedup: 5.170 
+   remark #15482: vectorized math library calls: 1 
+   remark #15486: divides: 2 
+   remark #15487: type converts: 1 
+   remark #15488: --- end vector cost summary ---
+
+   LOOP BEGIN at marqfit.cc(23,5) inlined into marqfit.cc(236,3)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(22,3) inlined into marqfit.cc(236,3)
+<Remainder loop for vectorization>
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.095
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+
+   LOOP BEGIN at marqfit.cc(23,5) inlined into marqfit.cc(236,3)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(237,3)
+<Distributed chunk1>
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(237,3)
+   <Distributed chunk1>
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(52,5) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15301: PARTIAL LOOP WAS VECTORIZED
+      remark #15449: unmasked aligned unit stride stores: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 4 
+      remark #15477: vector cost: 0.370 
+      remark #15478: estimated potential speedup: 5.330 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(237,3)
+   <Remainder loop for vectorization, Distributed chunk1>
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(52,5) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 1.200
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(53,5) inlined into marqfit.cc(237,3)
+<Distributed chunk2>
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(237,3)
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.333
+      remark #15301: PERMUTED LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15449: unmasked aligned unit stride stores: 2 
+      remark #15450: unmasked unaligned unit stride loads: 2 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 21 
+      remark #15477: vector cost: 1.870 
+      remark #15478: estimated potential speedup: 10.320 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(237,3)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.488
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(53,5) inlined into marqfit.cc(237,3)
+<Remainder, Distributed chunk2>
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(237,3)
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.333
+      remark #15301: PERMUTED LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15449: unmasked aligned unit stride stores: 1 
+      remark #15450: unmasked unaligned unit stride loads: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 11 
+      remark #15477: vector cost: 0.930 
+      remark #15478: estimated potential speedup: 10.810 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(237,3)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.696
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(59,3) inlined into marqfit.cc(237,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(60,5) inlined into marqfit.cc(237,3)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(62,7) inlined into marqfit.cc(237,3)
+         remark #15328: vectorization support: non-unit strided load was emulated for the variable <dydp[i*nParam+j]>, stride is unknown to compiler   [ marqfit.cc(63,26) ]
+         remark #15328: vectorization support: non-unit strided load was emulated for the variable <dydp[i*nParam+k]>, stride is unknown to compiler   [ marqfit.cc(63,41) ]
+         remark #15305: vectorization support: vector length 2
+         remark #15399: vectorization support: unroll factor set to 8
+         remark #15309: vectorization support: normalized vectorization overhead 0.148
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15452: unmasked strided loads: 2 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 8 
+         remark #15477: vector cost: 5.500 
+         remark #15478: estimated potential speedup: 1.370 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(62,7) inlined into marqfit.cc(237,3)
+      <Remainder loop for vectorization>
+         remark #15305: vectorization support: vector length 2
+         remark #15309: vectorization support: normalized vectorization overhead 2.091
+         remark #15301: REMAINDER LOOP WAS VECTORIZED
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(62,7) inlined into marqfit.cc(237,3)
+      <Remainder loop for vectorization>
+      LOOP END
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(240,5)
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <alpha[j*nParam+j]>, stride is unknown to compiler   [ marqfit.cc(241,10) ]
+   remark #15305: vectorization support: vector length 8
+   remark #15399: vectorization support: unroll factor set to 2
+   remark #15309: vectorization support: normalized vectorization overhead 0.694
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15452: unmasked strided loads: 1 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 8 
+   remark #15477: vector cost: 2.250 
+   remark #15478: estimated potential speedup: 3.220 
+   remark #15488: --- end vector cost summary ---
+LOOP END
+
+LOOP BEGIN at marqfit.cc(240,5)
+<Remainder loop for vectorization>
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 1.370
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+LOOP END
+
+LOOP BEGIN at marqfit.cc(245,3)
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   remark #15346: vector dependence: assumed ANTI dependence between alpha[j*nParam+j] (246:5) and alpha[j*nParam+j] (247:5)
+   remark #15346: vector dependence: assumed FLOW dependence between alpha[j*nParam+j] (247:5) and alpha[j*nParam+j] (246:5)
+LOOP END
+
+LOOP BEGIN at marqfit.cc(245,3)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at marqfit.cc(77,3) inlined into marqfit.cc(249,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(79,5) inlined into marqfit.cc(249,3)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(79,5) inlined into marqfit.cc(249,3)
+         remark #15389: vectorization support: reference h[i][j] has unaligned access   [ marqfit.cc(80,7) ]
+         remark #15389: vectorization support: reference alpha[i*nParam+j] has unaligned access   [ marqfit.cc(80,15) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15309: vectorization support: normalized vectorization overhead 1.000
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15450: unmasked unaligned unit stride loads: 1 
+         remark #15451: unmasked unaligned unit stride stores: 1 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 4 
+         remark #15477: vector cost: 0.750 
+         remark #15478: estimated potential speedup: 2.000 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(79,5) inlined into marqfit.cc(249,3)
+      <Remainder loop for vectorization>
+         remark #15389: vectorization support: reference h[i][j] has unaligned access   [ marqfit.cc(80,7) ]
+         remark #15389: vectorization support: reference alpha[i*nParam+j] has unaligned access   [ marqfit.cc(80,15) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15335: remainder loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+         remark #15305: vectorization support: vector length 2
+         remark #15309: vectorization support: normalized vectorization overhead 1.059
+      LOOP END
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(85,3) inlined into marqfit.cc(249,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(88,5) inlined into marqfit.cc(249,3)
+      remark #15415: vectorization support: non-unit strided load was generated for the variable <h[j][i]>, stride is unknown to compiler   [ marqfit.cc(89,10) ]
+      remark #15415: vectorization support: non-unit strided load was generated for the variable <h[j][i]>, stride is unknown to compiler   [ marqfit.cc(90,14) ]
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.864
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15452: unmasked strided loads: 2 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 13 
+      remark #15477: vector cost: 5.500 
+      remark #15478: estimated potential speedup: 2.120 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(88,5) inlined into marqfit.cc(249,3)
+   <Remainder loop for vectorization>
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 1.100
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(95,7) inlined into marqfit.cc(249,3)
+   <Peeled loop for vectorization>
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(96,14) ]
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(97,2) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(97,10) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(98,2) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15335: peel loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+      remark #15305: vectorization support: vector length 2
+      remark #15309: vectorization support: normalized vectorization overhead 0.216
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(95,7) inlined into marqfit.cc(249,3)
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(96,14) ]
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(97,2) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(97,10) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(98,2) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.810
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15450: unmasked unaligned unit stride loads: 2 
+      remark #15451: unmasked unaligned unit stride stores: 2 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 10 
+      remark #15477: vector cost: 1.310 
+      remark #15478: estimated potential speedup: 6.260 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(95,7) inlined into marqfit.cc(249,3)
+   <Remainder loop for vectorization>
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(96,14) ]
+      remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(97,2) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(97,10) ]
+      remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(98,2) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15335: remainder loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+      remark #15305: vectorization support: vector length 2
+      remark #15309: vectorization support: normalized vectorization overhead 0.216
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(101,5) inlined into marqfit.cc(249,3)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(103,7) inlined into marqfit.cc(249,3)
+      <Peeled loop for vectorization>
+         remark #15389: vectorization support: reference h[j][k+1] has unaligned access   [ marqfit.cc(104,9) ]
+         remark #15389: vectorization support: reference h[j][k+1] has unaligned access   [ marqfit.cc(104,9) ]
+         remark #15389: vectorization support: reference h[i][k+1] has unaligned access   [ marqfit.cc(104,20) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15309: vectorization support: normalized vectorization overhead 0.483
+         remark #15301: PEEL LOOP WAS VECTORIZED
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(103,7) inlined into marqfit.cc(249,3)
+         remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+         remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+         remark #15389: vectorization support: reference h[i][k+1] has unaligned access   [ marqfit.cc(104,20) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15399: vectorization support: unroll factor set to 2
+         remark #15309: vectorization support: normalized vectorization overhead 0.262
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15448: unmasked aligned unit stride loads: 1 
+         remark #15449: unmasked aligned unit stride stores: 1 
+         remark #15450: unmasked unaligned unit stride loads: 1 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 35 
+         remark #15477: vector cost: 5.000 
+         remark #15478: estimated potential speedup: 6.470 
+         remark #15486: divides: 1 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(103,7) inlined into marqfit.cc(249,3)
+      <Remainder loop for vectorization>
+         remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+         remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+         remark #15389: vectorization support: reference h[i][k+1] has unaligned access   [ marqfit.cc(104,20) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15309: vectorization support: normalized vectorization overhead 0.404
+         remark #15301: REMAINDER LOOP WAS VECTORIZED
+      LOOP END
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(110,3) inlined into marqfit.cc(249,3)
+   remark #15388: vectorization support: reference dp[i] has aligned access   [ marqfit.cc(111,5) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <h[i][nParam]>, stride is unknown to compiler   [ marqfit.cc(111,11) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <h[i][i]>, stride is unknown to compiler   [ marqfit.cc(111,22) ]
+   remark #15305: vectorization support: vector length 8
+   remark #15399: vectorization support: unroll factor set to 2
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15449: unmasked aligned unit stride stores: 1 
+   remark #15452: unmasked strided loads: 2 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 31 
+   remark #15477: vector cost: 10.250 
+   remark #15478: estimated potential speedup: 2.830 
+   remark #15486: divides: 1 
+   remark #15488: --- end vector cost summary ---
+LOOP END
+
+LOOP BEGIN at marqfit.cc(110,3) inlined into marqfit.cc(249,3)
+<Remainder loop for vectorization>
+   remark #15388: vectorization support: reference dp[i] has aligned access   [ marqfit.cc(111,5) ]
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.126
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+LOOP END
+
+LOOP BEGIN at marqfit.cc(74,33) inlined into marqfit.cc(275,7)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(255,5)
+      remark #15388: vectorization support: reference psav[j] has aligned access   [ marqfit.cc(256,7) ]
+      remark #15389: vectorization support: reference p[j] has unaligned access   [ marqfit.cc(256,17) ]
+      remark #15389: vectorization support: reference p[j] has unaligned access   [ marqfit.cc(257,7) ]
+      remark #15389: vectorization support: reference p[j] has unaligned access   [ marqfit.cc(257,14) ]
+      remark #15388: vectorization support: reference dp[j] has aligned access   [ marqfit.cc(257,21) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.316
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15449: unmasked aligned unit stride stores: 1 
+      remark #15450: unmasked unaligned unit stride loads: 1 
+      remark #15451: unmasked unaligned unit stride stores: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 11 
+      remark #15477: vector cost: 1.180 
+      remark #15478: estimated potential speedup: 8.540 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(255,5)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference psav[j] has aligned access   [ marqfit.cc(256,7) ]
+      remark #15389: vectorization support: reference p[j] has unaligned access   [ marqfit.cc(256,17) ]
+      remark #15389: vectorization support: reference p[j] has unaligned access   [ marqfit.cc(257,7) ]
+      remark #15389: vectorization support: reference p[j] has unaligned access   [ marqfit.cc(257,14) ]
+      remark #15388: vectorization support: reference dp[j] has aligned access   [ marqfit.cc(257,21) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.304
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(9,3) inlined into marqfit.cc(259,5)
+      remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(10,5) ]
+      remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,7) ]
+      remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,15) ]
+      remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(14,5) ]
+      remark #15389: vectorization support: reference y[i] has unaligned access   [ marqfit.cc(14,12) ]
+      remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(14,18) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.143
+      remark #15301: OpenMP SIMD LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15449: unmasked aligned unit stride stores: 3 
+      remark #15450: unmasked unaligned unit stride loads: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 158 
+      remark #15477: vector cost: 16.620 
+      remark #15478: estimated potential speedup: 9.100 
+      remark #15482: vectorized math library calls: 1 
+      remark #15486: divides: 1 
+      remark #15487: type converts: 1 
+      remark #15488: --- end vector cost summary ---
+
+      LOOP BEGIN at marqfit.cc(11,5) inlined into marqfit.cc(259,5)
+         remark #25460: No loop optimizations reported
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(9,3) inlined into marqfit.cc(259,5)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(10,5) ]
+      remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,7) ]
+      remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,15) ]
+      remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(14,5) ]
+      remark #15389: vectorization support: reference y[i] has unaligned access   [ marqfit.cc(14,12) ]
+      remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(14,18) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.176
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+
+      LOOP BEGIN at marqfit.cc(11,5) inlined into marqfit.cc(259,5)
+         remark #25460: No loop optimizations reported
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(39,3) inlined into marqfit.cc(260,14)
+      remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(40,10) ]
+      remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(40,17) ]
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 2.000
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 8 
+      remark #15477: vector cost: 0.870 
+      remark #15478: estimated potential speedup: 7.790 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(39,3) inlined into marqfit.cc(260,14)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(40,10) ]
+      remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(40,17) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 1.850
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(263,5)
+      remark #15388: vectorization support: reference dp[j] has aligned access   [ marqfit.cc(264,14) ]
+      remark #15388: vectorization support: reference dp[j] has aligned access   [ marqfit.cc(264,28) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(264,34) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15399: vectorization support: unroll factor set to 2
+      remark #15309: vectorization support: normalized vectorization overhead 1.182
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 2 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 12 
+      remark #15477: vector cost: 1.370 
+      remark #15478: estimated potential speedup: 7.720 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(263,5)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference dp[j] has aligned access   [ marqfit.cc(264,14) ]
+      remark #15388: vectorization support: reference dp[j] has aligned access   [ marqfit.cc(264,28) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(264,34) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 1.267
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(268,7)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(268,7)
+         remark #15389: vectorization support: reference p[j] has unaligned access   [ marqfit.cc(268,29) ]
+         remark #15388: vectorization support: reference psav[j] has aligned access   [ marqfit.cc(268,34) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15309: vectorization support: normalized vectorization overhead 0.600
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15448: unmasked aligned unit stride loads: 1 
+         remark #15451: unmasked unaligned unit stride stores: 1 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 4 
+         remark #15477: vector cost: 0.620 
+         remark #15478: estimated potential speedup: 2.660 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(268,7)
+      <Remainder loop for vectorization>
+         remark #15389: vectorization support: reference p[j] has unaligned access   [ marqfit.cc(268,29) ]
+         remark #15388: vectorization support: reference psav[j] has aligned access   [ marqfit.cc(268,34) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15335: remainder loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+         remark #15305: vectorization support: vector length 2
+         remark #15309: vectorization support: normalized vectorization overhead 0.882
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(272,7)
+      remark #15388: vectorization support: reference alpsav[j] has aligned access   [ marqfit.cc(273,27) ]
+      remark #15416: vectorization support: non-unit strided store was generated for the variable <alpha[j*nParam+j]>, stride is unknown to compiler   [ marqfit.cc(273,9) ]
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.049
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15453: unmasked strided stores: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 6 
+      remark #15477: vector cost: 2.560 
+      remark #15478: estimated potential speedup: 2.180 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(272,7)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference alpsav[j] has aligned access   [ marqfit.cc(273,27) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.382
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(77,3) inlined into marqfit.cc(275,7)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(79,5) inlined into marqfit.cc(275,7)
+         remark #15542: loop was not vectorized: inner loop was already vectorized
+
+         LOOP BEGIN at marqfit.cc(79,5) inlined into marqfit.cc(275,7)
+            remark #15389: vectorization support: reference h[i][j] has unaligned access   [ marqfit.cc(80,7) ]
+            remark #15389: vectorization support: reference alpha[i*nParam+j] has unaligned access   [ marqfit.cc(80,15) ]
+            remark #15381: vectorization support: unaligned access used inside loop body
+            remark #15305: vectorization support: vector length 8
+            remark #15309: vectorization support: normalized vectorization overhead 1.000
+            remark #15300: LOOP WAS VECTORIZED
+            remark #15450: unmasked unaligned unit stride loads: 1 
+            remark #15451: unmasked unaligned unit stride stores: 1 
+            remark #15475: --- begin vector cost summary ---
+            remark #15476: scalar cost: 4 
+            remark #15477: vector cost: 0.750 
+            remark #15478: estimated potential speedup: 2.000 
+            remark #15488: --- end vector cost summary ---
+         LOOP END
+
+         LOOP BEGIN at marqfit.cc(79,5) inlined into marqfit.cc(275,7)
+         <Remainder loop for vectorization>
+            remark #15389: vectorization support: reference h[i][j] has unaligned access   [ marqfit.cc(80,7) ]
+            remark #15389: vectorization support: reference alpha[i*nParam+j] has unaligned access   [ marqfit.cc(80,15) ]
+            remark #15381: vectorization support: unaligned access used inside loop body
+            remark #15335: remainder loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+            remark #15305: vectorization support: vector length 2
+            remark #15309: vectorization support: normalized vectorization overhead 1.059
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(85,3) inlined into marqfit.cc(275,7)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(88,5) inlined into marqfit.cc(275,7)
+         remark #15415: vectorization support: non-unit strided load was generated for the variable <h[j][i]>, stride is unknown to compiler   [ marqfit.cc(89,10) ]
+         remark #15415: vectorization support: non-unit strided load was generated for the variable <h[j][i]>, stride is unknown to compiler   [ marqfit.cc(90,14) ]
+         remark #15305: vectorization support: vector length 16
+         remark #15309: vectorization support: normalized vectorization overhead 0.864
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15452: unmasked strided loads: 2 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 13 
+         remark #15477: vector cost: 5.500 
+         remark #15478: estimated potential speedup: 2.120 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(88,5) inlined into marqfit.cc(275,7)
+      <Remainder loop for vectorization>
+         remark #15305: vectorization support: vector length 8
+         remark #15309: vectorization support: normalized vectorization overhead 1.100
+         remark #15301: REMAINDER LOOP WAS VECTORIZED
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(95,7) inlined into marqfit.cc(275,7)
+      <Peeled loop for vectorization>
+         remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(96,14) ]
+         remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(97,2) ]
+         remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(97,10) ]
+         remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(98,2) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15335: peel loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+         remark #15305: vectorization support: vector length 2
+         remark #15309: vectorization support: normalized vectorization overhead 0.216
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(95,7) inlined into marqfit.cc(275,7)
+         remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(96,14) ]
+         remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(97,2) ]
+         remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(97,10) ]
+         remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(98,2) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 16
+         remark #15309: vectorization support: normalized vectorization overhead 0.810
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15450: unmasked unaligned unit stride loads: 2 
+         remark #15451: unmasked unaligned unit stride stores: 2 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 10 
+         remark #15477: vector cost: 1.310 
+         remark #15478: estimated potential speedup: 6.260 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(95,7) inlined into marqfit.cc(275,7)
+      <Remainder loop for vectorization>
+         remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(96,14) ]
+         remark #15389: vectorization support: reference h[i][k] has unaligned access   [ marqfit.cc(97,2) ]
+         remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(97,10) ]
+         remark #15389: vectorization support: reference h[imax][k] has unaligned access   [ marqfit.cc(98,2) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15335: remainder loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+         remark #15305: vectorization support: vector length 2
+         remark #15309: vectorization support: normalized vectorization overhead 0.216
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(101,5) inlined into marqfit.cc(275,7)
+         remark #15542: loop was not vectorized: inner loop was already vectorized
+
+         LOOP BEGIN at marqfit.cc(103,7) inlined into marqfit.cc(275,7)
+         <Peeled loop for vectorization>
+            remark #15389: vectorization support: reference h[j][k+1] has unaligned access   [ marqfit.cc(104,9) ]
+            remark #15389: vectorization support: reference h[j][k+1] has unaligned access   [ marqfit.cc(104,9) ]
+            remark #15389: vectorization support: reference h[i][k+1] has unaligned access   [ marqfit.cc(104,20) ]
+            remark #15381: vectorization support: unaligned access used inside loop body
+            remark #15305: vectorization support: vector length 8
+            remark #15309: vectorization support: normalized vectorization overhead 0.483
+            remark #15301: PEEL LOOP WAS VECTORIZED
+         LOOP END
+
+         LOOP BEGIN at marqfit.cc(103,7) inlined into marqfit.cc(275,7)
+            remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+            remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+            remark #15389: vectorization support: reference h[i][k+1] has unaligned access   [ marqfit.cc(104,20) ]
+            remark #15381: vectorization support: unaligned access used inside loop body
+            remark #15305: vectorization support: vector length 8
+            remark #15399: vectorization support: unroll factor set to 2
+            remark #15309: vectorization support: normalized vectorization overhead 0.262
+            remark #15300: LOOP WAS VECTORIZED
+            remark #15448: unmasked aligned unit stride loads: 1 
+            remark #15449: unmasked aligned unit stride stores: 1 
+            remark #15450: unmasked unaligned unit stride loads: 1 
+            remark #15475: --- begin vector cost summary ---
+            remark #15476: scalar cost: 35 
+            remark #15477: vector cost: 5.000 
+            remark #15478: estimated potential speedup: 6.470 
+            remark #15486: divides: 1 
+            remark #15488: --- end vector cost summary ---
+         LOOP END
+
+         LOOP BEGIN at marqfit.cc(103,7) inlined into marqfit.cc(275,7)
+         <Remainder loop for vectorization>
+            remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+            remark #15388: vectorization support: reference h[j][k+1] has aligned access   [ marqfit.cc(104,9) ]
+            remark #15389: vectorization support: reference h[i][k+1] has unaligned access   [ marqfit.cc(104,20) ]
+            remark #15381: vectorization support: unaligned access used inside loop body
+            remark #15305: vectorization support: vector length 8
+            remark #15309: vectorization support: normalized vectorization overhead 0.404
+            remark #15301: REMAINDER LOOP WAS VECTORIZED
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(110,3) inlined into marqfit.cc(275,7)
+      remark #15388: vectorization support: reference dp[i] has aligned access   [ marqfit.cc(111,5) ]
+      remark #15415: vectorization support: non-unit strided load was generated for the variable <h[i][nParam]>, stride is unknown to compiler   [ marqfit.cc(111,11) ]
+      remark #15415: vectorization support: non-unit strided load was generated for the variable <h[i][i]>, stride is unknown to compiler   [ marqfit.cc(111,22) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15399: vectorization support: unroll factor set to 2
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15449: unmasked aligned unit stride stores: 1 
+      remark #15452: unmasked strided loads: 2 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 31 
+      remark #15477: vector cost: 10.250 
+      remark #15478: estimated potential speedup: 2.830 
+      remark #15486: divides: 1 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(110,3) inlined into marqfit.cc(275,7)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference dp[i] has aligned access   [ marqfit.cc(111,5) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.126
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+LOOP END
+===========================================================================
+
+Begin optimization report for: invrt_matrix(double *, int)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at marqfit.cc(132,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(134,5)
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed OUTPUT dependence between ik[k] (138:6) and ik[k] (138:6)
+      remark #15346: vector dependence: assumed OUTPUT dependence between ik[k] (138:6) and ik[k] (138:6)
+
+      LOOP BEGIN at marqfit.cc(135,7)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed ANTI dependence between aMax (136:4) and aMax (137:6)
+         remark #15346: vector dependence: assumed FLOW dependence between aMax (137:6) and aMax (136:4)
+         remark #15346: vector dependence: assumed FLOW dependence between aMax (137:6) and aMax (136:4)
+         remark #15346: vector dependence: assumed ANTI dependence between aMax (136:4) and aMax (137:6)
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(135,7)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(148,7)
+   <Multiversioned v1>
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed ANTI dependence between alpha[k*npar+j] (149:4) and alpha[i*npar+j] (151:4)
+      remark #15346: vector dependence: assumed FLOW dependence between alpha[i*npar+j] (151:4) and alpha[k*npar+j] (149:4)
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(148,7)
+   <Remainder, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(148,7)
+   <Multiversioned v2>
+      remark #15304: loop was not vectorized: non-vectorizable loop instance from multiversioning
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(148,7)
+   <Remainder, Multiversioned v2>
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(157,7)
+   <Multiversioned v1>
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed ANTI dependence between alpha[i*npar+k] (158:4) and alpha[i*npar+j] (160:4)
+      remark #15346: vector dependence: assumed FLOW dependence between alpha[i*npar+j] (160:4) and alpha[i*npar+k] (158:4)
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(157,7)
+   <Remainder, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(157,7)
+   <Multiversioned v2>
+      remark #15304: loop was not vectorized: non-vectorizable loop instance from multiversioning
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(157,7)
+   <Remainder, Multiversioned v2>
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(164,5)
+      remark #15416: vectorization support: non-unit strided store was generated for the variable <alpha[i*npar+k]>, masked, stride is unknown to compiler   [ marqfit.cc(165,19) ]
+      remark #15415: vectorization support: non-unit strided load was generated for the variable <alpha[i*npar+k]>, masked, stride is unknown to compiler   [ marqfit.cc(165,38) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15399: vectorization support: unroll factor set to 2
+      remark #15309: vectorization support: normalized vectorization overhead 0.038
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15460: masked strided loads: 1 
+      remark #15462: unmasked indexed (or gather) loads: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 22 
+      remark #15477: vector cost: 11.500 
+      remark #15478: estimated potential speedup: 1.790 
+      remark #15486: divides: 1 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(164,5)
+   <Remainder loop for vectorization>
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.190
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(164,5)
+   <Remainder loop for vectorization>
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(167,5)
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed OUTPUT dependence between alpha[i*npar+j] (169:26) and alpha[i*npar+j] (169:26)
+      remark #15346: vector dependence: assumed OUTPUT dependence between alpha[i*npar+j] (169:26) and alpha[i*npar+j] (169:26)
+
+      LOOP BEGIN at marqfit.cc(168,7)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed FLOW dependence between alpha[i*npar+j] (169:26) and alpha[k*npar+j] (169:26)
+         remark #15346: vector dependence: assumed ANTI dependence between alpha[k*npar+j] (169:26) and alpha[i*npar+j] (169:26)
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(168,7)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(168,7)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed FLOW dependence between alpha[i*npar+j] (169:26) and alpha[k*npar+j] (169:26)
+         remark #15346: vector dependence: assumed ANTI dependence between alpha[k*npar+j] (169:26) and alpha[i*npar+j] (169:26)
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(168,7)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(172,5)
+   <Peeled loop for vectorization>
+      remark #15389: vectorization support: reference alpha[k*npar+j] has unaligned access   [ marqfit.cc(173,20) ]
+      remark #15389: vectorization support: reference alpha[k*npar+j] has unaligned access   [ marqfit.cc(173,38) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.388
+      remark #15301: PEEL LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(172,5)
+      remark #15388: vectorization support: reference alpha[k*npar+j] has aligned access   [ marqfit.cc(173,20) ]
+      remark #15388: vectorization support: reference alpha[k*npar+j] has aligned access   [ marqfit.cc(173,38) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15399: vectorization support: unroll factor set to 2
+      remark #15309: vectorization support: normalized vectorization overhead 0.157
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15442: entire loop may be executed in remainder
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15449: unmasked aligned unit stride stores: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 31 
+      remark #15477: vector cost: 4.370 
+      remark #15478: estimated potential speedup: 6.590 
+      remark #15486: divides: 1 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(172,5)
+   <Remainder loop for vectorization>
+      remark #15389: vectorization support: reference alpha[k*npar+j] has unaligned access   [ marqfit.cc(173,20) ]
+      remark #15389: vectorization support: reference alpha[k*npar+j] has unaligned access   [ marqfit.cc(173,38) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.388
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(172,5)
+   <Peeled loop for vectorization>
+      remark #15389: vectorization support: reference alpha[k*npar+j] has unaligned access   [ marqfit.cc(173,20) ]
+      remark #15389: vectorization support: reference alpha[k*npar+j] has unaligned access   [ marqfit.cc(173,38) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.388
+      remark #15301: PEEL LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(172,5)
+      remark #15388: vectorization support: reference alpha[k*npar+j] has aligned access   [ marqfit.cc(173,20) ]
+      remark #15388: vectorization support: reference alpha[k*npar+j] has aligned access   [ marqfit.cc(173,38) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15399: vectorization support: unroll factor set to 2
+      remark #15309: vectorization support: normalized vectorization overhead 0.157
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15442: entire loop may be executed in remainder
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15449: unmasked aligned unit stride stores: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 31 
+      remark #15477: vector cost: 4.370 
+      remark #15478: estimated potential speedup: 6.590 
+      remark #15486: divides: 1 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(172,5)
+   <Remainder loop for vectorization>
+      remark #15389: vectorization support: reference alpha[k*npar+j] has unaligned access   [ marqfit.cc(173,20) ]
+      remark #15389: vectorization support: reference alpha[k*npar+j] has unaligned access   [ marqfit.cc(173,38) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.388
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(180,3)
+   remark #15541: outer loop was not auto-vectorized: consider using SIMD directive
+
+   LOOP BEGIN at marqfit.cc(183,7)
+   <Multiversioned v1>
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed ANTI dependence between alpha[i*npar+k] (184:4) and alpha[i*npar+j] (186:4)
+      remark #15346: vector dependence: assumed FLOW dependence between alpha[i*npar+j] (186:4) and alpha[i*npar+k] (184:4)
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(183,7)
+   <Remainder, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(183,7)
+   <Multiversioned v2>
+      remark #15304: loop was not vectorized: non-vectorizable loop instance from multiversioning
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(183,7)
+   <Remainder, Multiversioned v2>
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(191,7)
+   <Multiversioned v1>
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed ANTI dependence between alpha[k*npar+j] (192:4) and alpha[i*npar+j] (194:4)
+      remark #15346: vector dependence: assumed FLOW dependence between alpha[i*npar+j] (194:4) and alpha[k*npar+j] (192:4)
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(191,7)
+   <Remainder, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(191,7)
+   <Multiversioned v2>
+      remark #15304: loop was not vectorized: non-vectorizable loop instance from multiversioning
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(191,7)
+   <Remainder, Multiversioned v2>
+   LOOP END
+LOOP END
+===========================================================================
+
+Begin optimization report for: cal_perr(double *, double *, int, int, double *)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at marqfit.cc(9,3) inlined into marqfit.cc(208,3)
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(10,5) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,7) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,15) ]
+   remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(14,5) ]
+   remark #15389: vectorization support: reference y[i] has unaligned access   [ marqfit.cc(14,12) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(14,18) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.143
+   remark #15301: OpenMP SIMD LOOP WAS VECTORIZED
+   remark #15448: unmasked aligned unit stride loads: 1 
+   remark #15449: unmasked aligned unit stride stores: 3 
+   remark #15450: unmasked unaligned unit stride loads: 1 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 158 
+   remark #15477: vector cost: 16.620 
+   remark #15478: estimated potential speedup: 9.100 
+   remark #15482: vectorized math library calls: 1 
+   remark #15486: divides: 1 
+   remark #15487: type converts: 1 
+   remark #15488: --- end vector cost summary ---
+
+   LOOP BEGIN at marqfit.cc(11,5) inlined into marqfit.cc(208,3)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(9,3) inlined into marqfit.cc(208,3)
+<Remainder loop for vectorization>
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(10,5) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,7) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(12,15) ]
+   remark #15388: vectorization support: reference res[i] has aligned access   [ marqfit.cc(14,5) ]
+   remark #15389: vectorization support: reference y[i] has unaligned access   [ marqfit.cc(14,12) ]
+   remark #15388: vectorization support: reference yf[i] has aligned access   [ marqfit.cc(14,18) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.176
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+
+   LOOP BEGIN at marqfit.cc(11,5) inlined into marqfit.cc(208,3)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(22,3) inlined into marqfit.cc(209,3)
+   remark #15416: vectorization support: non-unit strided store was generated for the variable <dydp[i*nParam+j]>, stride is unknown to compiler   [ marqfit.cc(27,7) ]
+   remark #15416: vectorization support: non-unit strided store was generated for the variable <dydp[i*nParam+j+1]>, stride is unknown to compiler   [ marqfit.cc(28,7) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <dydp[i*nParam+j]>, stride is unknown to compiler   [ marqfit.cc(28,29) ]
+   remark #15416: vectorization support: non-unit strided store was generated for the variable <dydp[i*nParam+j+2]>, stride is unknown to compiler   [ marqfit.cc(29,7) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <dydp[i*nParam+j+1]>, stride is unknown to compiler   [ marqfit.cc(29,24) ]
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.065
+   remark #15301: OpenMP SIMD LOOP WAS VECTORIZED
+   remark #15452: unmasked strided loads: 2 
+   remark #15453: unmasked strided stores: 3 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 186 
+   remark #15477: vector cost: 34.500 
+   remark #15478: estimated potential speedup: 5.170 
+   remark #15482: vectorized math library calls: 1 
+   remark #15486: divides: 2 
+   remark #15487: type converts: 1 
+   remark #15488: --- end vector cost summary ---
+
+   LOOP BEGIN at marqfit.cc(23,5) inlined into marqfit.cc(209,3)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(22,3) inlined into marqfit.cc(209,3)
+<Remainder loop for vectorization>
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.095
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+
+   LOOP BEGIN at marqfit.cc(23,5) inlined into marqfit.cc(209,3)
+      remark #25460: No loop optimizations reported
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(210,3)
+<Distributed chunk1>
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(210,3)
+   <Distributed chunk1>
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(52,5) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15301: PARTIAL LOOP WAS VECTORIZED
+      remark #15449: unmasked aligned unit stride stores: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 4 
+      remark #15477: vector cost: 0.370 
+      remark #15478: estimated potential speedup: 5.330 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(210,3)
+   <Remainder loop for vectorization, Distributed chunk1>
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(52,5) ]
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 1.200
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(53,5) inlined into marqfit.cc(210,3)
+<Distributed chunk2>
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(210,3)
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.333
+      remark #15301: PERMUTED LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15449: unmasked aligned unit stride stores: 2 
+      remark #15450: unmasked unaligned unit stride loads: 2 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 21 
+      remark #15477: vector cost: 1.870 
+      remark #15478: estimated potential speedup: 10.320 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(210,3)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.488
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(53,5) inlined into marqfit.cc(210,3)
+<Remainder, Distributed chunk2>
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(210,3)
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 16
+      remark #15309: vectorization support: normalized vectorization overhead 0.333
+      remark #15301: PERMUTED LOOP WAS VECTORIZED
+      remark #15448: unmasked aligned unit stride loads: 1 
+      remark #15449: unmasked aligned unit stride stores: 1 
+      remark #15450: unmasked unaligned unit stride loads: 1 
+      remark #15475: --- begin vector cost summary ---
+      remark #15476: scalar cost: 11 
+      remark #15477: vector cost: 0.930 
+      remark #15478: estimated potential speedup: 10.810 
+      remark #15488: --- end vector cost summary ---
+   LOOP END
+
+   LOOP BEGIN at marqfit.cc(51,3) inlined into marqfit.cc(210,3)
+   <Remainder loop for vectorization>
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15388: vectorization support: reference beta[j] has aligned access   [ marqfit.cc(54,7) ]
+      remark #15389: vectorization support: reference dydp[i*nParam+j] has unaligned access   [ marqfit.cc(54,23) ]
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15305: vectorization support: vector length 8
+      remark #15309: vectorization support: normalized vectorization overhead 0.696
+      remark #15301: REMAINDER LOOP WAS VECTORIZED
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(59,3) inlined into marqfit.cc(210,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(60,5) inlined into marqfit.cc(210,3)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(62,7) inlined into marqfit.cc(210,3)
+         remark #15328: vectorization support: non-unit strided load was emulated for the variable <dydp[i*nParam+j]>, stride is unknown to compiler   [ marqfit.cc(63,26) ]
+         remark #15328: vectorization support: non-unit strided load was emulated for the variable <dydp[i*nParam+k]>, stride is unknown to compiler   [ marqfit.cc(63,41) ]
+         remark #15305: vectorization support: vector length 2
+         remark #15399: vectorization support: unroll factor set to 8
+         remark #15309: vectorization support: normalized vectorization overhead 0.148
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15452: unmasked strided loads: 2 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 8 
+         remark #15477: vector cost: 5.500 
+         remark #15478: estimated potential speedup: 1.370 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(62,7) inlined into marqfit.cc(210,3)
+      <Remainder loop for vectorization>
+         remark #15305: vectorization support: vector length 2
+         remark #15309: vectorization support: normalized vectorization overhead 2.091
+         remark #15301: REMAINDER LOOP WAS VECTORIZED
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(62,7) inlined into marqfit.cc(210,3)
+      <Remainder loop for vectorization>
+      LOOP END
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(211,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at marqfit.cc(212,5)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at marqfit.cc(212,5)
+         remark #15389: vectorization support: reference alpsav[i][j] has unaligned access   [ marqfit.cc(213,7) ]
+         remark #15389: vectorization support: reference alpha[i*nParam+j] has unaligned access   [ marqfit.cc(213,20) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15305: vectorization support: vector length 8
+         remark #15309: vectorization support: normalized vectorization overhead 1.000
+         remark #15300: LOOP WAS VECTORIZED
+         remark #15450: unmasked unaligned unit stride loads: 1 
+         remark #15451: unmasked unaligned unit stride stores: 1 
+         remark #15475: --- begin vector cost summary ---
+         remark #15476: scalar cost: 4 
+         remark #15477: vector cost: 0.750 
+         remark #15478: estimated potential speedup: 2.000 
+         remark #15488: --- end vector cost summary ---
+      LOOP END
+
+      LOOP BEGIN at marqfit.cc(212,5)
+      <Remainder loop for vectorization>
+         remark #15389: vectorization support: reference alpsav[i][j] has unaligned access   [ marqfit.cc(213,7) ]
+         remark #15389: vectorization support: reference alpha[i*nParam+j] has unaligned access   [ marqfit.cc(213,20) ]
+         remark #15381: vectorization support: unaligned access used inside loop body
+         remark #15335: remainder loop was not vectorized: vectorization possible but seems inefficient. Use vector always directive or -vec-threshold0 to override 
+         remark #15305: vectorization support: vector length 2
+         remark #15309: vectorization support: normalized vectorization overhead 1.059
+      LOOP END
+   LOOP END
+LOOP END
+
+LOOP BEGIN at marqfit.cc(218,3)
+<Peeled loop for vectorization>
+   remark #15389: vectorization support: reference perr[i] has unaligned access   [ marqfit.cc(220,7) ]
+   remark #15389: vectorization support: reference perr[i] has unaligned access   [ marqfit.cc(222,7) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.173
+   remark #15301: PEEL LOOP WAS VECTORIZED
+LOOP END
+
+LOOP BEGIN at marqfit.cc(218,3)
+   remark #15388: vectorization support: reference perr[i] has aligned access   [ marqfit.cc(220,7) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <alpha[i*nParam+i]>, stride is unknown to compiler   [ marqfit.cc(219,8) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <alpha[i*nParam+i]>, stride is unknown to compiler   [ marqfit.cc(222,15) ]
+   remark #15415: vectorization support: non-unit strided load was generated for the variable <alpha[i*nParam+i]>, stride is unknown to compiler   [ marqfit.cc(220,20) ]
+   remark #15305: vectorization support: vector length 8
+   remark #15399: vectorization support: unroll factor set to 2
+   remark #15309: vectorization support: normalized vectorization overhead 0.059
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15442: entire loop may be executed in remainder
+   remark #15449: unmasked aligned unit stride stores: 1 
+   remark #15452: unmasked strided loads: 3 
+   remark #15475: --- begin vector cost summary ---
+   remark #15476: scalar cost: 38 
+   remark #15477: vector cost: 10.620 
+   remark #15478: estimated potential speedup: 3.340 
+   remark #15488: --- end vector cost summary ---
+LOOP END
+
+LOOP BEGIN at marqfit.cc(218,3)
+<Remainder loop for vectorization>
+   remark #15389: vectorization support: reference perr[i] has unaligned access   [ marqfit.cc(220,7) ]
+   remark #15389: vectorization support: reference perr[i] has unaligned access   [ marqfit.cc(222,7) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15305: vectorization support: vector length 8
+   remark #15309: vectorization support: normalized vectorization overhead 0.173
+   remark #15301: REMAINDER LOOP WAS VECTORIZED
+LOOP END
+===========================================================================
