@@ -3,7 +3,7 @@
 #include <cmath>
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
-void fgauss(float yd[], float p[], int npar, int ndat, float res[]){
+void fgauss(const float yd[], const float p[], const int npar, const int ndat, float res[]){
   float yf[ndat];
 #pragma omp simd
   for(int i=0;i<ndat;i++){
@@ -17,7 +17,7 @@ void fgauss(float yd[], float p[], int npar, int ndat, float res[]){
 }
 
 /* analytic derivatives for multi-Gaussian function in fgauss */
-void dgauss(float p[], int npar, int ndat, float dydp[]){
+void dgauss(const float p[], const int npar, const int ndat, float dydp[]){
 #pragma ivdep
 #pragma omp simd 
   for(int i=0;i<ndat;i++){
@@ -33,7 +33,7 @@ void dgauss(float p[], int npar, int ndat, float dydp[]){
 }
 
 /* calculate ChiSquared */
-float cal_xi2(float res[], int ndat){
+float cal_xi2(const float res[], const int ndat){
   int i;
   float xi2;
   xi2=0.;
@@ -44,7 +44,7 @@ float cal_xi2(float res[], int ndat){
 }
 
 /* setup the beta and  (curvature) matrices */
-void setup_matrix(float res[], float dydp[], int npar, int ndat, float beta[], float alpha[])
+void setup_matrix(const float res[], const float dydp[], const int npar, const int ndat, float beta[], float alpha[])
 {
   int i,j,k;
   
@@ -69,7 +69,7 @@ void setup_matrix(float res[], float dydp[], int npar, int ndat, float beta[], f
 }
 
 /* solve system of linear equations */
-void solve_matrix(float beta[], float alpha[], int npar, float dp[])
+void solve_matrix(const float beta[], const float alpha[], const int npar, float dp[])
 {
   int i,j,k,imax;
   float hmax,hsav,h[npar][npar+1];
@@ -114,7 +114,7 @@ void solve_matrix(float beta[], float alpha[], int npar, float dp[])
 
 }
 
-float invrt_matrix(float alphaf[], int npar)
+float invrt_matrix(const float alphaf[], const int npar)
 {
   /*
      Inverts the curvature matrix alpha using Gauss-Jordan elimination and 
@@ -216,7 +216,7 @@ float invrt_matrix(float alphaf[], int npar)
 }
 
 /* Calculate parameter errors */
-int cal_perr(float p[], float y[], int nParam, int nData, float perr[])
+int cal_perr(float p[], float y[], const int nParam, const int nData, float perr[])
 {
   int i,j,k;
   float det;
@@ -244,7 +244,7 @@ int cal_perr(float p[], float y[], int nParam, int nData, float perr[])
   return 0;
 }
 
-int mrqdtfit(float &lambda, float p[], float y[], int nParam, int nData, float &chiSqr, float &dchiSqr)
+int mrqdtfit(float &lambda, float p[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
 {
   int i,j;
   float nu,rho,lzmlh,amax,chiSq0;
