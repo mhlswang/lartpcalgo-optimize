@@ -88,7 +88,7 @@ const int maxhits=2000;
 ifstream iStream;
 streampos currentPos;
 
-void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, int i1, int i2, float roiThreshold)
+void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, const int i1, const int i2, const float roiThreshold)
 {
   int i,maxIndex,ifirst,ilast,nhc;
   float maxValue,x;
@@ -202,7 +202,7 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
 }
 
 
-int findPeakParameters(const struct wiredata &wd, struct found_hc &fhc, struct hitgroup &hg, struct merged_hpp &mhpp, float &chi2PerNDF)
+int findPeakParameters(const struct wiredata &wd, const struct found_hc &fhc, const struct hitgroup &hg, struct merged_hpp &mhpp, float &chi2PerNDF)
 {
   const float chiCut   = 1e-3;
   float lambda   = 0.001;      /* Marquardt damping parameter */
