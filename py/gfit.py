@@ -53,7 +53,7 @@ class Hit:
         global guess
         pref = "n{0}_".format(num)
         #model = GaussianModel(prefix = pref)  # nonlinear model for peaks
-        model = VoigtModel(prefix = pref)  # nonlinear model for peaks
+        model = GaussianModel(prefix = pref)  # nonlinear model for peaks
         if guess:
             self.pars  = model.guess(self.y, x=self.x)
         else:
