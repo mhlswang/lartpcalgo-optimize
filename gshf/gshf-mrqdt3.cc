@@ -13,6 +13,7 @@
 #include <omp.h>
 
 #include "Event.h"
+#include "marqfit.h"
 
 #define DEBUG 0
 
@@ -26,8 +27,7 @@
 using namespace std;
 using namespace gshf;
 
-int mrqdtfit(float &lambda, float p[], float y[], int nParam, int nData, float &chiSqr, float &dchiSqr);
-int cal_perr(float p[], float y[], int nParam, int nData, float perr[]);
+std::unique_ptr<marqfit> fmarqfit;
 
 struct hitcand {
   int starttck;
@@ -201,37 +201,33 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
   }
 }
 
-
-int findPeakParameters(const struct wiredata &wd, const struct found_hc &fhc, const struct hitgroup &hg, struct merged_hpp &mhpp, float &chi2PerNDF)
+void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<struct hitcand> &mhc_vec, std::vector<struct peakparams> &peakparam_vec, float &chi2PerNDF, int &NDF)   
 {
   const float chiCut   = 1e-3;
   float lambda   = 0.001;      /* Marquardt damping parameter */
   float  chiSqr = std::numeric_limits<float>::max(), dchiSqr = std::numeric_limits<float>::max();
   int nParams=0;
-  float y[1000],p[15],pmin[15],pmax[15],perr[15];
-
-  int startTime = fhc.hc[hg.h[0]].starttck;
-  int endTime = fhc.hc[hg.h[hg.nh-1]].stoptck;
+  float y[1000],p[15],perr[15];
+  
+  int startTime = mhc_vec[0].starttck;
+  int endTime = mhc_vec[mhc_vec.size()-1].stoptck;
+  
   int roiSize = endTime - startTime;
-
+  
   /* choose the fit function and set the parameters */
   nParams = 0;
-  for(int i=0;i<hg.nh;i++){
-    int ih = hg.h[i];
-    float peakMean   = fhc.hc[ih].cen - (float)startTime;
-    float peakWidth  = fhc.hc[ih].sig;
-    float amplitude  = fhc.hc[ih].hgt;
+  
+  for(int imh=0; imh<mhc_vec.size();imh++){
+    float peakMean   = mhc_vec[imh].cen - (float)startTime;
+    float peakWidth  = mhc_vec[imh].sig;
+    float amplitude  = mhc_vec[imh].hgt;
+    
     float meanLowLim = fmax(peakMean - PeakRange * peakWidth,       0.);
     float meanHiLim  = fmin(peakMean + PeakRange * peakWidth, (float)roiSize);
     p[0+nParams]=amplitude;
     p[1+nParams]=peakMean;
     p[2+nParams]=peakWidth;
-    pmin[0+nParams]=0.1 * amplitude;
-    pmax[0+nParams]=AmpRange * amplitude;
-    pmin[1+nParams]=meanLowLim;
-    pmax[1+nParams]=meanHiLim;
-    pmin[2+nParams]=fmax(MinWidth, 0.1 * peakWidth);
-    pmax[2+nParams]=MaxWidthMult * peakWidth;
+   
     nParams += 3;
   }
 
@@ -239,7 +235,7 @@ int findPeakParameters(const struct wiredata &wd, const struct found_hc &fhc, co
 
   /* set the bin content */
   for (int idx = 0;idx< roiSize; idx++){
-    float adc=wd.wv[startTime+idx].adc;
+    float adc=adc_vec[startTime+idx];
     if(adc<=0.)adc=0.;
     y[idx]=adc;
   }
@@ -247,36 +243,30 @@ int findPeakParameters(const struct wiredata &wd, const struct found_hc &fhc, co
   int trial=0;
   lambda=-1.;   /* initialize lambda on first call */
   do{
-    fitResult=mrqdtfit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
+    fitResult=fmarqfit->marqfit::mrqdtfit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
     trial++;
     if(fitResult||(trial>100))break;
   }
   while (fabs(dchiSqr) >= chiCut);
 
-  int nmpp=mhpp.nmpp;
-  mhpp.mpp[nmpp].npp=0;
-  int fitStat=-1;
   if (!fitResult){
-    int fitResult2=cal_perr(p,y,nParams,roiSize,perr);
+    int fitResult2=fmarqfit->marqfit::cal_perr(p,y,nParams,roiSize,perr);
     if (!fitResult2){
-      float NDF = roiSize - nParams;
+      int NDF = roiSize - nParams;
       chi2PerNDF = chiSqr / NDF;
       int parIdx = 0;
-      for(int i=0;i<hg.nh;i++){
-        mhpp.mpp[nmpp].pp[i].peakAmplitude      = p[parIdx + 0];
-        mhpp.mpp[nmpp].pp[i].peakAmplitudeError = perr[parIdx + 0];
-        mhpp.mpp[nmpp].pp[i].peakCenter         = p[parIdx + 1] + 0.5 + float(startTime);
-        mhpp.mpp[nmpp].pp[i].peakCenterError    = perr[parIdx + 1];
-        mhpp.mpp[nmpp].pp[i].peakSigma          = p[parIdx + 2];
-        mhpp.mpp[nmpp].pp[i].peakSigmaError     = perr[parIdx + 2];
+      for(int i=0; i<mhc_vec.size();i++){
+      	peakparam_vec[i].peakAmplitude      = p[parIdx + 0];
+        peakparam_vec[i].peakAmplitudeError = perr[parIdx + 0];
+        peakparam_vec[i].peakCenter         = p[parIdx + 1] + 0.5 + float(startTime);
+        peakparam_vec[i].peakCenterError    = perr[parIdx + 1];
+        peakparam_vec[i].peakSigma          = p[parIdx + 2];
+        peakparam_vec[i].peakSigmaError     = perr[parIdx + 2];
+	
         parIdx += 3;
-        mhpp.mpp[nmpp].npp++;
       }
-      mhpp.nmpp++;
-      fitStat=0;
     }
   }
-  return fitStat;
 }
 
 int main(int argc, char **argv)
@@ -324,6 +314,12 @@ int main(int argc, char **argv)
 	for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
 	  const struct wiredata &wd = ev.wd_vec_[ii];
 
+	  //convert wd wire data struct to adcvec ->more like what larsoft has
+	  std::vector<float> adcvec(wd.wv.size());
+	  for(int iadc=0; iadc<wd.wv.size(); iadc++){
+	    adcvec[iadc]=wd.wv[iadc].adc;
+	  }
+	  
 	  float roiThreshold=MinSigVec[wd.vw];
 // #pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold)
 // 	  {
@@ -341,18 +337,44 @@ int main(int argc, char **argv)
 #endif
 
 	    //ti = omp_get_wtime();
-	    findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
+	   findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
 	    //tottimefindc += (omp_get_wtime()-ti);
 
+	    
+	    
 	    //ti = omp_get_wtime();
 	    mergeHitCandidates(fhc, mhc);
 	    //tottimemergec += (omp_get_wtime()-ti);
 
+
+	    
+	    //convert found_hc struct that comes out of findHitCandidates to vec<hitcand>
+	    //need merged hit candidates here
+	    //since larsoft outputs vec<hitcand> from merge hit candidates
+	    std::vector<struct hitcand> fhc_vec(fhc.nhc);
+	    //hard coded size to nhc for now
+	    //will need to change found_hc struct to use vec<struct hitcand> later
+	    for(int ihc=0; ihc<fhc.nhc; ihc++){
+	      fhc_vec[ihc]=fhc.hc[ihc];
+	    }
+
 	    //ti = omp_get_wtime();
 	    int ngausshits=0;
 	    mhpp.nmpp=0;
+	    //loop over merged hits
 	    for(int i=0;i<mhc.nmh;i++){
 
+	      //define mhc_vec -- this should be the output of mergeHitCandidates eventually
+	      //hg=mhc.mh[i]
+	      std::vector<struct hitcand> mhc_vec(mhc.mh[i].nh);
+	      
+	      for(int imhc=0;imhc<mhc.mh[i].nh;imhc++){
+		int ih = mhc.mh[i].h[imhc];
+		mhc_vec[imhc]=fhc_vec[ih];
+	      }
+	      
+	      std::vector<struct peakparams> pp_vec(mhc_vec.size());
+	      
 	      int nhg=mhc.mh[i].nh;
 
 	      int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
@@ -362,25 +384,24 @@ int main(int argc, char **argv)
 	      if(endTick - startTick < 5)continue;
 
 	      float chi2PerNDF=0.;
+	      int NDF=0.;
 	      int fitStat=-1;
 
 	      if(mhc.mh[i].nh <= MaxMultiHit){
-
-		fitStat=findPeakParameters(wd,fhc,mhc.mh[i],mhpp,chi2PerNDF);
-		if((!fitStat) && (chi2PerNDF <= 1.79769e+308)){
-
+		findPeakParameters(adcvec,mhc_vec,pp_vec,chi2PerNDF, NDF);
+				
+		if(chi2PerNDF <= 1.79769e+308){
 		  ngausshits++;
 		  
 		  // fill output here
-		  int impp=mhpp.nmpp-1;
-		  for(int j=0;j<mhpp.mpp[impp].npp;j++){
-		    
+		  for(int j=0; j<pp_vec.size(); j++){
 		    /* temporary fix for the discontinuous ticks */
-		    int imax=int(mhpp.mpp[impp].pp[j].peakCenter);
-		    float delta=mhpp.mpp[impp].pp[j].peakCenter-float(imax);
+		    int imax=int(pp_vec[j].peakCenter);
+		    float delta=pp_vec[j].peakCenter-float(imax);
 		    float mytck=wd.wv[imax].tck+delta;
 		    mytck=float(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
-		    float mysigma=mhpp.mpp[impp].pp[j].peakSigma;
+		    float mysigma=pp_vec[j].peakSigma;
+		    
 		    struct outdata outd;
 
 		    outd.n=n;
@@ -389,7 +410,6 @@ int main(int argc, char **argv)
 		    outd.mytck=mytck;
 		    outd.mysigma=mysigma;
 		    od_vec[ii].push_back(outd);
-
 
 		  }//for j
 		}//if !fit stat
