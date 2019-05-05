@@ -6,6 +6,10 @@
 
 #include <omp.h>
 
+#ifdef USE_CALI
+#include <caliper/cali.h>
+#endif
+
 using namespace std;
 
 int mrqdtfit(double &lambda, double p[], double y[], int nParam, int nData, double &chiSqr, double &dchiSqr);

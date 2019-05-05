@@ -1,8 +1,12 @@
 #include "marqfit.h"
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
-void marqfit::fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res){
-  std::vector<float> yf(ndat);
+void marqfit::fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res, std::vector<float> &yf){ 
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
 #pragma omp simd
   for(int i=0;i<ndat;i++){
     yf[i]=0.;
@@ -15,6 +19,11 @@ void marqfit::fgauss(const float yd[], const float p[], const int npar, const in
 
 /* analytic derivatives for multi-Gaussian function in fgauss */
 void marqfit::dgauss(const float p[], const int npar, const int ndat, std::vector<float> &dydp){
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
 #pragma ivdep
 #pragma omp simd 
   for(int i=0;i<ndat;i++){
@@ -31,6 +40,11 @@ void marqfit::dgauss(const float p[], const int npar, const int ndat, std::vecto
 
 /* calculate ChiSquared */
 float marqfit::cal_xi2(const std::vector<float> &res, const int ndat){
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
   int i;
   float xi2;
   xi2=0.;
@@ -41,8 +55,12 @@ float marqfit::cal_xi2(const std::vector<float> &res, const int ndat){
 }
 
 /* setup the beta and  (curvature) matrices */
-void marqfit::setup_matrix(const std::vector<float> &res, const std::vector<float> &dydp, const int npar, const int ndat, std::vector<float> &beta, std::vector<float> &alpha)
-{
+void marqfit::setup_matrix(const std::vector<float> &res, const std::vector<float> &dydp, const int npar, const int ndat, std::vector<float> &beta, std::vector<float> &alpha) {
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
   int i,j,k;
   
   /* ... Calculate beta */
@@ -66,44 +84,85 @@ void marqfit::setup_matrix(const std::vector<float> &res, const std::vector<floa
 }
 
 /* solve system of linear equations */
-void marqfit::solve_matrix(const std::vector<float> &beta, const std::vector<float> &alpha, const int npar, std::vector<float> &dp)
-{
+void marqfit::solve_matrix(const std::vector<float> &beta, const std::vector<float> &alpha, const int npar, std::vector<float> &dp) {
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
   int i,j,k,imax;
   float hmax,hsav;//,h[npar][npar+1];
 
   std::vector<std::vector<float>> h(npar, std::vector<float>(npar+1,0));
+  // if (false) {
+  if (npar == 3) {
+    // do 3x3 which is most
+    float adj[9];
 
-  /* ... set up augmented N x N+1 matrix */
-  for(i=0;i<npar;i++){
-    h[i][npar]=beta[i];
-    for(j=0;j<npar;j++){
-      h[i][j]=alpha[i*npar+j];
-    }
-  }
+    adj[0] =      alpha[4]*alpha[8] - alpha[5]*alpha[7];
+    adj[1] = -1.*(alpha[3]*alpha[8] - alpha[5]*alpha[6]);
+    adj[2] =      alpha[3]*alpha[7] - alpha[4]*alpha[6];
 
-  /* ... diagonalize N x N matrix but do only terms required for solution */
-  for(i=0;i<npar;i++){
-    hmax=h[i][i];
-    imax=i;
-    for(j=i+1;j<npar;j++){
-      if(h[j][i]>hmax){
-        hmax=h[j][i];
-	imax=j;
+    adj[3] = -1.*(alpha[1]*alpha[8] - alpha[2]*alpha[7]);
+    adj[4] =      alpha[0]*alpha[8] - alpha[2]*alpha[6];
+    adj[5] = -1.*(alpha[0]*alpha[7] - alpha[1]*alpha[6]);
+
+    adj[6] =      alpha[1]*alpha[5] - alpha[2]*alpha[4];
+    adj[7] = -1.*(alpha[0]*alpha[5] - alpha[2]*alpha[3]);
+    adj[8] =      alpha[0]*alpha[4] - alpha[1]*alpha[3];
+
+    float det_alpha = 0.0;
+    for (i = 0; i < 3; i++)
+      det_alpha += alpha[i] * adj[i];
+
+    for (i = 0; i < 9; i++)
+      adj[i] = adj[i]/det_alpha;
+
+    // for (i = 0; i < 3; i++){
+    //   dp_2[i] = 0.;
+    //   for (j = 0; j < 3; j++){
+    //     dp_2[i] += adj[j*3+i]*beta[j];
+    //   }
+    // }
+    dp[0] = adj[0]*beta[0] + adj[3]*beta[1] + adj[6]*beta[2];
+    dp[1] = adj[1]*beta[0] + adj[4]*beta[1] + adj[7]*beta[2];
+    dp[2] = adj[2]*beta[0] + adj[5]*beta[1] + adj[8]*beta[2];
+
+  // }
+  } else {
+
+    /* ... set up augmented N x N+1 matrix */
+    for(i=0;i<npar;i++){
+      h[i][npar]=beta[i];
+      for(j=0;j<npar;j++){
+        h[i][j]=alpha[i*npar+j];
       }
     }
-    if(imax!=i){
-      for(k=0;k<=npar;k++){
-        hsav=h[i][k];
-	h[i][k]=h[imax][k];
-	h[imax][k]=hsav;
+
+    /* ... diagonalize N x N matrix but do only terms required for solution */
+    for(i=0;i<npar;i++){
+      hmax=h[i][i];
+      imax=i;
+      for(j=i+1;j<npar;j++){
+        if(h[j][i]>hmax){
+          hmax=h[j][i];
+  	imax=j;
+        }
       }
-    }
-    for(j=0;j<npar;j++){
-      if(j==i)continue;
-      for(k=i;k<npar;k++){
-        h[j][k+1]-=h[i][k+1]*h[j][i]/h[i][i];
+      if(imax!=i){
+        for(k=0;k<=npar;k++){
+          hsav=h[i][k];
+  	h[i][k]=h[imax][k];
+  	h[imax][k]=hsav;
+        }
       }
-    }
+      for(j=0;j<npar;j++){
+        if(j==i)continue;
+        for(k=i;k<npar;k++){
+          h[j][k+1]-=h[i][k+1]*h[j][i]/h[i][i];
+        }
+      }
+    } //else
   }
 
   /* ... scale (N+1)'th column with factor which normalizes the diagonal */
@@ -113,8 +172,12 @@ void marqfit::solve_matrix(const std::vector<float> &beta, const std::vector<flo
 
 }
 
-float marqfit::invrt_matrix(std::vector<float> &alphaf, const int npar)
-{
+float marqfit::invrt_matrix(std::vector<float> &alphaf, const int npar) {
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
   /*
      Inverts the curvature matrix alpha using Gauss-Jordan elimination and 
      returns the determinant.  This is based on the implementation in "Data
@@ -224,18 +287,23 @@ float marqfit::invrt_matrix(std::vector<float> &alphaf, const int npar)
 }
 
 /* Calculate parameter errors */
-int marqfit::cal_perr(float p[], float y[], const int nParam, const int nData, float perr[])
-{
+int marqfit::cal_perr(float p[], float y[], const int nParam, const int nData, float perr[]) {
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
   int i,j,k;
   float det;
 
   std::vector<float> res(nData);
+  std::vector<float> yf(nData);
   std::vector<float> dydp(nData*nParam);
   std::vector<float> beta(nParam);
   std::vector<float> alpha(nParam*nParam);
   std::vector<std::vector<float>> alpsav(nParam,std::vector<float>(nParam));
    
-  fgauss(y, p, nParam, nData, res);
+  fgauss(y, p, nParam, nData, res, yf);
   dgauss(p, nParam, nData, dydp);
   setup_matrix(res, dydp, nParam, nData, beta,alpha);
   for(i=0;i<nParam;i++){
@@ -257,8 +325,12 @@ int marqfit::cal_perr(float p[], float y[], const int nParam, const int nData, f
   return 0;
 }
 
-int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
-{
+int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr) {
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
   int i,j;
   float nu,rho,lzmlh,amax,chiSq0;
 
@@ -269,8 +341,9 @@ int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, con
   std::vector<float> psav(nParam);
   std::vector<float> dydp(nData*nParam);
   std::vector<float> alpha(nParam*nParam);
+  std::vector<float> yf(nData);
   
-  fgauss(y, p, nParam, nData, res);
+  fgauss(y, p, nParam, nData, res, yf);
   chiSq0=cal_xi2(res, nData);
   dgauss(p, nParam, nData, dydp);
   setup_matrix(res, dydp, nParam, nData, beta, alpha);
@@ -295,7 +368,7 @@ int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, con
       psav[j] = p[j];
       p[j] = p[j] + dp[j];
     }
-    fgauss(y, p, nParam, nData, res);
+    fgauss(y, p, nParam, nData, res, yf);
     chiSqr = cal_xi2(res, nData);
 
     lzmlh=0.;

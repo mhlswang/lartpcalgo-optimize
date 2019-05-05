@@ -12,6 +12,10 @@
 
 #include <omp.h>
 
+#ifdef USE_CALI
+#include <caliper/cali.h>
+#endif
+
 #include "Event.h"
 #include "marqfit.h"
 
@@ -203,6 +207,11 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
 
 void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<struct hitcand> &mhc_vec, std::vector<struct peakparams> &peakparam_vec, float &chi2PerNDF, int &NDF)   
 {
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
   const float chiCut   = 1e-3;
   float lambda   = 0.001;      /* Marquardt damping parameter */
   float  chiSqr = std::numeric_limits<float>::max(), dchiSqr = std::numeric_limits<float>::max();
@@ -271,6 +280,16 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
 
 int main(int argc, char **argv)
 {
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+
+cali_id_t thread_attr = cali_create_attribute("thread_id", CALI_TYPE_INT, CALI_ATTR_ASVALUE | CALI_ATTR_SKIP_EVENTS);
+#pragma omp parallel
+{
+cali_set_int(thread_attr, omp_get_thread_num());
+}
+#endif
 
   FILE* fout = fopen("result.txt","w");
 

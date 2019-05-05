@@ -2,6 +2,10 @@
 #include <cmath>
 #include <vector>
 
+#ifdef USE_CALI
+#include <caliper/cali.h>
+#endif
+
 class marqfit {
   
 public:
@@ -13,7 +17,7 @@ public:
   
 private:
   //these functions are  called by the public functions
-  void fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res);
+  void fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res, std::vector<float> &yf);
   void dgauss(const float p[], const int npar, const int ndat, std::vector<float> &dydp);
   float cal_xi2(const std::vector<float> &res, const int ndat);
   void setup_matrix(const std::vector<float> &res, const std::vector<float> &dydp, const int npar, const int ndat, std::vector<float> &beta, std::vector<float> &alpha);
