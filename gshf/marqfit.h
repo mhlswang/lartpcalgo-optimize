@@ -9,8 +9,8 @@
 class marqfit {
   
 public:
-  explicit marqfit();
-  virtual ~marqfit() {}
+  marqfit(int nData, int nParam);
+  ~marqfit() {}
   
   int cal_perr(float p[], float y[], const int nParam, const int nData, float perr[]);
   int mrqdtfit(float &lambda, float p[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr);
@@ -23,6 +23,17 @@ private:
   void setup_matrix(const std::vector<float> &res, const std::vector<float> &dydp, const int npar, const int ndat, std::vector<float> &beta, std::vector<float> &alpha);
   void solve_matrix(const std::vector<float> &beta, const std::vector<float> &alpha, const int npar, std::vector<float> &dp);
   float invrt_matrix(std::vector<float> &alphaf, const int npar);
+
+
+  std::vector<float> res;
+  std::vector<float> beta;
+  std::vector<float> dp;
+  std::vector<float> alpsav;
+  std::vector<float> psav;
+  std::vector<float> dydp;
+  std::vector<float> alpha;
+  std::vector<float> yf;
+   
 };
 
 

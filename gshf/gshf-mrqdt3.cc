@@ -92,7 +92,11 @@ const int maxhits=2000;
 ifstream iStream;
 streampos currentPos;
 
-void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, const int i1, const int i2, const float roiThreshold)
+void findHitCandidates(const struct wiredata &wd, 
+                       struct found_hc &fhc, 
+                       const int i1, 
+                       const int i2, 
+                       const float roiThreshold)
 {
   int i,maxIndex,ifirst,ilast,nhc;
   float maxValue,x;
@@ -150,7 +154,8 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, const in
   return;
 }
 
-void mergeHitCandidates(const struct found_hc &fhc, struct merged_hc &mhc)
+void mergeHitCandidates(const struct found_hc &fhc, 
+                        struct merged_hc &mhc)
 {
   int i,j,ih,lastTick;
   int g[100];
@@ -181,7 +186,9 @@ void mergeHitCandidates(const struct found_hc &fhc, struct merged_hc &mhc)
   }
 }
 
-void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<struct outdata> > &od_vec, FILE* fout){
+void printHitCandidates(const vector<struct refdata> &rd_vec, 
+                        vector<vector<struct outdata> > &od_vec, 
+                        FILE* fout){
 
   for (int iv=0; iv<od_vec.size(); iv++) {
     int ic_min = -1;
@@ -205,7 +212,11 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
   }
 }
 
-void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<struct hitcand> &mhc_vec, std::vector<struct peakparams> &peakparam_vec, float &chi2PerNDF, int &NDF)   
+void findPeakParameters(const std::vector<float> &adc_vec, 
+                        const std::vector<struct hitcand> &mhc_vec, 
+                        std::vector<struct peakparams> &peakparam_vec, 
+                        float &chi2PerNDF, 
+                        int &NDF)   
 {
 
 #ifdef USE_CALI
@@ -249,17 +260,18 @@ CALI_CXX_MARK_FUNCTION;
     y[idx]=adc;
   }
 
+  marqfit fmarqfit(roiSize, nParams);
   int trial=0;
   lambda=-1.;   /* initialize lambda on first call */
   do{
-    fitResult=fmarqfit->marqfit::mrqdtfit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
+    fitResult=fmarqfit.mrqdtfit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
     trial++;
     if(fitResult||(trial>100))break;
   }
   while (fabs(dchiSqr) >= chiCut);
 
   if (!fitResult){
-    int fitResult2=fmarqfit->marqfit::cal_perr(p,y,nParams,roiSize,perr);
+    int fitResult2=fmarqfit.cal_perr(p,y,nParams,roiSize,perr);
     if (!fitResult2){
       int NDF = roiSize - nParams;
       chi2PerNDF = chiSqr / NDF;

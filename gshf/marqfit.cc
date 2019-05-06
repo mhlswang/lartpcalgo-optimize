@@ -1,5 +1,18 @@
 #include "marqfit.h"
 
+marqfit::marqfit(int nData, int nParam) {
+
+  res.reserve(nData);
+  beta.reserve(nParam);
+  dp.reserve(nParam);
+  alpsav.reserve(nParam);
+  psav.reserve(nParam);
+  dydp.reserve(nData*nParam);
+  alpha.reserve(nParam*nParam);
+  yf.reserve(nData);
+
+}
+
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
 void marqfit::fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res, std::vector<float> &yf){ 
 
@@ -287,7 +300,11 @@ CALI_CXX_MARK_FUNCTION;
 }
 
 /* Calculate parameter errors */
-int marqfit::cal_perr(float p[], float y[], const int nParam, const int nData, float perr[]) {
+int marqfit::cal_perr(float p[], 
+                      float y[], 
+                      const int nParam, 
+                      const int nData, 
+                      float perr[]) {
 
 #ifdef USE_CALI
 CALI_CXX_MARK_FUNCTION;
@@ -296,11 +313,11 @@ CALI_CXX_MARK_FUNCTION;
   int i,j,k;
   float det;
 
-  std::vector<float> res(nData);
-  std::vector<float> yf(nData);
-  std::vector<float> dydp(nData*nParam);
-  std::vector<float> beta(nParam);
-  std::vector<float> alpha(nParam*nParam);
+  // std::vector<float> res(nData);
+  // std::vector<float> yf(nData);
+  // std::vector<float> dydp(nData*nParam);
+  // std::vector<float> beta(nParam);
+  // std::vector<float> alpha(nParam*nParam);
   std::vector<std::vector<float>> alpsav(nParam,std::vector<float>(nParam));
    
   fgauss(y, p, nParam, nData, res, yf);
@@ -325,7 +342,13 @@ CALI_CXX_MARK_FUNCTION;
   return 0;
 }
 
-int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr) {
+int marqfit::mrqdtfit(float &lambda, 
+                      float p[], 
+                      float y[], 
+                      const int nParam, 
+                      const int nData, 
+                      float &chiSqr, 
+                      float &dchiSqr) {
 
 #ifdef USE_CALI
 CALI_CXX_MARK_FUNCTION;
@@ -334,14 +357,14 @@ CALI_CXX_MARK_FUNCTION;
   int i,j;
   float nu,rho,lzmlh,amax,chiSq0;
 
-  std::vector<float> res(nData);
-  std::vector<float> beta(nParam);
-  std::vector<float> dp(nParam);
-  std::vector<float> alpsav(nParam);
-  std::vector<float> psav(nParam);
-  std::vector<float> dydp(nData*nParam);
-  std::vector<float> alpha(nParam*nParam);
-  std::vector<float> yf(nData);
+  // std::vector<float> res(nData);
+  // std::vector<float> beta(nParam);
+  // std::vector<float> dp(nParam);
+  // std::vector<float> alpsav(nParam);
+  // std::vector<float> psav(nParam);
+  // std::vector<float> dydp(nData*nParam);
+  // std::vector<float> alpha(nParam*nParam);
+  // std::vector<float> yf(nData);
   
   fgauss(y, p, nParam, nData, res, yf);
   chiSq0=cal_xi2(res, nData);
