@@ -31,7 +31,7 @@
 using namespace std;
 using namespace gshf;
 
-std::unique_ptr<marqfit> fmarqfit;
+// std::unique_ptr<marqfit> fmarqfit;
 
 struct hitcand {
   int starttck;

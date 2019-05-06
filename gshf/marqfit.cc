@@ -107,8 +107,8 @@ CALI_CXX_MARK_FUNCTION;
   float hmax,hsav;//,h[npar][npar+1];
 
   std::vector<std::vector<float>> h(npar, std::vector<float>(npar+1,0));
-  // if (false) {
-  if (npar == 3) {
+  if (false) {
+  // if (npar == 3) {
     // do 3x3 which is most
     float adj[9];
 
