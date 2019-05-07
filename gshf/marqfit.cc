@@ -107,8 +107,8 @@ CALI_CXX_MARK_FUNCTION;
   float hmax,hsav;//,h[npar][npar+1];
 
   std::vector<std::vector<float>> h(npar, std::vector<float>(npar+1,0));
-  if (false) {
-  // if (npar == 3) {
+  // if (false) {
+  if (npar == 3) {
     // do 3x3 which is most
     float adj[9];
 
@@ -175,13 +175,14 @@ CALI_CXX_MARK_FUNCTION;
           h[j][k+1]-=h[i][k+1]*h[j][i]/h[i][i];
         }
       }
-    } //else
-  }
+    } 
 
-  /* ... scale (N+1)'th column with factor which normalizes the diagonal */
-  for(i=0;i<npar;i++){
-    dp[i]=h[i][npar]/h[i][i];
-  }
+    /* ... scale (N+1)'th column with factor which normalizes the diagonal */
+    for(i=0;i<npar;i++){
+      dp[i]=h[i][npar]/h[i][i];
+    }
+
+  } //else
 
 }
 
