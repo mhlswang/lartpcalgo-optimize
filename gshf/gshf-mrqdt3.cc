@@ -212,7 +212,7 @@ void printHitCandidates(const vector<struct refdata> &rd_vec,
   }
 }
 
-void findPeakParameters(const std::vector<float> &adc_vec, 
+double findPeakParameters(const std::vector<float> &adc_vec, 
                         const std::vector<struct hitcand> &mhc_vec, 
                         std::vector<struct peakparams> &peakparam_vec, 
                         float &chi2PerNDF, 
@@ -233,6 +233,8 @@ CALI_CXX_MARK_FUNCTION;
   int endTime = mhc_vec[mhc_vec.size()-1].stoptck;
   
   int roiSize = endTime - startTime;
+
+  double time_start, time_tot = 0.;
   
   /* choose the fit function and set the parameters */
   nParams = 0;
@@ -260,6 +262,9 @@ CALI_CXX_MARK_FUNCTION;
     y[idx]=adc;
   }
 
+
+  time_start = omp_get_wtime();
+
   marqfit fmarqfit(roiSize, nParams);
   int trial=0;
   lambda=-1.;   /* initialize lambda on first call */
@@ -269,6 +274,8 @@ CALI_CXX_MARK_FUNCTION;
     if(fitResult||(trial>100))break;
   }
   while (fabs(dchiSqr) >= chiCut);
+
+  time_tot += omp_get_wtime() - time_start;
 
   if (!fitResult){
     int fitResult2=fmarqfit.cal_perr(p,y,nParams,roiSize,perr);
@@ -288,6 +295,7 @@ CALI_CXX_MARK_FUNCTION;
       }
     }
   }
+  return time_tot;
 }
 
 int main(int argc, char **argv)
@@ -318,6 +326,10 @@ cali_set_int(thread_attr, omp_get_thread_num());
   double tottimefindpl = 0;
   double tp = 0;
   //int itcounter = 0;
+
+  double fpp_start   = 0.;
+  double fpp_tot     = 0.;
+  double fpp_section = 0.;
 
   if( argc == 2 ) fname = argv[1];
 
@@ -419,7 +431,9 @@ cali_set_int(thread_attr, omp_get_thread_num());
 	      int fitStat=-1;
 
 	      if(mhc.mh[i].nh <= MaxMultiHit){
-		findPeakParameters(adcvec,mhc_vec,pp_vec,chi2PerNDF, NDF);
+    fpp_start = omp_get_wtime();
+		fpp_section += findPeakParameters(adcvec,mhc_vec,pp_vec,chi2PerNDF, NDF);
+    fpp_tot += omp_get_wtime() - fpp_start;
 				
 		if(chi2PerNDF <= 1.79769e+308){
 		  ngausshits++;
@@ -474,7 +488,9 @@ cali_set_int(thread_attr, omp_get_thread_num());
   std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
             << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
             << std::endl;
-  std::cout << "time without I/O=" << tottime - tottimeread - tottimeprint << endl;
+  std::cout << "time without I/O =" << tottime - tottimeread - tottimeprint << endl;
+  std::cout << "FPP total time   =" << fpp_tot << endl;
+  std::cout << "FPP section time =" << fpp_section << endl;
 
   return 0;
 }
