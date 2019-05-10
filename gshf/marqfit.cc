@@ -17,7 +17,7 @@ marqfit::marqfit(int nData, int nParam) {
 void marqfit::fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res, std::vector<float> &yf){ 
 
 #ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
+// CALI_CXX_MARK_FUNCTION;
 #endif
 
 #pragma omp simd
@@ -34,7 +34,7 @@ CALI_CXX_MARK_FUNCTION;
 void marqfit::dgauss(const float p[], const int npar, const int ndat, std::vector<float> &dydp){
 
 #ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
+// CALI_CXX_MARK_FUNCTION;
 #endif
 
 #pragma ivdep
@@ -55,7 +55,7 @@ CALI_CXX_MARK_FUNCTION;
 float marqfit::cal_xi2(const std::vector<float> &res, const int ndat){
 
 #ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
+// CALI_CXX_MARK_FUNCTION;
 #endif
 
   int i;
@@ -71,7 +71,7 @@ CALI_CXX_MARK_FUNCTION;
 void marqfit::setup_matrix(const std::vector<float> &res, const std::vector<float> &dydp, const int npar, const int ndat, std::vector<float> &beta, std::vector<float> &alpha) {
 
 #ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
+// CALI_CXX_MARK_FUNCTION;
 #endif
 
   int i,j,k;
@@ -100,7 +100,7 @@ CALI_CXX_MARK_FUNCTION;
 void marqfit::solve_matrix(const std::vector<float> &beta, const std::vector<float> &alpha, const int npar, std::vector<float> &dp) {
 
 #ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
+// CALI_CXX_MARK_FUNCTION;
 #endif
 
   int i,j,k,imax;
@@ -189,7 +189,7 @@ CALI_CXX_MARK_FUNCTION;
 float marqfit::invrt_matrix(std::vector<float> &alphaf, const int npar) {
 
 #ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
+// CALI_CXX_MARK_FUNCTION;
 #endif
 
   /*
@@ -308,7 +308,7 @@ int marqfit::cal_perr(float p[],
                       float perr[]) {
 
 #ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
+// CALI_CXX_MARK_FUNCTION;
 #endif
 
   int i,j,k;
@@ -352,7 +352,7 @@ int marqfit::mrqdtfit(float &lambda,
                       float &dchiSqr) {
 
 #ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
+// CALI_CXX_MARK_FUNCTION;
 #endif
 
   int i,j;

@@ -212,7 +212,7 @@ void printHitCandidates(const vector<struct refdata> &rd_vec,
   }
 }
 
-double findPeakParameters(const std::vector<float> &adc_vec, 
+void findPeakParameters(const std::vector<float> &adc_vec, 
                         const std::vector<struct hitcand> &mhc_vec, 
                         std::vector<struct peakparams> &peakparam_vec, 
                         float &chi2PerNDF, 
@@ -234,7 +234,6 @@ CALI_CXX_MARK_FUNCTION;
   
   int roiSize = endTime - startTime;
 
-  double time_start, time_tot = 0.;
   
   /* choose the fit function and set the parameters */
   nParams = 0;
@@ -263,7 +262,9 @@ CALI_CXX_MARK_FUNCTION;
   }
 
 
-  time_start = omp_get_wtime();
+#ifdef USE_CALI
+CALI_MARK_BEGIN("fpp while loop");
+#endif
 
   marqfit fmarqfit(roiSize, nParams);
   int trial=0;
@@ -275,7 +276,10 @@ CALI_CXX_MARK_FUNCTION;
   }
   while (fabs(dchiSqr) >= chiCut);
 
-  time_tot += omp_get_wtime() - time_start;
+#ifdef USE_CALI
+CALI_MARK_END("fpp while loop");
+#endif
+
 
   if (!fitResult){
     int fitResult2=fmarqfit.cal_perr(p,y,nParams,roiSize,perr);
@@ -295,14 +299,13 @@ CALI_CXX_MARK_FUNCTION;
       }
     }
   }
-  return time_tot;
 }
 
 int main(int argc, char **argv)
 {
 
 #ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
+// CALI_CXX_MARK_FUNCTION;
 
 cali_id_t thread_attr = cali_create_attribute("thread_id", CALI_TYPE_INT, CALI_ATTR_ASVALUE | CALI_ATTR_SKIP_EVENTS);
 #pragma omp parallel
@@ -326,10 +329,6 @@ cali_set_int(thread_attr, omp_get_thread_num());
   double tottimefindpl = 0;
   double tp = 0;
   //int itcounter = 0;
-
-  double fpp_start   = 0.;
-  double fpp_tot     = 0.;
-  double fpp_section = 0.;
 
   if( argc == 2 ) fname = argv[1];
 
@@ -431,9 +430,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
 	      int fitStat=-1;
 
 	      if(mhc.mh[i].nh <= MaxMultiHit){
-    fpp_start = omp_get_wtime();
-		fpp_section += findPeakParameters(adcvec,mhc_vec,pp_vec,chi2PerNDF, NDF);
-    fpp_tot += omp_get_wtime() - fpp_start;
+		findPeakParameters(adcvec,mhc_vec,pp_vec,chi2PerNDF, NDF);
 				
 		if(chi2PerNDF <= 1.79769e+308){
 		  ngausshits++;
@@ -489,8 +486,6 @@ cali_set_int(thread_attr, omp_get_thread_num());
             << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
             << std::endl;
   std::cout << "time without I/O =" << tottime - tottimeread - tottimeprint << endl;
-  std::cout << "FPP total time   =" << fpp_tot << endl;
-  std::cout << "FPP section time =" << fpp_section << endl;
-
+  
   return 0;
 }
