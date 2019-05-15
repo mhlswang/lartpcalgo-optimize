@@ -202,7 +202,7 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
 }
 
 
-int doFit(float lambda, float p[], float y[], int nParams, int roiSize, float chiSqr, float dchiSqr){
+int doFit(float &lambda, float p[], float y[], int &nParams, int &roiSize, float &chiSqr, float &dchiSqr){
   const float chiCut   = 1e-3;
   int fitResult=-1;
 
