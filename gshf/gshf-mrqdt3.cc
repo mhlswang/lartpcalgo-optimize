@@ -281,6 +281,10 @@ CALI_MARK_END("fpp while loop");
 #endif
 
 
+#ifdef USE_CALI
+CALI_MARK_BEGIN("fpp cal perr loop");
+#endif
+
   if (!fitResult){
     int fitResult2=fmarqfit.cal_perr(p,y,nParams,roiSize,perr);
     if (!fitResult2){
@@ -299,6 +303,11 @@ CALI_MARK_END("fpp while loop");
       }
     }
   }
+
+#ifdef USE_CALI
+CALI_MARK_END("fpp cal perr loop");
+#endif
+
 }
 
 int main(int argc, char **argv)

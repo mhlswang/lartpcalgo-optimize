@@ -20,6 +20,8 @@ void marqfit::fgauss(const float yd[], const float p[], const int npar, const in
 // CALI_CXX_MARK_FUNCTION;
 #endif
 
+  __assume_aligned(yd, 64);
+  __assume_aligned(p, 64);
 #pragma omp simd
   for(int i=0;i<ndat;i++){
     yf[i]=0.;

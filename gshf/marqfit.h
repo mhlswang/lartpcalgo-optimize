@@ -24,7 +24,6 @@ private:
   void solve_matrix(const std::vector<float> &beta, const std::vector<float> &alpha, const int npar, std::vector<float> &dp);
   float invrt_matrix(std::vector<float> &alphaf, const int npar);
 
-
   std::vector<float> res;
   std::vector<float> beta;
   std::vector<float> dp;
