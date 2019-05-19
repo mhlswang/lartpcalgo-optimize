@@ -47,12 +47,6 @@ gshf-mrqdt3:
 gshf-mrqdt3-gmac:
 	${CXX} -std=c++11 ${OPT} ${CPPFLAGS} -o gshf-mrqdt3 gshf-mrqdt3.cc marqfit.cc Event.cc ${LDFLAGS}
 
-gshf-mrqdt2:
-	${CXX} ${OPT} ${CPPFLAGS} -o gshf-mrqdt2 gshf-mrqdt3.cc marqfit.cc Event.cc ${LDFLAGS}
-
-gshf-mrqdt2-knl:
-	${CXX} ${OPT} ${CPPFLAGS} -o gshf-mrqdt2 gshf-mrqdt2.cc  marqfit.cc ${LDFLAGS}
-
 clean:	
 	rm -f gshf-mrqdt3 gshf-mrqdt2 gshf-levmar *.optrpt *.o 
 
