@@ -1,24 +1,58 @@
-PROGNAME = gshf
-SOURCEFILES = gshf.cc
-OBJS    = $(patsubst %.cc, %.o, $(SOURCEFILES))
 
-ROOTCFLAGS   := $(shell root-config --cflags)
-ROOTLIBS     := $(shell root-config --libs)
-ROOTGLIBS    := $(shell root-config --glibs)
 
-LDFLAGS       = -O
-LIBS         += $(ROOTLIBS)
-CFLAGS       += $(ROOTCFLAGS)
+AVX_512 := 1
+#AVX2    := 1
 
-%.o: %.cc
-	g++ ${CFLAGS} -c  -g -o $@ $<
+CPPFLAGS := -std=c++11 # this is hwere to add include links 
+# LDFLAGS  := # nothing yet but this is hwere to add library links 
 
-$(PROGNAME):    $(OBJS)
-	g++ -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
+ifdef INTEL_LICENSE_FILE
+	CXX=icpc
+	CPPFLAGS += -qopenmp
+else
+	CXX=g++
+	CPPFLAGS += -fopenmp
+endif
 
-test:
-	@echo $(ROOTCFLAGS)
+OPT = -g -O3
+ifdef AVX_512
+	ifeq (${CXX},icpc)
+		OPT  += -qopt-zmm-usage=high -xCORE-AVX512 -qopt-report=5 
+	else
+		OPT  += -mavx512f -mavx512cd
+	endif
+else ifdef AVX2
+	OPT  += -mavx2
+else
+	OPT  += -mavx
+endif
+
+ifdef USE_CALI 
+  CPPFLAGS += -I${CALIPER_DIR}/include
+  CPPFLAGS += -DUSE_CALI
+  LDFLAGS  += -L${CALIPER_DIR}/lib64 
+  LDFLAGS  += -lcaliper
+endif
+
+ifdef WITH_ROOT
+  CPPFLAGS += $(shell root-config --cflags)
+  LDFLAGS  += $(shell root-config --libs)
+else
+  CPPFLAGS += -DNO_ROOT
+endif
+
+gshf-mrqdt3:
+	${CXX} ${OPT} ${CPPFLAGS} -o gshf-mrqdt3 gshf-mrqdt3.cc marqfit.cc Event.cc  ${LDFLAGS}
+
+gshf-mrqdt3-gmac:
+	${CXX} -std=c++11 ${OPT} ${CPPFLAGS} -o gshf-mrqdt3 gshf-mrqdt3.cc marqfit.cc Event.cc ${LDFLAGS}
+
+gshf-mrqdt2:
+	${CXX} ${OPT} ${CPPFLAGS} -o gshf-mrqdt2 gshf-mrqdt3.cc marqfit.cc Event.cc ${LDFLAGS}
+
+gshf-mrqdt2-knl:
+	${CXX} ${OPT} ${CPPFLAGS} -o gshf-mrqdt2 gshf-mrqdt2.cc  marqfit.cc ${LDFLAGS}
 
 clean:	
-	-rm -f ${PROGNAME} ${OBJS}
+	rm -f gshf-mrqdt3 gshf-mrqdt2 gshf-levmar *.optrpt *.o 
 
