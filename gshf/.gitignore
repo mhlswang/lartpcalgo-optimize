@@ -1,0 +1,12 @@
+*.out
+*.txt
+*.bin
+*.o
+gshf-mrqdt3
+gshf-mrqdt2
+
+*.optrpt
+
+cali*
+*.json
+
