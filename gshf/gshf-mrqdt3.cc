@@ -228,18 +228,25 @@ void printHitCandidates(const vector<struct refdata> &rd_vec,
    f     out:    function value f(x) */
 void extended_powell (MKL_INT * m, MKL_INT * n, float *x, float *f)
 {
-    MKL_INT i;
+  MKL_INT i,j;
 
-    for (i = 0; i < (*n) / 4; i++)
-    {
-        f[4 * i] = x[4 * i] + 10.0 * x[4 * i + 1];
-        f[4 * i + 1] = 2.2360679774998 * (x[4 * i + 2] - x[4 * i + 3]);
-        f[4 * i + 2] = (x[4 * i + 1] - 2.0 * x[4 * i + 2]) * 
-                       (x[4 * i + 1] - 2.0 * x[4 * i + 2]);
-        f[4 * i + 3] = 3.1622776601684 * (x[4 * i] - x[4 * i + 3]) * 
-                                         (x[4 * i] - x[4 * i + 3]);
+    // for (i = 0; i < (*n) / 4; i++)
+    // {
+    //     f[4 * i] = x[4 * i] + 10.0 * x[4 * i + 1];
+    //     f[4 * i + 1] = 2.2360679774998 * (x[4 * i + 2] - x[4 * i + 3]);
+    //     f[4 * i + 2] = (x[4 * i + 1] - 2.0 * x[4 * i + 2]) * 
+    //                    (x[4 * i + 1] - 2.0 * x[4 * i + 2]);
+    //     f[4 * i + 3] = 3.1622776601684 * (x[4 * i] - x[4 * i + 3]) * 
+    //                                      (x[4 * i] - x[4 * i + 3]);
+    // }
+
+  for(i=0;i<(*m);i++){
+    f[i] = 0;
+    for(j=0;j<(*n);j+=3){
+      f[i] = f[i] + x[j]*std::exp(-0.5*std::pow((float(i)-x[j+1])/x[j+2],2));
     }
-    return;
+  }
+  return;
 }
 
 int doFit(float &lambda,  // 
@@ -260,7 +267,7 @@ CALI_CXX_MARK_FUNCTION;
   MKL_INT n = nParams;
   MKL_INT m = roiSize;
   /* precisions for stop-criteria (see manual for more details) */
-  const float eps[6]={0.00001,0.00001,0.00001,0.00001,0.00001,0.00001}; /* set precisions for stop-criteria */
+  const float eps[6]={0.00001,0.00001,0.00001,0.00001,0.00001,0.00001}; 
   /* precision of the Jacobian matrix calculation */
   float jac_eps;
   /* solution vector. contains values x for f(x) */
@@ -306,11 +313,11 @@ CALI_CXX_MARK_FUNCTION;
   }
 
   /* set precision of the Jacobian matrix calculation */
-  jac_eps = 0.00000001;
+  jac_eps = 0.0001;
 
   /* set initial values */
   for (i = 0; i < n; i++) x[i] = p[i];
-  for (i = 0; i < m; i++) fvec[i] = y[i];//0.0;
+  for (i = 0; i < m; i++) fvec[i] = y[i];
   for (i = 0; i < m * n; i++) fjac[i] = 0.0;
 
   /* initialize solver (allocate memory, set initial values)
@@ -322,7 +329,7 @@ CALI_CXX_MARK_FUNCTION;
    iter1   in:     maximum number of iterations
    iter2   in:     maximum number of iterations of calculation of trial-step
    rs      in:     initial step bound */
-  std::cout << "init..." << endl;
+  // std::cout << "init..." << endl;
   if (strnlsp_init (&handle, &n, &m, x, eps, &iter1, &iter2, &rs) != TR_SUCCESS)
   {
     MKL_Free_Buffers ();
@@ -333,7 +340,7 @@ CALI_CXX_MARK_FUNCTION;
 
   /* Checks the correctness of handle and arrays containing Jacobian matrix, 
    objective function, lower and upper bounds, and stopping criteria. */
-  std::cout << "check..." << endl;
+  // std::cout << "check..." << endl;
   if (strnlsp_check (&handle, &n, &m, fjac, fvec, eps, info) != TR_SUCCESS)
   {
     MKL_Free_Buffers ();
@@ -359,7 +366,7 @@ CALI_CXX_MARK_FUNCTION;
   successful = 0;
   /* rci cycle */
 
-  std::cout << "loop..." << endl;
+  // std::cout << "loop..." << endl;
   while (successful == 0)
   {
     /* call tr solver
@@ -385,6 +392,7 @@ CALI_CXX_MARK_FUNCTION;
       n            in:     number of function variables
       x            in:     solution vector
       fvec    out:    function value f(x) */
+      // std::cout << "RCI 1" <<  endl;
       extended_powell (&m, &n, x, fvec);
     }
     if (RCI_Request == 2)
@@ -396,6 +404,7 @@ CALI_CXX_MARK_FUNCTION;
       fjac            out:    jacobi matrix
       x               in:     solution vector
       jac_eps         in:     jacobi calculation precision */
+      // std::cout << "RCI 2" <<  endl;
       if (sjacobi (extended_powell, &n, &m, fjac, x, &jac_eps) !=  TR_SUCCESS)
       {
         MKL_Free_Buffers ();
