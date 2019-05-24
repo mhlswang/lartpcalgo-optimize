@@ -213,7 +213,18 @@ void printHitCandidates(const vector<struct refdata> &rd_vec,
 }
 
 
-int doFit(float &lambda, float p[], float y[], int &nParams, int &roiSize, float &chiSqr, float &dchiSqr){
+int doFit(float &lambda, 
+          float p[], 
+          float y[], 
+          int &nParams, 
+          int &roiSize, 
+          float &chiSqr, 
+          float &dchiSqr){
+  
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
   const float chiCut   = 1e-3;
   int fitResult=-1;
 
