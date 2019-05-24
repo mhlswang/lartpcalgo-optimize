@@ -212,6 +212,23 @@ void printHitCandidates(const vector<struct refdata> &rd_vec,
   }
 }
 
+
+int doFit(float &lambda, float p[], float y[], int &nParams, int &roiSize, float &chiSqr, float &dchiSqr){
+  const float chiCut   = 1e-3;
+  int fitResult=-1;
+
+  int trial=0;
+  lambda=-1.;   /* initialize lambda on first call */
+  do{
+    fitResult=fmarqfit->marqfit::mrqdtfit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
+    trial++;
+    if(fitResult||(trial>100))break;
+  }
+  while (fabs(dchiSqr) >= chiCut);
+
+  return fitResult;
+}
+
 void findPeakParameters(const std::vector<float> &adc_vec, 
                         const std::vector<struct hitcand> &mhc_vec, 
                         std::vector<struct peakparams> &peakparam_vec, 
@@ -223,7 +240,6 @@ void findPeakParameters(const std::vector<float> &adc_vec,
 CALI_CXX_MARK_FUNCTION;
 #endif
 
-  const float chiCut   = 1e-3;
   float lambda   = 0.001;      /* Marquardt damping parameter */
   float  chiSqr = std::numeric_limits<float>::max(), dchiSqr = std::numeric_limits<float>::max();
   int nParams=0;
@@ -261,29 +277,7 @@ CALI_CXX_MARK_FUNCTION;
     y[idx]=adc;
   }
 
-
-#ifdef USE_CALI
-CALI_MARK_BEGIN("fpp while loop");
-#endif
-
-  marqfit fmarqfit(roiSize, nParams);
-  int trial=0;
-  lambda=-1.;   /* initialize lambda on first call */
-  do{
-    fitResult=fmarqfit.mrqdtfit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
-    trial++;
-    if(fitResult||(trial>100))break;
-  }
-  while (fabs(dchiSqr) >= chiCut);
-
-#ifdef USE_CALI
-CALI_MARK_END("fpp while loop");
-#endif
-
-
-#ifdef USE_CALI
-CALI_MARK_BEGIN("fpp cal perr loop");
-#endif
+  fitResult=doFit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
 
   if (!fitResult){
     int fitResult2=fmarqfit.cal_perr(p,y,nParams,roiSize,perr);
@@ -303,10 +297,6 @@ CALI_MARK_BEGIN("fpp cal perr loop");
       }
     }
   }
-
-#ifdef USE_CALI
-CALI_MARK_END("fpp cal perr loop");
-#endif
 
 }
 
