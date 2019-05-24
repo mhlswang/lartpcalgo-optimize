@@ -240,6 +240,7 @@ void extended_powell (MKL_INT * m, MKL_INT * n, float *x, float *f)
     //                                      (x[4 * i] - x[4 * i + 3]);
     // }
 
+  #pragma simd
   for(i=0;i<(*m);i++){
     f[i] = 0;
     for(j=0;j<(*n);j+=3){
@@ -313,7 +314,7 @@ CALI_CXX_MARK_FUNCTION;
   }
 
   /* set precision of the Jacobian matrix calculation */
-  jac_eps = 0.0001;
+  jac_eps = 0.000001;
 
   /* set initial values */
   for (i = 0; i < n; i++) x[i] = p[i];
