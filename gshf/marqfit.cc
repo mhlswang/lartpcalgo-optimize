@@ -362,10 +362,10 @@ CALI_CXX_MARK_FUNCTION;
   std::vector<float> alpha(nParam*nParam);
   std::vector<float> yf(nData);
   
-  fgauss(y, p, nParam, nData, res, yf);
+  fgauss(y, p, nParam, nData, res, yf); // sets up res
   chiSq0=cal_xi2(res, nData);
-  dgauss(p, nParam, nData, dydp);
-  setup_matrix(res, dydp, nParam, nData, beta, alpha);
+  dgauss(p, nParam, nData, dydp); // sets up dydp
+  setup_matrix(res, dydp, nParam, nData, beta, alpha); // sets beta and alpha
   if(lambda<0.){
     amax=-999.;
     for(j = 0; j < nParam; j++){
@@ -377,7 +377,7 @@ CALI_CXX_MARK_FUNCTION;
     alpsav[j]=alpha[j*nParam+j];
     alpha[j*nParam+j]=alpsav[j]+lambda;
   }
-  solve_matrix(beta, alpha, nParam, dp);
+  solve_matrix(beta, alpha, nParam, dp); // solve beta and alpha -> dp
 
   nu=2.;
   rho=-1.;
@@ -385,7 +385,7 @@ CALI_CXX_MARK_FUNCTION;
   do{
     for(j=0;j<nParam;j++){
       psav[j] = p[j];
-      p[j] = p[j] + dp[j];
+      p[j] = p[j] + dp[j]; //update p
     }
     fgauss(y, p, nParam, nData, res, yf);
     chiSqr = cal_xi2(res, nData);
@@ -395,17 +395,20 @@ CALI_CXX_MARK_FUNCTION;
       lzmlh+=dp[j]*(lambda*dp[j]+beta[j]);
     }
     rho=2.*(chiSq0-chiSqr)/lzmlh;
-    if (rho<0.){
-      for (j=0;j<nParam;j++)p[j]=psav[j];
+
+    if (rho<0.){ // if not done
+      for (j=0;j<nParam;j++)p[j]=psav[j]; // reset p
       chiSqr=chiSq0;
       lambda = nu*lambda;
       nu=2.*nu;
       for(j = 0; j < nParam; j++){
-        alpha[j*nParam+j]=alpsav[j]+lambda;
+        alpha[j*nParam+j]=alpsav[j]+lambda; // tweak alpha
       }
-      solve_matrix(beta, alpha, nParam, dp);
+      solve_matrix(beta, alpha, nParam, dp); // re - solve
     }
+
   } while(rho<0.);
+
   lambda=lambda*fmax(0.333333,1.-pow(2.*rho-1.,3));  
   dchiSqr=chiSqr-chiSq0;
   return 0;
