@@ -31,7 +31,7 @@
 using namespace std;
 using namespace gshf;
 
-// std::unique_ptr<marqfit> fmarqfit;
+std::unique_ptr<marqfit> fmarqfit;
 
 struct hitcand {
   int starttck;
@@ -280,7 +280,7 @@ CALI_CXX_MARK_FUNCTION;
   fitResult=doFit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
 
   if (!fitResult){
-    int fitResult2=fmarqfit.cal_perr(p,y,nParams,roiSize,perr);
+    int fitResult2=fmarqfit->cal_perr(p,y,nParams,roiSize,perr);
     if (!fitResult2){
       int NDF = roiSize - nParams;
       chi2PerNDF = chiSqr / NDF;
