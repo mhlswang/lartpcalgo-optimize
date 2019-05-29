@@ -20,35 +20,91 @@ which then we can compare to our versions of the fitterr
 by looking at `rd_vec[iv].rms` compared to `od_vec[iv][ic_min].mytck` for both marqfit and MKL
 
 '''
+import numpy as np
+import matplotlib.pyplot as plt
+
+NAMES = {
+  "od_vec.n": 0,
+  "od_vec.imh": 1,
+  "od_vec.ipp": 2,
+  "rd_vec.simtck": 3,
+  "rd_vec.rectck": 4,
+  "rd_vec.rms": 5,
+  "od_vec.mytck": 6,
+  "od_vec.mysigma": 7
+}
+
+class ResultData(object):
+	"""docstring for ResultData"""
+	def __init__(self, filename):
+		
+		self.filename = filename
+		self.data_li = []
+		self._load_data()
 
 
+	def _load_data(self):
 
-if __name__ == '__main__':
-	
-	f_known = open("og_result.txt", "r")
-	f_new   = open("mkl_results.txt", "r")
+		f = open(self.filename, "r")
 
-	known_li = []
-	new_li   = []
+		for line in f:
+			self.data_li.append([float(x) for x in line.split()])
 
-	for line in f_known:
-		known_li.append([float(x) for x in line.split()])
+		f.close()
 
-	for line in f_new:
-		new_li.append([float(x) for x in line.split()])
+	def get_column(self,col_name):
+		try:
+			li = [x[NAMES[col_name]] for x in self.data_li]	
+		except:
+			li = []
+			print "ERROR: get_column; no such name"	
 
-	for old,new in zip(known_li,new_li):
+		return li
+
+
+def fraction_different(self,old, new):
+	for old_row,new_row in zip(old.data_li,new.data_li):
 		out = ""
 		i = 0
-		for o,n in zip(old,new):
+		for o,n in zip(old_row,new_row):
 			if i > 2:
 				out = out + str((o-n)/o) + ','
 			i = i + 1 
 
 		print out
 
-	f_new.close()
-	f_known.close()
+
+if __name__ == '__main__':
+
+	old = ResultData("og_result.txt")
+	new = ResultData("mkl_results.txt")
+
+
+	old_rms   = old.get_column("rd_vec.rms")
+	old_mytck = old.get_column("od_vec.mytck")
+	new_rms   = new.get_column("rd_vec.rms")
+	new_mytck = new.get_column("od_vec.mytck")
+ 	diff_rms   = [o-n for o,n in zip(old_rms,new_rms)]
+ 	diff_mytck = [o-n for o,n in zip(old_mytck,new_mytck)]
+
+	x = range(len(old_rms))
+
+	plt.figure(1)
+	plt.plot(x, new_rms, 'bs',  ms=0.7)
+	plt.plot(x, old_rms, 'r^', ms=0.2)
+	plt.savefig('pos0.png')
+
+	plt.figure(2)
+	plt.plot(x, new_mytck, 'bs',  ms=0.7)
+	plt.plot(x, old_mytck, 'r^', ms=0.2)
+	plt.savefig('pos1.png')
+ 
+	plt.figure(3)
+	plt.plot(x, diff_mytck, 'bs',  ms=0.7)
+	plt.plot(x, diff_rms,   'r^', ms=0.2)
+	plt.savefig('pos2.png')
+
+
 
 
 
