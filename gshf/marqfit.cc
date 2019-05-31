@@ -2,31 +2,83 @@
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
 void marqfit::fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res){
+
+  int npeaks = npar/3;
+
   std::vector<float> yf(ndat);
+  std::vector<float> p0(npeaks);
+  std::vector<float> p1(npeaks);
+  std::vector<float> p2(npeaks);
+
+  //temporary conversion to remove +=3 in loop
+  int ik=0;
+  for(int k=0; k<npar; k+=3){
+    
+    p0[ik]=p[k];
+    p1[ik]=p[k+1];
+    p2[ik]=p[k+2];
+
+    ik++;
+  }
+  if(ik!=npeaks){
+    std::cout<<"warning number of peaks wrong"<<std::endl;
+  }
 #pragma omp simd
   for(int i=0;i<ndat;i++){
     yf[i]=0.;
-    for(int j=0;j<npar;j+=3){
-      yf[i] = yf[i] + p[j]*std::exp(-0.5*std::pow((float(i)-p[j+1])/p[j+2],2));
+    for(int j=0;j<npeaks;j++){
+      yf[i] = yf[i] + p0[j]*std::exp(-0.5*std::pow((float(i)-p1[j])/p2[j],2));
     }
     res[i]=yd[i]-yf[i];
   }
+
 }
 
 /* analytic derivatives for multi-Gaussian function in fgauss */
 void marqfit::dgauss(const float p[], const int npar, const int ndat, std::vector<float> &dydp){
+
+  int npeaks = npar/3;
+  
+  std::vector<float> p0(npeaks);
+  std::vector<float> p1(npeaks);
+  std::vector<float> p2(npeaks);
+
+  std::vector<float> dydp0(npeaks*ndat);
+  std::vector<float> dydp1(npeaks*ndat);
+  std::vector<float> dydp2(npeaks*ndat);
+
+  
+  //temporary conversion to remove +=3 in loop
+  int ik=0;
+  for(int k=0; k<npar; k+=3){
+    p0[ik]=p[k];
+    p1[ik]=p[k+1];
+    p2[ik]=p[k+2];
+    ik++;
+  }
+
 #pragma ivdep
 #pragma omp simd 
   for(int i=0;i<ndat;i++){
-    for(int j=0;j<npar;j+=3){
-      const float xmu=float(i)-p[j+1];
-      const float xmu_sg=xmu/p[j+2];
+    for(int j=0;j<npeaks;j++){
+      const float xmu=float(i)-p1[j];
+      const float xmu_sg=xmu/p2[j];
       const float xmu_sg2=xmu_sg*xmu_sg;
-      dydp[i*npar+j] = std::exp(-0.5*xmu_sg2);
-      dydp[i*npar+j+1]=p[j]*dydp[i*npar+j]*xmu_sg/p[j+2];
-      dydp[i*npar+j+2]=dydp[i*npar+j+1]*xmu_sg;
+      dydp0[i*npeaks+j] = std::exp(-0.5*xmu_sg2);
+      dydp1[i*npeaks+j]=p0[j]*dydp0[i*npeaks+j]*xmu_sg/p2[j];
+      dydp2[i*npeaks+j]=dydp1[i*npeaks+j]*xmu_sg;
     }
   }
+
+  //convert dydp back
+  int ipeak=0;
+  for(int k=0; k<(npar*ndat); k+=3){
+    dydp[k]=dydp0[ipeak];
+    dydp[k+1]=dydp1[ipeak];
+    dydp[k+2]=dydp2[ipeak];
+    ipeak++;
+  }
+  
 }
 
 /* calculate ChiSquared */
