@@ -93,26 +93,48 @@ if __name__ == '__main__':
 	plt.figure()
 	plt.plot(x, new_sigma, 'bs',  ms=0.7)
 	plt.plot(x, old_sigma, 'r^', ms=0.2)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('od_vec.mysigma')
+	plt.title('Comparison of MKL (Blue) and Marquat (red) Sigma')
 	plt.savefig('lart_sigma.png')
 
 	plt.figure()
 	plt.plot(x, new_mytck, 'bs',  ms=0.7)
 	plt.plot(x, old_mytck, 'r^', ms=0.2)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('od_vec.mytck')
+	plt.title('Comparison of MKL (Blue) and Marquat (red) mytck')
 	plt.savefig('lart_mytck.png')
  
 	plt.figure()
 	plt.plot(x, diff_mytck, 'bs',  ms=0.7)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('Difference')
+	plt.title('Marquat - MKL for mytck')
 	plt.savefig('lart_diff_mytck.png')
 
 	plt.figure()
-	counts, bins = np.histogram(diff_mytck, bins=len(old_sigma)/10)
+	counts, bins = np.histogram(diff_mytck, bins=len(old_sigma)/1000)
 	plt.hist(bins[:-1], bins, weights=counts, log=True)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('count')
+	plt.title('Histogram of mytck difference values')
 	plt.savefig('lart_hist_mytck.png')
 
 	plt.figure()
 	plt.plot(x, diff_sigma,   'r^', ms=0.2)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('Difference')
+	plt.title('Marquat - MKL for sigma')
 	plt.savefig('lart_diff_sigma.png')
 
+	plt.figure()
+	counts, bins = np.histogram(diff_mytck, bins=len(old_sigma)/1000)
+	plt.hist(bins[:-1], bins, weights=counts, log=True)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('count')
+	plt.title('Histogram of sigma difference values')
+	plt.savefig('lart_hist_sigma.png')
 
 
 	# comparison to LArSoft
@@ -128,11 +150,25 @@ if __name__ == '__main__':
 
 	plt.figure()
 	plt.plot(x, new_larsoft_accuracy,   'bs', ms=0.2)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('Difference')
+	plt.title('LArTPC Accuracy (rd_vec.simtck-rd_vec.rectck)')
 	plt.savefig('lart_new_lart_accuracy.png')
 
 	plt.figure()
 	plt.plot(x, old_larsoft_accuracy,   'r^', ms=0.2)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('Difference')
+	plt.title('LArTPC Accuracy (rd_vec.simtck-rd_vec.rectck)')
 	plt.savefig('lart_old_lart_accuracy.png')
+
+	plt.figure()
+	counts, bins = np.histogram(old_larsoft_accuracy, bins=len(old_sigma)/100)
+	plt.hist(bins[:-1], bins, weights=counts, log=True)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('counts')
+	plt.title('LArTPC Accuracy Histogram')
+	plt.savefig('lart_hist_lart_acc.png')
 
 	# rd_vec[iv].simtck-od_vec[iv][ic_min].mytck = resolution of the
 	# marqfit and MKL versions compared to truth
@@ -140,12 +176,35 @@ if __name__ == '__main__':
 	mkl_accuracy      = [s-r for s,r in zip(new_simtck,new_mytck)]
 
 	plt.figure()
-	plt.plot(x, new_larsoft_accuracy,   'bs', ms=0.2)
+	plt.plot(x, marquat_accuracy,   'bs', ms=0.2)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('Difference')
+	plt.title('Marquat Accuracy (rd_vec.simtck-od_vec.mytck)')
 	plt.savefig('lart_maquat_accuracy.png')
 
 	plt.figure()
-	plt.plot(x, old_larsoft_accuracy,   'r^', ms=0.2)
+	counts, bins = np.histogram(marquat_accuracy, bins=len(old_sigma)/100)
+	plt.hist(bins[:-1], bins, weights=counts, log=True)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('counts')
+	plt.title('Marquat Accuracy Histogram')
+	plt.savefig('lart_hist_maquat_acc.png')
+
+	plt.figure()
+	plt.plot(x, mkl_accuracy,   'r^', ms=0.2)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('Difference')
+	plt.title('MKL Accuracy (rd_vec.simtck-od_vec.mytck)')
 	plt.savefig('lart_mkl_accuracy.png')
+
+	plt.figure()
+	counts, bins = np.histogram(mkl_accuracy, bins=len(old_sigma)/100)
+	plt.hist(bins[:-1], bins, weights=counts, log=True)
+	plt.xlabel('Line of Result file')
+	plt.ylabel('counts')
+	plt.title('MKL Accuracy Histogram')
+	plt.savefig('lart_hist_mkl_acc.png')
+
 
 
 
