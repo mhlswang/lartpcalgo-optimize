@@ -1,4 +1,4 @@
-CONDADIR = /Users/cerati/miniconda3/include/
+CONDADIR = /home/users/cerati/miniconda3/include/
 
 AVX_512 := 1
 #AVX2    := 1
