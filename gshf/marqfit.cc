@@ -1,11 +1,10 @@
 #include "marqfit.h"
+#include "xsimd/xsimd.hpp"
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
 void marqfit::fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res){
+  const int npeaks = npar/3;
 
-  int npeaks = npar/3;
-
-  std::vector<float> yf(ndat);
   std::vector<float> p0(npeaks);
   std::vector<float> p1(npeaks);
   std::vector<float> p2(npeaks);
@@ -23,13 +22,36 @@ void marqfit::fgauss(const float yd[], const float p[], const int npar, const in
   if(ik!=npeaks){
     std::cout<<"warning number of peaks wrong"<<std::endl;
   }
-#pragma omp simd
-  for(int i=0;i<ndat;i++){
-    yf[i]=0.;
-    for(int j=0;j<npeaks;j++){
-      yf[i] = yf[i] + p0[j]*std::exp(-0.5*std::pow((float(i)-p1[j])/p2[j],2));
+
+  using b_type = xsimd::simd_type<float>; //option1: automatic vector size detection
+  // using b_type = xsimd::batch<float, 8>; //option2: you can specify the vector size by hand
+  std::size_t inc = b_type::size;
+  std::size_t size = ndat;
+  // size for which the vectorization is possible
+  std::size_t vec_size = size - size % inc;
+  //
+  std::vector<float> is(ndat,0.);
+  for (int i=0;i<ndat;i++) is[i] = float(i);
+  //
+  for(std::size_t i = 0; i < vec_size; i += inc) {
+    b_type ydvec = xsimd::load_unaligned(&yd[i]);//option1
+    b_type isvec = xsimd::load_unaligned(&is[i]);//option1
+    // b_type ydvec(&yd[i]);//option2
+    // b_type isvec(&is[i]);//option2
+    b_type yfvec = p0[0]*exp(-0.5*(isvec-p1[0])*(isvec-p1[0])/(p2[0]*p2[0]));
+    for(int j=1;j<npeaks;j++){
+      yfvec += p0[j]*exp(-0.5*(isvec-p1[j])*(isvec-p1[j])/(p2[j]*p2[j]));
     }
-    res[i]=yd[i]-yf[i];
+    b_type rvec=ydvec-yfvec;
+    rvec.store_unaligned(&res[i]);
+  }
+  // Remaining part that cannot be vectorize
+  for(std::size_t i = vec_size; i < size; ++i) {
+    float yf = 0.;
+    for(int j=0;j<npeaks;j++){
+      yf += p0[j]*std::exp(-0.5*std::pow((float(i)-p1[j])/p2[j],2));
+    }
+    res[i]=yd[i]-yf;
   }
 
 }

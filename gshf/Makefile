@@ -1,4 +1,4 @@
-
+CONDADIR = /Users/cerati/miniconda3/include/
 
 AVX_512 := 1
 #AVX2    := 1
@@ -40,6 +40,8 @@ ifdef WITH_ROOT
 else
   CPPFLAGS += -DNO_ROOT
 endif
+
+CPPFLAGS += -I $(CONDADIR)
 
 gshf-mrqdt3:
 	${CXX} ${OPT} ${CPPFLAGS} -o gshf-mrqdt3 gshf-mrqdt3.cc marqfit.cc Event.cc  ${LDFLAGS}
