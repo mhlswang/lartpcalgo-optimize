@@ -226,27 +226,18 @@ void printHitCandidates(const vector<struct refdata> &rd_vec,
    n     in:     number of function variables
    x     in:     vector for function calculating
    f     out:    function value f(x) */
-void extended_powell (MKL_INT * m, MKL_INT * n, float *x, float *f)
+void fgauss_for_mkl (MKL_INT * m, MKL_INT * n, float *p, float *f)
 {
   MKL_INT i,j;
 
-    // for (i = 0; i < (*n) / 4; i++)
-    // {
-    //     f[4 * i] = x[4 * i] + 10.0 * x[4 * i + 1];
-    //     f[4 * i + 1] = 2.2360679774998 * (x[4 * i + 2] - x[4 * i + 3]);
-    //     f[4 * i + 2] = (x[4 * i + 1] - 2.0 * x[4 * i + 2]) * 
-    //                    (x[4 * i + 1] - 2.0 * x[4 * i + 2]);
-    //     f[4 * i + 3] = 3.1622776601684 * (x[4 * i] - x[4 * i + 3]) * 
-    //                                      (x[4 * i] - x[4 * i + 3]);
-    // }
-
-  #pragma simd
+  #pragma vector
   for(i=0;i<(*m);i++){
     f[i] = 0;
     for(j=0;j<(*n);j+=3){
-      f[i] = f[i] + x[j]*std::exp(-0.5*std::pow((float(i)-x[j+1])/x[j+2],2));
+      f[i] = f[i] + p[j]*std::exp(-0.5*std::pow((float(i)-p[j+1])/p[j+2],2));
     }
   }
+
   return;
 }
 
@@ -305,8 +296,8 @@ CALI_CXX_MARK_FUNCTION;
   error = -1;
 
   /* memory allocation */
-  x = (float *) mkl_malloc(sizeof (float) * n, 64);
   fvec = (float *) mkl_malloc(sizeof (float) * m, 64);
+  f    = (float *) mkl_malloc(sizeof (float) * m, 64);
   fjac = (float *) mkl_malloc(sizeof (float) * m * n, 64);
   if ( (x == NULL) ||(fvec == NULL) || (fjac == NULL) ) {
     std::cout << "| error allocating memory" << endl; 
@@ -317,21 +308,23 @@ CALI_CXX_MARK_FUNCTION;
   jac_eps = 0.000001;
 
   /* set initial values */
-  for (i = 0; i < n; i++) x[i] = p[i];
-  for (i = 0; i < m; i++) fvec[i] = y[i];
+  fgauss_for_mkl (&m, &n, p, f);
+  // plot f
+  // and y
+  for (i = 0; i < m; i++) fvec[i] = y[i]-f[i];
   for (i = 0; i < m * n; i++) fjac[i] = 0.0;
 
   /* initialize solver (allocate memory, set initial values)
    handle       in/out: TR solver handle
    n       in:     number of function variables
    m       in:     dimension of function value
-   x       in:     solution vector. contains values x for f(x)
+   p       in:     solution vector. contains values x for f(x)
    eps     in:     precisions for stop-criteria
    iter1   in:     maximum number of iterations
    iter2   in:     maximum number of iterations of calculation of trial-step
    rs      in:     initial step bound */
   // std::cout << "init..." << endl;
-  if (strnlsp_init (&handle, &n, &m, x, eps, &iter1, &iter2, &rs) != TR_SUCCESS)
+  if (strnlsp_init (&handle, &n, &m, p, eps, &iter1, &iter2, &rs) != TR_SUCCESS)
   {
     MKL_Free_Buffers ();
     std::cout << "| error in strnlsp_init" << endl; 
@@ -372,7 +365,8 @@ CALI_CXX_MARK_FUNCTION;
   {
     /* call tr solver
        handle               in/out: tr solver handle
-       fvec         in:     vector
+       fvec         in:     Array of size m. Contains the function values at X, where fvec[i] = (yi – fi(x)).
+       fvec         out:    Array of size m. Updated function evaluated at x.
        fjac         in:     jacobi matrix
        RCI_request in/out:  return number which denote next step for performing */
     if (strnlsp_solve (&handle, fvec, fjac, &RCI_Request) != TR_SUCCESS)
@@ -394,19 +388,20 @@ CALI_CXX_MARK_FUNCTION;
       x            in:     solution vector
       fvec    out:    function value f(x) */
       // std::cout << "RCI 1" <<  endl;
-      extended_powell (&m, &n, x, fvec);
+      fgauss_for_mkl (&m, &n, p, f);
+      for (i = 0; i < m; i++) fvec[i] = y[i]-f[i];
     }
     if (RCI_Request == 2)
     {
       /* compute jacobi matrix
-      extended_powell      in:     external objective function
+      fgauss_for_mkl      in:     external objective function
       n               in:     number of function variables
       m               in:     dimension of function value
       fjac            out:    jacobi matrix
       x               in:     solution vector
       jac_eps         in:     jacobi calculation precision */
       // std::cout << "RCI 2" <<  endl;
-      if (sjacobi (extended_powell, &n, &m, fjac, x, &jac_eps) !=  TR_SUCCESS)
+      if (sjacobi (fgauss_for_mkl, &n, &m, fjac, p, &jac_eps) !=  TR_SUCCESS)
       {
         MKL_Free_Buffers ();
         std::cout << "| error in sjacobi" << endl; 
@@ -437,13 +432,11 @@ CALI_CXX_MARK_FUNCTION;
     return error;
   }
 
-  for (int i = 0; i < n; ++i) p[i] = x[i];
   /* free allocated memory */
   // TODO wrap most of this function up so all the mem gets freed on errors
   MKL_Free_Buffers ();
   mkl_free (fjac);
   mkl_free (fvec);
-  mkl_free (x);
   
   if (r2 < 0.00001) 
     return 0; // Success!
