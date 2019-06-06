@@ -33,14 +33,20 @@ void marqfit::fgauss(const float yd[], const float p[], const int npar, const in
   std::vector<float> is(ndat,0.);
   for (int i=0;i<ndat;i++) is[i] = float(i);
   //
+#pragma ivdep
   for(std::size_t i = 0; i < vec_size; i += inc) {
     b_type ydvec = xsimd::load_unaligned(&yd[i]);//option1
     b_type isvec = xsimd::load_unaligned(&is[i]);//option1
     // b_type ydvec(&yd[i]);//option2
     // b_type isvec(&is[i]);//option2
-    b_type yfvec = p0[0]*exp(-0.5*(isvec-p1[0])*(isvec-p1[0])/(p2[0]*p2[0]));
+    const b_type arg = -0.5*(isvec-p1[0])*(isvec-p1[0])/(p2[0]*p2[0]);
+    // b_type yfvec = p0[0]*xsimd::exp(arg);
+    b_type yfvec = p0[0]*arg;
+#pragma unroll
     for(int j=1;j<npeaks;j++){
-      yfvec += p0[j]*exp(-0.5*(isvec-p1[j])*(isvec-p1[j])/(p2[j]*p2[j]));
+      const b_type argl = -0.5*(isvec-p1[j])*(isvec-p1[j])/(p2[j]*p2[j]);
+      // yfvec += p0[j]*xsimd::exp(argl);
+      yfvec += p0[j]*argl;
     }
     b_type rvec=ydvec-yfvec;
     rvec.store_unaligned(&res[i]);
