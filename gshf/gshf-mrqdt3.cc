@@ -37,6 +37,8 @@
 using namespace std;
 using namespace gshf;
 
+int PRINT_FOR_PLOTS=0;
+
 std::unique_ptr<marqfit> fmarqfit;
 
 struct hitcand {
@@ -276,6 +278,7 @@ CALI_CXX_MARK_FUNCTION;
   MKL_INT successful;
   /* function (f(x)) value vector */
   float *fvec = NULL;
+  float *f    = NULL;
   /* jacobi matrix */
   float *fjac = NULL;
   /* number of iterations */
@@ -299,7 +302,7 @@ CALI_CXX_MARK_FUNCTION;
   fvec = (float *) mkl_malloc(sizeof (float) * m, 64);
   f    = (float *) mkl_malloc(sizeof (float) * m, 64);
   fjac = (float *) mkl_malloc(sizeof (float) * m * n, 64);
-  if ( (x == NULL) ||(fvec == NULL) || (fjac == NULL) ) {
+  if ( (f == NULL) ||(fvec == NULL) || (fjac == NULL) ) {
     std::cout << "| error allocating memory" << endl; 
     return error;
   }
@@ -314,11 +317,20 @@ CALI_CXX_MARK_FUNCTION;
   for (i = 0; i < m; i++) fvec[i] = y[i]-f[i];
   for (i = 0; i < m * n; i++) fjac[i] = 0.0;
 
+  if(PRINT_FOR_PLOTS < 10) {
+    for (i = 0; i < m; i++) std::cout << y[i] << ',';
+    std::cout << endl;
+
+    for (i = 0; i < m; i++) std::cout << f[i] << ',';
+    std::cout << endl;
+  }
+
   /* initialize solver (allocate memory, set initial values)
    handle       in/out: TR solver handle
    n       in:     number of function variables
    m       in:     dimension of function value
    p       in:     solution vector. contains values x for f(x)
+                   (our result not the goal to fit to)
    eps     in:     precisions for stop-criteria
    iter1   in:     maximum number of iterations
    iter2   in:     maximum number of iterations of calculation of trial-step
@@ -432,12 +444,20 @@ CALI_CXX_MARK_FUNCTION;
     return error;
   }
 
+  if(PRINT_FOR_PLOTS < 10) {
+    fgauss_for_mkl (&m, &n, p, f);
+    for (i = 0; i < m; i++) 
+      std::cout << f[i] << ',';
+    std::cout << endl;
+  }
+
   /* free allocated memory */
   // TODO wrap most of this function up so all the mem gets freed on errors
   MKL_Free_Buffers ();
+  mkl_free (f);
   mkl_free (fjac);
   mkl_free (fvec);
-  
+
   if (r2 < 0.00001) 
     return 0; // Success!
   else 
@@ -480,6 +500,7 @@ CALI_CXX_MARK_FUNCTION;
 
 
 void findPeakParameters(const std::vector<float> &adc_vec, 
+                        const std::vector<float> &time_vec, 
                         const std::vector<struct hitcand> &mhc_vec, 
                         std::vector<struct peakparams> &peakparam_vec, 
                         float &chi2PerNDF, 
@@ -523,11 +544,17 @@ CALI_CXX_MARK_FUNCTION;
   /* set the bin content */
   for (int idx = 0;idx< roiSize; idx++){
     float adc=adc_vec[startTime+idx];
+    if(PRINT_FOR_PLOTS < 10) std::cout << time_vec[startTime+idx] << ','; // should give time which is x?
     if(adc<=0.)adc=0.;
     y[idx]=adc;
   }
+  if(PRINT_FOR_PLOTS < 10){
+   std::cout << std::endl;
+  }
 
   fitResult=doFit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
+
+  PRINT_FOR_PLOTS++;
 
   if (!fitResult){
     int fitResult2=fmarqfit->cal_perr(p,y,nParams,roiSize,perr);
@@ -606,9 +633,11 @@ cali_set_int(thread_attr, omp_get_thread_num());
 	  const struct wiredata &wd = ev.wd_vec_[ii];
 
 	  //convert wd wire data struct to adcvec ->more like what larsoft has
-	  std::vector<float> adcvec(wd.wv.size());
+    std::vector<float> adcvec(wd.wv.size());
+	  std::vector<float> timevec(wd.wv.size());
 	  for(int iadc=0; iadc<wd.wv.size(); iadc++){
-	    adcvec[iadc]=wd.wv[iadc].adc;
+      adcvec[iadc]=wd.wv[iadc].adc;
+	    timevec[iadc]=wd.wv[iadc].tck;
 	  }
 	  
 	  float roiThreshold=MinSigVec[wd.vw];
@@ -679,7 +708,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
 	      int fitStat=-1;
 
 	      if(mhc.mh[i].nh <= MaxMultiHit){
-		findPeakParameters(adcvec,mhc_vec,pp_vec,chi2PerNDF, NDF);
+		findPeakParameters(adcvec,timevec,mhc_vec,pp_vec,chi2PerNDF, NDF);
 				
 		if(chi2PerNDF <= 1.79769e+308){
 		  ngausshits++;
@@ -731,10 +760,10 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   tottime = omp_get_wtime() - t0;
 
-  std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
-            << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
-            << std::endl;
-  std::cout << "time without I/O =" << tottime - tottimeread - tottimeprint << endl;
+  // std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
+  //           << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
+  //           << std::endl;
+  // std::cout << "time without I/O =" << tottime - tottimeread - tottimeprint << endl;
   
   return 0;
 }

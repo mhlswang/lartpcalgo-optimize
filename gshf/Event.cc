@@ -112,8 +112,8 @@ namespace gshf {
 	exit(1);
       }
 
-    printf("Opened file '%s', format version %d, n_events %d\n",
-	   fname.c_str(), f_header.f_format_version, f_header.f_n_events);
+    // printf("Opened file '%s', format version %d, n_events %d\n",
+	   // fname.c_str(), f_header.f_format_version, f_header.f_n_events);
 
     return f_header.f_n_events;
   }
