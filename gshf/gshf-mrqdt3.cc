@@ -37,7 +37,9 @@
 using namespace std;
 using namespace gshf;
 
+#ifdef MAKE_PLOTS
 int PRINT_FOR_PLOTS=0;
+#endif
 
 std::unique_ptr<marqfit> fmarqfit;
 
@@ -228,7 +230,25 @@ void printHitCandidates(const vector<struct refdata> &rd_vec,
    n     in:     number of function variables
    x     in:     vector for function calculating
    f     out:    function value f(x) */
-void fgauss_for_mkl (MKL_INT * m, MKL_INT * n, float *p, float *f)
+void fgauss_for_mkl (MKL_INT * m, MKL_INT * n, float *p, float *f, void* data_to_fit)
+{
+  MKL_INT i,j;
+
+  float* y = (float*)data_to_fit;
+
+  #pragma vector
+  for(i=0;i<(*m);i++){
+    f[i] = 0;
+    for(j=0;j<(*n);j+=3){
+      f[i] = f[i] + p[j]*std::exp(-0.5*std::pow((float(i)-p[j+1])/p[j+2],2));
+    }
+    f[i]=y[i]-f[i];
+  }
+
+  return;
+}
+
+void gauss_for_mkl (MKL_INT * m, MKL_INT * n, float *p, float *f)
 {
   MKL_INT i,j;
 
@@ -265,7 +285,7 @@ CALI_CXX_MARK_FUNCTION;
   /* precision of the Jacobian matrix calculation */
   float jac_eps;
   /* solution vector. contains values x for f(x) */
-  float *x = NULL;
+  float *mkl_p = NULL;
   /* iter1 - maximum number of iterations
      iter2 - maximum number of iterations of calculation of trial-step */
   const MKL_INT iter1 = 1000;
@@ -296,34 +316,40 @@ CALI_CXX_MARK_FUNCTION;
   /* memory allocation flags */
   MKL_INT error;
 
-  error = -1;
+  error = 1;
 
   /* memory allocation */
-  fvec = (float *) mkl_malloc(sizeof (float) * m, 64);
-  f    = (float *) mkl_malloc(sizeof (float) * m, 64);
-  fjac = (float *) mkl_malloc(sizeof (float) * m * n, 64);
-  if ( (f == NULL) ||(fvec == NULL) || (fjac == NULL) ) {
+  mkl_p = (float *) mkl_malloc(sizeof (float) * n, 64);
+  fvec  = (float *) mkl_malloc(sizeof (float) * m, 64);
+  f     = (float *) mkl_malloc(sizeof (float) * m, 64);
+  fjac  = (float *) mkl_malloc(sizeof (float) * m * n, 64);
+  if ( (mkl_p == NULL) ||  (f == NULL) || (fvec == NULL) || (fjac == NULL) ) {
     std::cout << "| error allocating memory" << endl; 
     return error;
   }
+  for (i = 0; i < n; i++) mkl_p[i] = p[i];
 
   /* set precision of the Jacobian matrix calculation */
   jac_eps = 0.000001;
 
   /* set initial values */
-  fgauss_for_mkl (&m, &n, p, f);
-  // plot f
-  // and y
-  for (i = 0; i < m; i++) fvec[i] = y[i]-f[i];
+  fgauss_for_mkl (&m, &n, mkl_p, fvec, y);
+  // for (i = 0; i < m; i++) fvec[i] = y[i]-f[i];
   for (i = 0; i < m * n; i++) fjac[i] = 0.0;
 
+  // plot f
+  // and y
+
+#ifdef MAKE_PLOTS
   if(PRINT_FOR_PLOTS < 10) {
+    gauss_for_mkl (&m, &n, mkl_p, f);
     for (i = 0; i < m; i++) std::cout << y[i] << ',';
     std::cout << endl;
 
     for (i = 0; i < m; i++) std::cout << f[i] << ',';
     std::cout << endl;
   }
+#endif
 
   /* initialize solver (allocate memory, set initial values)
    handle       in/out: TR solver handle
@@ -336,7 +362,7 @@ CALI_CXX_MARK_FUNCTION;
    iter2   in:     maximum number of iterations of calculation of trial-step
    rs      in:     initial step bound */
   // std::cout << "init..." << endl;
-  if (strnlsp_init (&handle, &n, &m, p, eps, &iter1, &iter2, &rs) != TR_SUCCESS)
+  if (strnlsp_init (&handle, &n, &m, mkl_p, eps, &iter1, &iter2, &rs) != TR_SUCCESS)
   {
     MKL_Free_Buffers ();
     std::cout << "| error in strnlsp_init" << endl; 
@@ -400,8 +426,8 @@ CALI_CXX_MARK_FUNCTION;
       x            in:     solution vector
       fvec    out:    function value f(x) */
       // std::cout << "RCI 1" <<  endl;
-      fgauss_for_mkl (&m, &n, p, f);
-      for (i = 0; i < m; i++) fvec[i] = y[i]-f[i];
+      fgauss_for_mkl (&m, &n, mkl_p, fvec, y);
+      // for (i = 0; i < m; i++) fvec[i] = y[i]-f[i];
     }
     if (RCI_Request == 2)
     {
@@ -413,7 +439,7 @@ CALI_CXX_MARK_FUNCTION;
       x               in:     solution vector
       jac_eps         in:     jacobi calculation precision */
       // std::cout << "RCI 2" <<  endl;
-      if (sjacobi (fgauss_for_mkl, &n, &m, fjac, p, &jac_eps) !=  TR_SUCCESS)
+      if (sjacobix (fgauss_for_mkl, &n, &m, fjac, mkl_p, &jac_eps, y) !=  TR_SUCCESS)
       {
         MKL_Free_Buffers ();
         std::cout << "| error in sjacobi" << endl; 
@@ -444,26 +470,26 @@ CALI_CXX_MARK_FUNCTION;
     return error;
   }
 
+#ifdef MAKE_PLOTS
   if(PRINT_FOR_PLOTS < 10) {
-    fgauss_for_mkl (&m, &n, p, f);
+    gauss_for_mkl (&m, &n, mkl_p, f);
     for (i = 0; i < m; i++) 
       std::cout << f[i] << ',';
     std::cout << endl;
   }
+#endif
+
+  for (i = 0; i < n; i++) p[i] = mkl_p[i];
 
   /* free allocated memory */
   // TODO wrap most of this function up so all the mem gets freed on errors
   MKL_Free_Buffers ();
+  mkl_free (mkl_p);
   mkl_free (f);
   mkl_free (fjac);
   mkl_free (fvec);
 
-  if (r2 < 0.00001) 
-    return 0; // Success!
-  else 
-    return 1; // not good enough!   
-
-  return error;
+  return 0;
 } // MKL doFit
 
 #else
@@ -544,17 +570,25 @@ CALI_CXX_MARK_FUNCTION;
   /* set the bin content */
   for (int idx = 0;idx< roiSize; idx++){
     float adc=adc_vec[startTime+idx];
-    if(PRINT_FOR_PLOTS < 10) std::cout << time_vec[startTime+idx] << ','; // should give time which is x?
     if(adc<=0.)adc=0.;
     y[idx]=adc;
+
+#ifdef MAKE_PLOTS
+    if(PRINT_FOR_PLOTS < 10) std::cout << time_vec[startTime+idx] << ','; // should give time which is x?
+#endif
   }
+
+#ifdef MAKE_PLOTS
   if(PRINT_FOR_PLOTS < 10){
    std::cout << std::endl;
   }
+#endif
 
   fitResult=doFit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
 
+#ifdef MAKE_PLOTS
   PRINT_FOR_PLOTS++;
+#endif
 
   if (!fitResult){
     int fitResult2=fmarqfit->cal_perr(p,y,nParams,roiSize,perr);
@@ -573,6 +607,8 @@ CALI_CXX_MARK_FUNCTION;
         parIdx += 3;
       }
     }
+  } else {
+    std::cout << endl << "ERROR: fitting failed" << endl;
   }
 
 }
@@ -590,7 +626,11 @@ cali_set_int(thread_attr, omp_get_thread_num());
 }
 #endif
 
+#ifdef USE_MKL
+  FILE* fout = fopen("mkl_result.txt","w");
+#else
   FILE* fout = fopen("result.txt","w");
+#endif
 
   DataFile in;
   string fname = "gc-hitfinder.bin";
@@ -622,7 +662,9 @@ cali_set_int(thread_attr, omp_get_thread_num());
         double ti = omp_get_wtime();
         ev.Reset(evt);
         ev.read_in(in);
-        //std::cout << "read event with nhits=" << ev.wd_vec_.size() << std::endl;
+
+        // std::cout << "read event with nhits=" << ev.wd_vec_.size() << std::endl;
+
         tottimeread += (omp_get_wtime()-ti);
 
         std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
@@ -760,10 +802,13 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   tottime = omp_get_wtime() - t0;
 
-  // std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
-  //           << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
-  //           << std::endl;
-  // std::cout << "time without I/O =" << tottime - tottimeread - tottimeprint << endl;
-  
+
+#ifndef MAKE_PLOTS
+  std::cout << "time=" << tottime << " tottimeread=" << tottimeread  << " tottimeprint=" << tottimeprint
+            << " tottimefindc=" << tottimefindc << " tottimemergec=" << tottimemergec << " tottimefindpl=" << tottimefindpl
+            << std::endl;
+  std::cout << "time without I/O =" << tottime - tottimeread - tottimeprint << endl;
+#endif
+
   return 0;
 }

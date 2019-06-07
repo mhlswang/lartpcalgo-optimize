@@ -4,7 +4,7 @@ AVX_512 := 1
 #AVX2    := 1
 
 #USE_CALI := 1
-USE_MKL  := 1
+# USE_MKL  := 1
 
 CPPFLAGS := -std=c++11 # this is hwere to add include links 
 # LDFLAGS  := # nothing yet but this is hwere to add library links 

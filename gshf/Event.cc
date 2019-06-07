@@ -74,6 +74,7 @@ namespace gshf {
 	{
 	  fread(&wf[i], sizeof(waveform), 1, fp);
 	}
+
       // for (int i = 0; i < wd.ntck; ++i)
       // 	{
       // 	  std::cout << "wf tck=" << wf[i].tck << " adc=" << wf[i].adc << std::endl;

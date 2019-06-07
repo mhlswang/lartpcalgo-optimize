@@ -77,7 +77,7 @@ def fraction_different(self,old, new):
 if __name__ == '__main__':
 
 	old = ResultData("og_result.txt")
-	new = ResultData("mkl_results.txt")
+	new = ResultData("mkl_result.txt")
 
 
 	# basic comparison of the results from our implementations
