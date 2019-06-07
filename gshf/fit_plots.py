@@ -40,9 +40,13 @@ if __name__ == '__main__':
 
 	for i in range(num_ev):
 		plt.figure()
-		plt.plot(event_data[i].data['x'], event_data[i].data['y'], 'bo')
-		plt.plot(event_data[i].data['x'], event_data[i].data['fi'], 'g*-')
-		plt.plot(event_data[i].data['x'], event_data[i].data['fo'], 'r-')
+		plt.plot(event_data[i].data['x'], event_data[i].data['y'],  'bo',  label="data to fit to")
+		plt.plot(event_data[i].data['x'], event_data[i].data['fi'], 'g*-', label="initial guess")
+		plt.plot(event_data[i].data['x'], event_data[i].data['fo'], 'r-',  label="final fit")
+		plt.title("Fit of one Event for LArTPC")
+		plt.xlabel("time in simulation")
+		plt.ylabel("y value")
+		plt.legend(loc='upper left')
 		plt.savefig('fit_%d.png' % i)
 
 
