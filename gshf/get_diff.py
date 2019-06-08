@@ -94,6 +94,8 @@ if __name__ == '__main__':
 
 	x = range(len(old_sigma))
 
+	diff_bins = 10 #len(old_sigma)/100
+
 	plt.figure()
 	plt.plot(x, new_sigma, 'bs',  ms=0.7)
 	plt.plot(x, old_sigma, 'r^', ms=0.2)
@@ -118,8 +120,7 @@ if __name__ == '__main__':
 	plt.savefig('lart_diff_mytck.png')
 
 	plt.figure()
-	counts, bins = np.histogram(diff_mytck, bins=len(old_sigma)/1000)
-	plt.hist(bins[:-1], bins, weights=counts, log=True)
+	plt.hist(diff_mytck, diff_bins, log=True)
 	plt.xlabel('Line of Result file')
 	plt.ylabel('count')
 	plt.title('Histogram of mytck difference values')
@@ -133,8 +134,7 @@ if __name__ == '__main__':
 	plt.savefig('lart_diff_sigma.png')
 
 	plt.figure()
-	counts, bins = np.histogram(diff_mytck, bins=len(old_sigma)/1000)
-	plt.hist(bins[:-1], bins, weights=counts, log=True)
+	plt.hist(diff_mytck, diff_bins, log=True)
 	plt.xlabel('Line of Result file')
 	plt.ylabel('count')
 	plt.title('Histogram of sigma difference values')
@@ -152,7 +152,7 @@ if __name__ == '__main__':
 	old_larsoft_accuracy = [s-r for s,r in zip(old_simtck,old_rectck)]
 	new_larsoft_accuracy = [s-r for s,r in zip(new_simtck,new_rectck)]
 
-	acc_bins = len(old_sigma)/500
+	acc_bins = 10 #len(old_sigma)/100
 	
 	plt.figure()
 	plt.plot(x, new_larsoft_accuracy,   'bs', ms=0.2)
@@ -170,9 +170,8 @@ if __name__ == '__main__':
 
 
 	plt.figure()
-	counts, bins = np.histogram(old_larsoft_accuracy, bins=acc_bins)
-	plt.hist(bins[:-1], acc_bins, weights=counts, log=True, range=(-200,200))
-	plt.xlabel('Line of Result file')
+	plt.hist(old_larsoft_accuracy, acc_bins, range=(-500,500), log=True)
+	plt.xlabel('histogram bins')
 	plt.ylabel('counts')
 	plt.title('LArTPC Accuracy Histogram')
 	plt.savefig('lart_hist_lart_acc.png')
@@ -191,9 +190,8 @@ if __name__ == '__main__':
 	plt.savefig('lart_maquat_accuracy.png')
 
 	plt.figure()
-	counts, bins = np.histogram(marquat_accuracy, bins=acc_bins)
-	plt.hist(bins[:-1], acc_bins, weights=counts, log=True, range=(-200,200))
-	plt.xlabel('Line of Result file')
+	plt.hist(marquat_accuracy, acc_bins, range=(-500,500), log=True)
+	plt.xlabel('histogram bins')
 	plt.ylabel('counts')
 	plt.title('Marquardt Accuracy Histogram')
 	plt.savefig('lart_hist_maquat_acc.png')
@@ -206,9 +204,8 @@ if __name__ == '__main__':
 	plt.savefig('lart_mkl_accuracy.png')
 
 	plt.figure()
-	counts, bins = np.histogram(mkl_accuracy, bins=acc_bins)
-	plt.hist(bins[:-1], acc_bins, weights=counts, log=True, range=(-200,200))
-	plt.xlabel('Line of Result file')
+	plt.hist(mkl_accuracy, acc_bins, range=(-500,500), log=True)
+	plt.xlabel('histogram bins')
 	plt.ylabel('counts')
 	plt.title('MKL Accuracy Histogram')
 	plt.savefig('lart_hist_mkl_acc.png')
@@ -231,6 +228,18 @@ if __name__ == '__main__':
 	plt.title('MKL Ratio (od_vec.sigma/rd_vec.rms)')
 	plt.savefig('lart_mkl_ratio.png')
 
+
+	plt.figure()
+	colors = ['gray', 'violet', 'blue']
+	labels = ['LArTPC', 'Marquardt', 'MKL']
+	data = (old_larsoft_accuracy,marquat_accuracy,mkl_accuracy)
+	plt.hist(data, acc_bins, color=colors, label=labels, log=True)
+	plt.xlabel('histogram bins')
+	plt.ylabel('counts')
+	plt.legend(loc='upper left')
+	plt.title('Combined Accuracy Histograms')
+
+	plt.savefig('lart_comb_hist_acc.png')
 
 
 
