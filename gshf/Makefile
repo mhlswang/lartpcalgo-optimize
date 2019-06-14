@@ -2,6 +2,7 @@
 
 AVX_512 := 1
 #AVX2    := 1
+#NOVEC    := 1
 
 CPPFLAGS := -std=c++11 # this is hwere to add include links 
 # LDFLAGS  := # nothing yet but this is hwere to add library links 
@@ -23,6 +24,8 @@ ifdef AVX_512
 	endif
 else ifdef AVX2
 	OPT  += -mavx2
+else ifdef NOVEC
+	OPT  += -no-vec
 else
 	OPT  += -mavx
 endif
