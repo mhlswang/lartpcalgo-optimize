@@ -24,7 +24,7 @@ void marqfit::fgauss(const float yd[], const float p[], const int npar, const in
   }
 
   using b_type = xsimd::simd_type<float>; //option1: automatic vector size detection
-  // using b_type = xsimd::batch<float, 8>; //option2: you can specify the vector size by hand
+  // using b_type = xsimd::batch<float, 16>; //option2: you can specify the vector size by hand
   std::size_t inc = b_type::size;
   std::size_t size = ndat;
   // size for which the vectorization is possible
@@ -40,13 +40,11 @@ void marqfit::fgauss(const float yd[], const float p[], const int npar, const in
     // b_type ydvec(&yd[i]);//option2
     // b_type isvec(&is[i]);//option2
     const b_type arg = -0.5*(isvec-p1[0])*(isvec-p1[0])/(p2[0]*p2[0]);
-    // b_type yfvec = p0[0]*xsimd::exp(arg);
-    b_type yfvec = p0[0]*arg;
-#pragma unroll
+    b_type yfvec = p0[0]*xsimd::exp(arg);
+//#pragma unroll
     for(int j=1;j<npeaks;j++){
       const b_type argl = -0.5*(isvec-p1[j])*(isvec-p1[j])/(p2[j]*p2[j]);
-      // yfvec += p0[j]*xsimd::exp(argl);
-      yfvec += p0[j]*argl;
+      yfvec += p0[j]*xsimd::exp(argl);
     }
     b_type rvec=ydvec-yfvec;
     rvec.store_unaligned(&res[i]);

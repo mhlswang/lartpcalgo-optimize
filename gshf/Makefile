@@ -1,7 +1,7 @@
 CONDADIR = /home/users/cerati/miniconda3/include/
 
-#AVX_512 := 1
-AVX2    := 1
+AVX_512 := 1
+#AVX2    := 1
 
 CPPFLAGS := -std=c++11 # this is hwere to add include links 
 # LDFLAGS  := # nothing yet but this is hwere to add library links 
