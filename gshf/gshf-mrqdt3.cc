@@ -317,7 +317,7 @@ int main(int argc, char **argv)
   }
 
 // concurrent events: need to 'export OMP_NESTED=TRUE' and e.g. 'export OMP_NUM_THREADS=6,2'
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
   for (int evt = 0; evt < Nevents; ++evt) {
 
     bool notdone = true;
@@ -325,7 +325,7 @@ int main(int argc, char **argv)
     Event& ev = ev_vec[evt];
     std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
     for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
       const struct wiredata &wd = ev.wd_vec_[ii];
 
