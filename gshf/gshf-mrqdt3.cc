@@ -286,7 +286,6 @@ int main(int argc, char **argv)
 
   DataFile in;
   string fname = "gc-hitfinder.bin";
-  Event ev(0);
 
   double t0 = omp_get_wtime();
   double tottime = 0;
@@ -302,23 +301,28 @@ int main(int argc, char **argv)
 
   const int Nevents = in.OpenRead(fname);
 
-// #pragma omp parallel
-//   {
-// #pragma omp single
-//     {
+  std::vector<Event> ev_vec(Nevents,Event(0));
 
+  for (int evt = 0; evt < Nevents; ++evt) {
+
+    double ti = omp_get_wtime();
+    Event& ev = ev_vec[evt];
+    ev.Reset(evt);
+    ev.read_in(in);
+    //std::cout << "read event with nhits=" << ev.wd_vec_.size() << std::endl;
+    tottimeread += (omp_get_wtime()-ti);
+
+    std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
+    od_vec.resize(ev.wd_vec_.size());
+  }
+
+#pragma omp parallel for
       for (int evt = 0; evt < Nevents; ++evt) {
 
         bool notdone = true;
 
-        double ti = omp_get_wtime();
-        ev.Reset(evt);
-        ev.read_in(in);
-        //std::cout << "read event with nhits=" << ev.wd_vec_.size() << std::endl;
-        tottimeread += (omp_get_wtime()-ti);
-
-        std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
-        od_vec.resize(ev.wd_vec_.size());
+	Event& ev = ev_vec[evt];
+	std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
 
 #pragma omp parallel for
 	for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
@@ -434,14 +438,16 @@ int main(int argc, char **argv)
 
 
 	//itcounter++;
-	double tpi = omp_get_wtime();
-	printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
-	tottimeprint += (omp_get_wtime()-tpi);
-
       } // event loop
   //   } // end of single
   // } // end of parallel
 
+
+  double tpi = omp_get_wtime();
+  for (auto& ev : ev_vec) {
+    printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
+  }
+  tottimeprint += (omp_get_wtime()-tpi);
 
   // The code below is executed by a single thread
 
