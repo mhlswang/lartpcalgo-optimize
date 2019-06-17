@@ -79,6 +79,7 @@ namespace gshf {
     std::vector<wiredata> wd_vec_;
     std::vector<refdata>  rd_vec_;
     std::vector<std::vector<outdata> > od_vec_;
+    std::vector<outdata> outvector_;
   };
 
 }

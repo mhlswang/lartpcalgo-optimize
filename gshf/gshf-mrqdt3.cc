@@ -9,6 +9,7 @@
 #include <cstring>
 #include <iomanip>
 #include <limits>
+#include <memory>
 
 #include <omp.h>
 
@@ -201,8 +202,27 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
   }
 }
 
+void printHitCandidates1d(const vector<struct refdata> &rd_vec, vector<struct outdata> &od_vec, FILE* fout){
+
+  for (int iv=0; iv<od_vec.size(); iv++) {
+    /*
+        fprintf(fout,"%d %d %d %lf %lf %lf %lf %lf\n",
+            od_vec[iv].n,od_vec[iv].imh,od_vec[iv].ipp,
+            rd_vec[iv].simtck,rd_vec[iv].rectck,rd_vec[iv].rms,
+            od_vec[iv].mytck,od_vec[iv].mysigma);
+    */
+
+    fprintf(fout," %lf %lf\n",
+	    od_vec[iv].mytck,od_vec[iv].mysigma);
+    //    od_vec[iv].clear();
+
+  }
+}
+
+
 void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<struct hitcand> &mhc_vec, std::vector<struct peakparams> &peakparam_vec, float &chi2PerNDF, int &NDF)   
 {
+  //  std::unique_ptr<marqfit> fmarqfit;
   const float chiCut   = 1e-3;
   float lambda   = 0.001;      /* Marquardt damping parameter */
   float  chiSqr = std::numeric_limits<float>::max(), dchiSqr = std::numeric_limits<float>::max();
@@ -305,12 +325,23 @@ int main(int argc, char **argv)
         ev.Reset(evt);
         ev.read_in(in);
         //std::cout << "read event with nhits=" << ev.wd_vec_.size() << std::endl;
-        tottimeread += (omp_get_wtime()-ti);
+	//        tottimeread += (omp_get_wtime()-ti);
 
-        std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
+	std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
+        //std::vector<std::vector<outdata> > od_vec = ev.od_vec_;
         od_vec.resize(ev.wd_vec_.size());
+ 	tottimeread += (omp_get_wtime()-ti);
 
-#pragma omp parallel for
+	std::vector<struct outdata> outvec_global = ev.outvector_;
+
+	//	std::vector<struct refdata> rd_global = ev.rd_vec_;
+#pragma omp parallel 
+	{
+
+	  std::vector<struct outdata> outvec_local = ev.outvector_;
+	  //	  std::vector<struct refdata> rd_local = ev.rd_vec_;
+
+#pragma omp for //schedule(auto) //nowait //schedule(dynamic)
 	for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
 	  const struct wiredata &wd = ev.wd_vec_[ii];
 
@@ -339,14 +370,10 @@ int main(int argc, char **argv)
 	    //ti = omp_get_wtime();
 	   findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
 	    //tottimefindc += (omp_get_wtime()-ti);
-
-	    
 	    
 	    //ti = omp_get_wtime();
 	    mergeHitCandidates(fhc, mhc);
 	    //tottimemergec += (omp_get_wtime()-ti);
-
-
 	    
 	    //convert found_hc struct that comes out of findHitCandidates to vec<hitcand>
 	    //need merged hit candidates here
@@ -409,8 +436,9 @@ int main(int argc, char **argv)
 		    outd.ipp=j;
 		    outd.mytck=mytck;
 		    outd.mysigma=mysigma;
-		    od_vec[ii].push_back(outd);
-
+		    //	    od_vec[ii].push_back(outd);
+		    outvec_local.push_back(outd);
+		    
 		  }//for j
 		}//if !fit stat
 	      }//if max mult hit
@@ -420,12 +448,20 @@ int main(int argc, char **argv)
 	  // } // omp task
 
 	} // omp for (int ii -- 
-// #pragma omp taskwait
+      	// #pragma omp taskwait
+	//#pragma omp barrier
+#pragma omp critical
+	{
+	  //outvec_global.push_back(outvec_local);
+	  outvec_global.insert(outvec_global.end(),std::make_move_iterator(outvec_local.begin()),std::make_move_iterator(outvec_local.end()));
+	}
 
+	}//#pragma omp parallel
 
 	//itcounter++;
 	double tpi = omp_get_wtime();
-	printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
+	//	printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
+	printHitCandidates1d(ev.rd_vec_,outvec_global,fout);
 	tottimeprint += (omp_get_wtime()-tpi);
 
       } // event loop
