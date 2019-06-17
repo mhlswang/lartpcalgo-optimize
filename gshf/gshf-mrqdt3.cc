@@ -316,143 +316,119 @@ int main(int argc, char **argv)
     od_vec.resize(ev.wd_vec_.size());
   }
 
+// concurrent events: need to 'export OMP_NESTED=TRUE' and e.g. 'export OMP_NUM_THREADS=6,2'
 #pragma omp parallel for
-      for (int evt = 0; evt < Nevents; ++evt) {
+  for (int evt = 0; evt < Nevents; ++evt) {
 
-        bool notdone = true;
+    bool notdone = true;
 
-	Event& ev = ev_vec[evt];
-	std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
+    Event& ev = ev_vec[evt];
+    std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
 
 #pragma omp parallel for
-	for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
-	  const struct wiredata &wd = ev.wd_vec_[ii];
+    for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
+      const struct wiredata &wd = ev.wd_vec_[ii];
 
-	  //convert wd wire data struct to adcvec ->more like what larsoft has
-	  std::vector<float> adcvec(wd.wv.size());
-	  for(int iadc=0; iadc<wd.wv.size(); iadc++){
-	    adcvec[iadc]=wd.wv[iadc].adc;
-	  }
+      //convert wd wire data struct to adcvec ->more like what larsoft has
+      std::vector<float> adcvec(wd.wv.size());
+      for(int iadc=0; iadc<wd.wv.size(); iadc++){
+	adcvec[iadc]=wd.wv[iadc].adc;
+      }
 	  
-	  float roiThreshold=MinSigVec[wd.vw];
-// #pragma omp task shared(od_vec) private(tottimeprint) firstprivate(ti,ii,wd,roiThreshold)
-// 	  {
-	    int my_tid = omp_get_thread_num();
-	    vector<struct outdata> od;
-	    int n=0;
-	    struct found_hc fhc;
-	    struct merged_hc mhc;
-	    struct merged_hpp mhpp;
-	    fhc.nhc=0;
+      float roiThreshold=MinSigVec[wd.vw];
+      int my_tid = omp_get_thread_num();
+      vector<struct outdata> od;
+      int n=0;
+      struct found_hc fhc;
+      struct merged_hc mhc;
+      struct merged_hpp mhpp;
+      fhc.nhc=0;
 #if DEBUG
-	    ti = omp_get_wtime();
-	    printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
-	    tottimeprint += (omp_get_wtime()-ti);
+      ti = omp_get_wtime();
+      printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
+      tottimeprint += (omp_get_wtime()-ti);
 #endif
 
-	    //ti = omp_get_wtime();
-	   findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
-	    //tottimefindc += (omp_get_wtime()-ti);
+      findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
 
+      mergeHitCandidates(fhc, mhc);
 	    
-	    
-	    //ti = omp_get_wtime();
-	    mergeHitCandidates(fhc, mhc);
-	    //tottimemergec += (omp_get_wtime()-ti);
+      //convert found_hc struct that comes out of findHitCandidates to vec<hitcand>
+      //need merged hit candidates here
+      //since larsoft outputs vec<hitcand> from merge hit candidates
+      std::vector<struct hitcand> fhc_vec(fhc.nhc);
+      //hard coded size to nhc for now
+      //will need to change found_hc struct to use vec<struct hitcand> later
+      for(int ihc=0; ihc<fhc.nhc; ihc++){
+	fhc_vec[ihc]=fhc.hc[ihc];
+      }
 
+      int ngausshits=0;
+      mhpp.nmpp=0;
+      //loop over merged hits
+      for(int i=0;i<mhc.nmh;i++){
 
-	    
-	    //convert found_hc struct that comes out of findHitCandidates to vec<hitcand>
-	    //need merged hit candidates here
-	    //since larsoft outputs vec<hitcand> from merge hit candidates
-	    std::vector<struct hitcand> fhc_vec(fhc.nhc);
-	    //hard coded size to nhc for now
-	    //will need to change found_hc struct to use vec<struct hitcand> later
-	    for(int ihc=0; ihc<fhc.nhc; ihc++){
-	      fhc_vec[ihc]=fhc.hc[ihc];
-	    }
-
-	    //ti = omp_get_wtime();
-	    int ngausshits=0;
-	    mhpp.nmpp=0;
-	    //loop over merged hits
-	    for(int i=0;i<mhc.nmh;i++){
-
-	      //define mhc_vec -- this should be the output of mergeHitCandidates eventually
-	      //hg=mhc.mh[i]
-	      std::vector<struct hitcand> mhc_vec(mhc.mh[i].nh);
+	//define mhc_vec -- this should be the output of mergeHitCandidates eventually
+	//hg=mhc.mh[i]
+	std::vector<struct hitcand> mhc_vec(mhc.mh[i].nh);
 	      
-	      for(int imhc=0;imhc<mhc.mh[i].nh;imhc++){
-		int ih = mhc.mh[i].h[imhc];
-		mhc_vec[imhc]=fhc_vec[ih];
-	      }
+	for(int imhc=0;imhc<mhc.mh[i].nh;imhc++){
+	  int ih = mhc.mh[i].h[imhc];
+	  mhc_vec[imhc]=fhc_vec[ih];
+	}
 	      
-	      std::vector<struct peakparams> pp_vec(mhc_vec.size());
+	std::vector<struct peakparams> pp_vec(mhc_vec.size());
 	      
-	      int nhg=mhc.mh[i].nh;
+	int nhg=mhc.mh[i].nh;
 
-	      int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
-	      int ihc2=mhc.mh[i].h[nhg-1];  /* last hit in this hit group */
-	      int startTick=fhc.hc[ihc1].starttck;
-	      int endTick=fhc.hc[ihc2].stoptck;
-	      if(endTick - startTick < 5)continue;
+	int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
+	int ihc2=mhc.mh[i].h[nhg-1];  /* last hit in this hit group */
+	int startTick=fhc.hc[ihc1].starttck;
+	int endTick=fhc.hc[ihc2].stoptck;
+	if(endTick - startTick < 5) continue;
 
-	      float chi2PerNDF=0.;
-	      int NDF=0.;
-	      int fitStat=-1;
+	float chi2PerNDF=0.;
+	int NDF=0.;
+	int fitStat=-1;
 
-	      if(mhc.mh[i].nh <= MaxMultiHit){
-		findPeakParameters(adcvec,mhc_vec,pp_vec,chi2PerNDF, NDF);
+	if(mhc.mh[i].nh <= MaxMultiHit){
+	  findPeakParameters(adcvec,mhc_vec,pp_vec,chi2PerNDF, NDF);
 				
-		if(chi2PerNDF <= 1.79769e+308){
-		  ngausshits++;
+	  if(chi2PerNDF <= 1.79769e+308){
+	    ngausshits++;
 		  
-		  // fill output here
-		  for(int j=0; j<pp_vec.size(); j++){
-		    /* temporary fix for the discontinuous ticks */
-		    int imax=int(pp_vec[j].peakCenter);
-		    float delta=pp_vec[j].peakCenter-float(imax);
-		    float mytck=wd.wv[imax].tck+delta;
-		    mytck=float(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
-		    float mysigma=pp_vec[j].peakSigma;
+	    // fill output here
+	    for(int j=0; j<pp_vec.size(); j++){
+	      /* temporary fix for the discontinuous ticks */
+	      int imax=int(pp_vec[j].peakCenter);
+	      float delta=pp_vec[j].peakCenter-float(imax);
+	      float mytck=wd.wv[imax].tck+delta;
+	      mytck=float(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
+	      float mysigma=pp_vec[j].peakSigma;
 		    
-		    struct outdata outd;
+	      struct outdata outd;
 
-		    outd.n=n;
-		    outd.imh=i;
-		    outd.ipp=j;
-		    outd.mytck=mytck;
-		    outd.mysigma=mysigma;
-		    od_vec[ii].push_back(outd);
+	      outd.n=n;
+	      outd.imh=i;
+	      outd.ipp=j;
+	      outd.mytck=mytck;
+	      outd.mysigma=mysigma;
+	      od_vec[ii].push_back(outd);
 
-		  }//for j
-		}//if !fit stat
-	      }//if max mult hit
-	    } // for (int i
-              //tottimefindpl += (omp_get_wtime()-ti);
-	    n++;
-	  // } // omp task
+	    }//for j
+	  }//if !fit stat
+	}//if max mult hit
+      } // for (int i
+      n++;
 
-	} // omp for (int ii -- 
-// #pragma omp taskwait
-
-
-	//itcounter++;
-      } // event loop
-  //   } // end of single
-  // } // end of parallel
-
-
+    } // omp for (int ii -- 
+  } // event loop
+  
   double tpi = omp_get_wtime();
   for (auto& ev : ev_vec) {
     printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
   }
   tottimeprint += (omp_get_wtime()-tpi);
-
-  // The code below is executed by a single thread
-
-  //final timing information
-      //cout<<"printing final timing info"<<endl;
 
   tottime = omp_get_wtime() - t0;
 
