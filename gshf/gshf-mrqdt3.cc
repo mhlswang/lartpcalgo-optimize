@@ -322,9 +322,7 @@ int main(int argc, char **argv)
       vector<struct outdata> od;
       int n=0;
       found_hc fhc;
-      fhc.reserve(80);
       merged_hc mhc;
-      mhc.reserve(20);
 #if DEBUG
       ti = omp_get_wtime();
       printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
