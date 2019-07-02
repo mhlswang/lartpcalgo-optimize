@@ -240,6 +240,7 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
       chi2PerNDF = chiSqr / NDF;
       int parIdx = 0;
       for(int i=0; i<mhc_vec.size();i++){
+	//std::cout << "found par0=" << p[parIdx + 0] << " par1=" << p[parIdx + 1] << " par2=" << p[parIdx + 2] << " startTime=" << startTime << std::endl;
       	peakparam_vec[i].peakAmplitude      = p[parIdx + 0];
         peakparam_vec[i].peakAmplitudeError = perr[parIdx + 0];
         peakparam_vec[i].peakCenter         = p[parIdx + 1] + 0.5 + float(startTime);
@@ -280,10 +281,13 @@ int main(int argc, char **argv)
   std::vector<Event> ev_vec(Nevents,Event(0));
 
   for (int evt = 0; evt < Nevents; ++evt) {
+    //if (evt>119) continue;
+
     double ti = omp_get_wtime();
     Event& ev = ev_vec[evt];
     ev.Reset(evt);
     ev.read_in(in);
+    //std::cout << "read event " << evt << " with nhits=" << ev.wd_vec_.size() << std::endl;
     tottimeread += (omp_get_wtime()-ti);
 
     std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
@@ -293,15 +297,19 @@ int main(int argc, char **argv)
 // concurrent events: need to 'export OMP_NESTED=TRUE' and e.g. 'export OMP_NUM_THREADS=6,2'
 #pragma omp parallel for schedule(dynamic)
   for (int evt = 0; evt < Nevents; ++evt) {
+    //if (evt!=119) continue;
+    //std::cout << "evt=" << evt << std::endl;
 
     bool notdone = true;
 
     Event& ev = ev_vec[evt];
     std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
+    //std::cout << "ev.wd_vec_.size()=" << ev.wd_vec_.size() << std::endl;
 
 #pragma omp parallel for schedule(dynamic)
     for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
       const struct wiredata &wd = ev.wd_vec_[ii];
+      //std::cout << "wd ntck=" << wd.ntck << " vw=" << wd.vw << " wv.size=" << wd.wv.size() << std::endl;
 
       //convert wd wire data struct to adcvec ->more like what larsoft has
       std::vector<float> adcvec(wd.wv.size());
@@ -323,13 +331,20 @@ int main(int argc, char **argv)
       tottimeprint += (omp_get_wtime()-ti);
 #endif
 
+      //std::cout << "find" << std::endl;
       findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
+      //std::cout << "fhc.size()=" << fhc.size() << std::endl;
 
+      //std::cout << "merge" << std::endl;
       mergeHitCandidates(fhc, mhc);
+      //std::cout << "mhc.nmh=" << mhc.nmh << std::endl;
 	    
       int ngausshits=0;
       //loop over merged hits
+      //std::cout << "loop" << std::endl;
       for(int i=0;i<mhc.size();i++){
+
+	//std::cout << "mh i=" << i << std::endl;
 
 	int nhg=mhc[i].size();
 
@@ -344,15 +359,19 @@ int main(int argc, char **argv)
 	int fitStat=-1;
 
 	if(nhg <= MaxMultiHit){
+	  //std::cout << "peak" << std::endl;
 	  findPeakParameters(adcvec,mhc[i],pp_vec,chi2PerNDF, NDF);
+	  //std::cout << "chi2PerNDF=" << chi2PerNDF << std::endl;
 
 	  if(chi2PerNDF <= 1.79769e+308){
 	    ngausshits++;
 
+	    //std::cout << "ngausshits=" << ngausshits << " pp_vec.size()=" << pp_vec.size() << std::endl;
 	    // fill output here
 	    for(int j=0; j<pp_vec.size(); j++){
 	      /* temporary fix for the discontinuous ticks */
 	      int imax=int(pp_vec[j].peakCenter);
+	      //std::cout << "j=" << j << " pp_vec[j].peakCenter=" << pp_vec[j].peakCenter << " imax=" << imax << " wd.wv.size()=" << wd.wv.size() << std::endl;
 	      float delta=pp_vec[j].peakCenter-float(imax);
 	      if (imax>=wd.wv.size()) continue;
 	      float mytck=wd.wv[imax].tck+delta;
@@ -367,7 +386,7 @@ int main(int argc, char **argv)
 	      outd.mytck=mytck;
 	      outd.mysigma=mysigma;
 	      od_vec[ii].push_back(outd);
-
+	      //std::cout << "push outd ii=" << ii << std::endl;
 	    }//for j
 	  }//if !fit stat
 	}//if max mult hit
