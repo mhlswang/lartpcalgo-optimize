@@ -41,20 +41,8 @@ struct hitcand {
   float hgt;
 };
 
-struct found_hc {
-  int nhc;
-  struct hitcand hc[80];
-};
-
-struct hitgroup {
-  int nh;
-  int h[80];
-};
-
-struct merged_hc {
-  int nmh;
-  struct hitgroup mh[20];
-};
+using found_hc = std::vector<hitcand>;
+using merged_hc = std::vector<found_hc>;
 
 struct peakparams {
   float peakAmplitude;
@@ -63,16 +51,6 @@ struct peakparams {
   float peakCenterError;
   float peakSigma;
   float peakSigmaError;
-};
-
-struct ppgroup {
-  int npp;
-  struct peakparams pp[80];
-};
-
-struct merged_hpp {
-  int nmpp;
-  struct ppgroup mpp[20];
 };
 
 /* Global Constants */
@@ -88,7 +66,7 @@ const int maxhits=2000;
 ifstream iStream;
 streampos currentPos;
 
-void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, const int i1, const int i2, const float roiThreshold)
+void findHitCandidates(const struct wiredata &wd, found_hc &fhc, const int i1, const int i2, const float roiThreshold)
 {
   int i,maxIndex,ifirst,ilast,nhc;
   float maxValue,x;
@@ -128,17 +106,17 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, const in
     }
 
     /* add the new hit to the list of candidates */
-    nhc=fhc.nhc;
-    fhc.hc[nhc].starttck = ifirst;
-    fhc.hc[nhc].stoptck = ilast;
-    fhc.hc[nhc].maxtck = ifirst;
-    fhc.hc[nhc].mintck = ilast;
-    fhc.hc[nhc].maxdrv = wd.wv[ifirst].adc;
-    fhc.hc[nhc].mindrv = wd.wv[ilast].adc;
-    fhc.hc[nhc].cen = maxIndex;
-    fhc.hc[nhc].sig = fmax(2.,(float)((ilast-ifirst)/6.));
-    fhc.hc[nhc].hgt = maxValue;
-    fhc.nhc++;
+    hitcand newhc;
+    newhc.starttck = ifirst;
+    newhc.stoptck = ilast;
+    newhc.maxtck = ifirst;
+    newhc.mintck = ilast;
+    newhc.maxdrv = wd.wv[ifirst].adc;
+    newhc.mindrv = wd.wv[ilast].adc;
+    newhc.cen = maxIndex;
+    newhc.sig = fmax(2.,(float)((ilast-ifirst)/6.));
+    newhc.hgt = maxValue;
+    fhc.push_back(newhc);
 
     /* recursive */
     findHitCandidates(wd, fhc, ilast+1,i2,roiThreshold);
@@ -146,35 +124,28 @@ void findHitCandidates(const struct wiredata &wd, struct found_hc &fhc, const in
   return;
 }
 
-void mergeHitCandidates(const struct found_hc &fhc, struct merged_hc &mhc)
+void mergeHitCandidates(const found_hc &fhc, merged_hc &mhc)
 {
-  int i,j,ih,lastTick;
-  int g[100];
+  if (fhc.empty()) return;
 
-  lastTick = fhc.hc[0].stoptck;
-  ih = 0;
-  mhc.nmh = 0;
-  /* loop over list of hit candidates */
-  for(i=0;i<fhc.nhc;i++){
-    /* if current hit far enough from previous, start new search for merged hits */
-    if( (fhc.hc[i].starttck - lastTick) > 1 ){
-      mhc.mh[mhc.nmh].nh = ih;
-      for(j=0;j<ih;j++){
-        mhc.mh[mhc.nmh].h[j] = g[j];
-      }
-      mhc.nmh++;
-      ih = 0;
+  found_hc ghv;//groupedHitVec
+  int lastTick = fhc[0].stoptck;
+
+  for(const auto& hc : fhc)
+  {
+    // Check condition that we have a new grouping
+    if (int(hc.starttck) - lastTick > 1)
+    {
+      mhc.emplace_back(ghv);
+      ghv.clear();
     }
-    lastTick = fhc.hc[i].stoptck;
-    g[ih++] = i;
+    // Add the current hit to the current group
+    ghv.emplace_back(hc);
+    lastTick = hc.stoptck;
   }
-  if(ih>0){
-    mhc.mh[mhc.nmh].nh = ih;
-    for(j=0;j<ih;j++){
-      mhc.mh[mhc.nmh].h[j] = g[j];
-    }
-    mhc.nmh++;
-  }
+  // Check end condition
+  if (!ghv.empty()) mhc.emplace_back(ghv);
+  return;
 }
 
 void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<struct outdata> > &od_vec, FILE* fout){
@@ -224,12 +195,15 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
   float lambda   = 0.001;      /* Marquardt damping parameter */
   float  chiSqr = std::numeric_limits<float>::max(), dchiSqr = std::numeric_limits<float>::max();
   int nParams=0;
-  float y[1000],p[15],perr[15];
   
   int startTime = mhc_vec[0].starttck;
   int endTime = mhc_vec[mhc_vec.size()-1].stoptck;
   
   int roiSize = endTime - startTime;
+
+  std::vector<float> y(roiSize);
+  std::vector<float> p(3*mhc_vec.size());
+  std::vector<float> perr(3*mhc_vec.size());
   
   /* choose the fit function and set the parameters */
   nParams = 0;
@@ -257,10 +231,10 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
     y[idx]=adc;
   }
 
-  fitResult=doFit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
+  fitResult=doFit(lambda, &p[0], &y[0], nParams, roiSize, chiSqr, dchiSqr);
 
   if (!fitResult){
-    int fitResult2=fmarqfit->marqfit::cal_perr(p,y,nParams,roiSize,perr);
+    int fitResult2=fmarqfit->marqfit::cal_perr(&p[0],&y[0],nParams,roiSize,&perr[0]);
     if (!fitResult2){
       int NDF = roiSize - nParams;
       chi2PerNDF = chiSqr / NDF;
@@ -286,6 +260,8 @@ int main(int argc, char **argv)
 
   DataFile in;
   string fname = "gc-hitfinder.bin";
+  //string fname = "hitfinder-mu-25k.bin";
+  //string fname = "hitfinder-ovrl-1k.bin";
 
   double t0 = omp_get_wtime();
   double tottime = 0;
@@ -304,12 +280,10 @@ int main(int argc, char **argv)
   std::vector<Event> ev_vec(Nevents,Event(0));
 
   for (int evt = 0; evt < Nevents; ++evt) {
-
     double ti = omp_get_wtime();
     Event& ev = ev_vec[evt];
     ev.Reset(evt);
     ev.read_in(in);
-    //std::cout << "read event with nhits=" << ev.wd_vec_.size() << std::endl;
     tottimeread += (omp_get_wtime()-ti);
 
     std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
@@ -339,10 +313,10 @@ int main(int argc, char **argv)
       int my_tid = omp_get_thread_num();
       vector<struct outdata> od;
       int n=0;
-      struct found_hc fhc;
-      struct merged_hc mhc;
-      struct merged_hpp mhpp;
-      fhc.nhc=0;
+      found_hc fhc;
+      fhc.reserve(80);
+      merged_hc mhc;
+      mhc.reserve(20);
 #if DEBUG
       ti = omp_get_wtime();
       printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
@@ -353,55 +327,34 @@ int main(int argc, char **argv)
 
       mergeHitCandidates(fhc, mhc);
 	    
-      //convert found_hc struct that comes out of findHitCandidates to vec<hitcand>
-      //need merged hit candidates here
-      //since larsoft outputs vec<hitcand> from merge hit candidates
-      std::vector<struct hitcand> fhc_vec(fhc.nhc);
-      //hard coded size to nhc for now
-      //will need to change found_hc struct to use vec<struct hitcand> later
-      for(int ihc=0; ihc<fhc.nhc; ihc++){
-	fhc_vec[ihc]=fhc.hc[ihc];
-      }
-
       int ngausshits=0;
-      mhpp.nmpp=0;
       //loop over merged hits
-      for(int i=0;i<mhc.nmh;i++){
+      for(int i=0;i<mhc.size();i++){
 
-	//define mhc_vec -- this should be the output of mergeHitCandidates eventually
-	//hg=mhc.mh[i]
-	std::vector<struct hitcand> mhc_vec(mhc.mh[i].nh);
-	      
-	for(int imhc=0;imhc<mhc.mh[i].nh;imhc++){
-	  int ih = mhc.mh[i].h[imhc];
-	  mhc_vec[imhc]=fhc_vec[ih];
-	}
-	      
-	std::vector<struct peakparams> pp_vec(mhc_vec.size());
-	      
-	int nhg=mhc.mh[i].nh;
+	int nhg=mhc[i].size();
 
-	int ihc1=mhc.mh[i].h[0];      /*  1st hit in this hit group */
-	int ihc2=mhc.mh[i].h[nhg-1];  /* last hit in this hit group */
-	int startTick=fhc.hc[ihc1].starttck;
-	int endTick=fhc.hc[ihc2].stoptck;
+	std::vector<struct peakparams> pp_vec(nhg);
+
+	int startTick=mhc[i][0].starttck;
+	int endTick  =mhc[i][nhg-1].stoptck;
 	if(endTick - startTick < 5) continue;
 
 	float chi2PerNDF=0.;
 	int NDF=0.;
 	int fitStat=-1;
 
-	if(mhc.mh[i].nh <= MaxMultiHit){
-	  findPeakParameters(adcvec,mhc_vec,pp_vec,chi2PerNDF, NDF);
-				
+	if(nhg <= MaxMultiHit){
+	  findPeakParameters(adcvec,mhc[i],pp_vec,chi2PerNDF, NDF);
+
 	  if(chi2PerNDF <= 1.79769e+308){
 	    ngausshits++;
-		  
+
 	    // fill output here
 	    for(int j=0; j<pp_vec.size(); j++){
 	      /* temporary fix for the discontinuous ticks */
 	      int imax=int(pp_vec[j].peakCenter);
 	      float delta=pp_vec[j].peakCenter-float(imax);
+	      if (imax>=wd.wv.size()) continue;
 	      float mytck=wd.wv[imax].tck+delta;
 	      mytck=float(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
 	      float mysigma=pp_vec[j].peakSigma;
