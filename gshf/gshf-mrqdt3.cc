@@ -172,6 +172,11 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
   }
 }
 
+void printHitCandidates1d(const vector<struct refdata> &rd_vec, vector<struct outdata> &od_vec, FILE* fout){
+  for (int iv=0; iv<od_vec.size(); iv++) {
+    fprintf(fout," %lf %lf\n",od_vec[iv].mytck,od_vec[iv].mysigma);
+  }
+}
 
 int doFit(float &lambda, float p[], float y[], int &nParams, int &roiSize, float &chiSqr, float &dchiSqr){
   const float chiCut   = 1e-3;
@@ -285,9 +290,6 @@ int main(int argc, char **argv)
     ev.Reset(evt);
     ev.read_in(in);
     tottimeread += (omp_get_wtime()-ti);
-
-    std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
-    od_vec.resize(ev.wd_vec_.size());
   }
 
 // concurrent events: need to 'export OMP_NESTED=TRUE' and e.g. 'export OMP_NUM_THREADS=6,2'
@@ -297,9 +299,12 @@ int main(int argc, char **argv)
     bool notdone = true;
 
     Event& ev = ev_vec[evt];
-    std::vector<std::vector<outdata> >& od_vec = ev.od_vec_;
+    std::vector<outdata>& outvec_global = ev.outvector_;
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel
+    {
+    std::vector<struct outdata> outvec_local;
+#pragma omp for schedule(dynamic)
     for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
       const struct wiredata &wd = ev.wd_vec_[ii];
 
@@ -364,7 +369,7 @@ int main(int argc, char **argv)
 	      outd.ipp=j;
 	      outd.mytck=mytck;
 	      outd.mysigma=mysigma;
-	      od_vec[ii].push_back(outd);
+	      outvec_local.push_back(outd);
 
 	    }//for j
 	  }//if !fit stat
@@ -372,12 +377,17 @@ int main(int argc, char **argv)
       } // for (int i
       n++;
 
-    } // omp for (int ii -- 
+    } // omp for (int ii --
+#pragma omp critical
+    {
+      outvec_global.insert(outvec_global.end(),std::make_move_iterator(outvec_local.begin()),std::make_move_iterator(outvec_local.end()));
+    }
+    } // omp parallel
   } // event loop
   
   double tpi = omp_get_wtime();
   for (auto& ev : ev_vec) {
-    printHitCandidates(ev.rd_vec_,ev.od_vec_,fout);
+    printHitCandidates1d(ev.rd_vec_,ev.outvector_,fout);
   }
   tottimeprint += (omp_get_wtime()-tpi);
 

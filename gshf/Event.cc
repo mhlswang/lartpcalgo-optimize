@@ -15,7 +15,7 @@ namespace gshf {
 
     wd_vec_.clear();
     rd_vec_.clear();
-    od_vec_.clear();
+    outvector_.clear();
   }
 
 
