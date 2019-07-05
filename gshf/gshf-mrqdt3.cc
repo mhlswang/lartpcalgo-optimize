@@ -174,7 +174,7 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
 
 void printHitCandidates1d(int evid,const vector<struct refdata> &rd_vec, vector<struct outdata> &od_vec, FILE* fout){
   for (int iv=0; iv<od_vec.size(); iv++) {
-    fprintf(fout,"%5i %10lf %10lf\n",evid,od_vec[iv].mytck,od_vec[iv].mysigma);
+    fprintf(fout,"%5i %5i %5i %5i %10lf %10lf\n",evid,od_vec[iv].n,od_vec[iv].imh,od_vec[iv].ipp,od_vec[iv].mytck,od_vec[iv].mysigma);
   }
 }
 
@@ -317,7 +317,6 @@ int main(int argc, char **argv)
         float roiThreshold=MinSigVec[wd.vw];
         int my_tid = omp_get_thread_num();
         vector<struct outdata> od;
-        int n=0;
         found_hc fhc;
         merged_hc mhc;
 #if DEBUG
@@ -364,7 +363,7 @@ int main(int argc, char **argv)
 
                 struct outdata outd;
 
-                outd.n=n;
+                outd.n=ii;
                 outd.imh=i;
                 outd.ipp=j;
                 outd.mytck=mytck;
@@ -375,7 +374,6 @@ int main(int argc, char **argv)
             }//if !fit stat
           }//if max mult hit
         } // for (int i
-        n++;
 
       } // omp for (int ii --
 #pragma omp critical
