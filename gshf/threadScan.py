@@ -9,14 +9,11 @@ os.environ['KMP_AFFINITY'] = 'scatter'
 #os.environ['KMP_AFFINITY'] = 'compact'
 print(os.environ['KMP_AFFINITY'])
 
-vnthevt1  = ['1,1','1,2','1,4','1,6','1,10','1,15','1,20','1,25','1,30','1,40','1,50','1,60','1,80','1,100']
-vnthroi1  = ['2,1','4,1','6,1','10,1','15,1','20,1','25,1','30,1','40,1','50,1','60,1','80,1','100,1']
-vnthevt5  = ['5,2','5,4','5,6','5,10','5,15','5,20']
-vnthevt10 = ['10,2','10,4','10,6','10,10']
-vnthevt20 = ['20,2','20,3','20,4','20,5']
-addtnl = ['1,150','1,200','150,1','200,1','5,30','5,40','10,15','10,20','20,7','20,10']
-addtnl2 = ['70,1','90,1','1,70','1,90','5,13','5,16','10,8']
-cmpct = ['10,8','1,80','80,1','1,10','10,1','5,6','20,3']
+vnthevt1  = ['1,1','1,2','1,4','1,6','1,10','1,15','1,20','1,25','1,30','1,40','1,50','1,60','1,70','1,80','1,90','1,100','1,150','1,200']
+vnthroi1  = ['2,1','4,1','6,1','10,1','15,1','20,1','25,1','30,1','40,1','50,1','60,1','70,1','80,1','90,1','100,1','150,1','200,1']
+vnthevt5  = ['5,2','5,4','5,6','5,10','5,13','5,15','5,16','5,20','5,30','5,40']
+vnthevt10 = ['10,2','10,4','10,6','10,8','10,10','10,15','10,20']
+vnthevt20 = ['20,2','20,3','20,4','20,5','20,7','20,10']
 
 vnthstr = []
 vnthstr.extend(vnthevt1)
@@ -24,10 +21,12 @@ vnthstr.extend(vnthroi1)
 vnthstr.extend(vnthevt5)
 vnthstr.extend(vnthevt10)
 vnthstr.extend(vnthevt20)
-vnthstr.extend(addtnl2)
-vnthstr.extend(cmpct)
 
 print(vnthstr)
+
+nte = []
+ntw = []
+tim = []
 
 for thstr in vnthstr:
     os.environ['OMP_NUM_THREADS'] = thstr
@@ -42,3 +41,10 @@ for thstr in vnthstr:
     os.system('rm logtmp.txt') 
     avg = avg/float(nrep)
     print(os.environ['OMP_NUM_THREADS'],avg)
+    nte.append(thstr.split(',')[0])
+    ntw.append(thstr.split(',')[1])
+    tim.append(avg)
+
+print(nte)
+print(ntw)
+print(tim)

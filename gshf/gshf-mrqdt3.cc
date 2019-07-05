@@ -265,8 +265,9 @@ int main(int argc, char **argv)
   FILE* fout = fopen("result.txt","w");
 
   DataFile in;
-  string fname = "gc-hitfinder.bin";
+  //string fname = "gc-hitfinder.bin";
   //string fname = "hitfinder-mu-25k.bin";
+  string fname = "hitfinder-ovrl-100.bin";
   //string fname = "hitfinder-ovrl-1k.bin";
 
   double t0 = omp_get_wtime();
