@@ -172,9 +172,9 @@ void printHitCandidates(const vector<struct refdata> &rd_vec, vector<vector<stru
   }
 }
 
-void printHitCandidates1d(const vector<struct refdata> &rd_vec, vector<struct outdata> &od_vec, FILE* fout){
+void printHitCandidates1d(int evid,const vector<struct refdata> &rd_vec, vector<struct outdata> &od_vec, FILE* fout){
   for (int iv=0; iv<od_vec.size(); iv++) {
-    fprintf(fout," %lf %lf\n",od_vec[iv].mytck,od_vec[iv].mysigma);
+    fprintf(fout,"%5i %10lf %10lf\n",evid,od_vec[iv].mytck,od_vec[iv].mysigma);
   }
 }
 
@@ -387,7 +387,7 @@ int main(int argc, char **argv)
   
   double tpi = omp_get_wtime();
   for (auto& ev : ev_vec) {
-    printHitCandidates1d(ev.rd_vec_,ev.outvector_,fout);
+    printHitCandidates1d(ev.evtID(),ev.rd_vec_,ev.outvector_,fout);
   }
   tottimeprint += (omp_get_wtime()-tpi);
 
