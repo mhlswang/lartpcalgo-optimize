@@ -194,36 +194,36 @@ int doFit(float &lambda, float p[], float y[], int &nParams, int &roiSize, float
   return fitResult;
 }
 
-void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<struct hitcand> &mhc_vec, std::vector<struct peakparams> &peakparam_vec, float &chi2PerNDF, int &NDF)   
+void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<struct hitcand> &mhc_vec, std::vector<struct peakparams> &peakparam_vec, float &chi2PerNDF, int &NDF)
 {
 
   float lambda   = 0.001;      /* Marquardt damping parameter */
   float  chiSqr = std::numeric_limits<float>::max(), dchiSqr = std::numeric_limits<float>::max();
   int nParams=0;
-  
+
   int startTime = mhc_vec[0].starttck;
   int endTime = mhc_vec[mhc_vec.size()-1].stoptck;
-  
+
   int roiSize = endTime - startTime;
 
   std::vector<float> y(roiSize);
   std::vector<float> p(3*mhc_vec.size());
   std::vector<float> perr(3*mhc_vec.size());
-  
+
   /* choose the fit function and set the parameters */
   nParams = 0;
-  
+
   for(int imh=0; imh<mhc_vec.size();imh++){
     float peakMean   = mhc_vec[imh].cen - (float)startTime;
     float peakWidth  = mhc_vec[imh].sig;
     float amplitude  = mhc_vec[imh].hgt;
-    
+
     float meanLowLim = fmax(peakMean - PeakRange * peakWidth,       0.);
     float meanHiLim  = fmin(peakMean + PeakRange * peakWidth, (float)roiSize);
     p[0+nParams]=amplitude;
     p[1+nParams]=peakMean;
     p[2+nParams]=peakWidth;
-   
+
     nParams += 3;
   }
 
@@ -245,13 +245,13 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
       chi2PerNDF = chiSqr / NDF;
       int parIdx = 0;
       for(int i=0; i<mhc_vec.size();i++){
-      	peakparam_vec[i].peakAmplitude      = p[parIdx + 0];
+        peakparam_vec[i].peakAmplitude      = p[parIdx + 0];
         peakparam_vec[i].peakAmplitudeError = perr[parIdx + 0];
         peakparam_vec[i].peakCenter         = p[parIdx + 1] + 0.5 + float(startTime);
         peakparam_vec[i].peakCenterError    = perr[parIdx + 1];
         peakparam_vec[i].peakSigma          = p[parIdx + 2];
         peakparam_vec[i].peakSigmaError     = perr[parIdx + 2];
-	
+
         parIdx += 3;
       }
     }
@@ -303,88 +303,88 @@ int main(int argc, char **argv)
 
 #pragma omp parallel
     {
-    std::vector<struct outdata> outvec_local;
+      std::vector<struct outdata> outvec_local;
 #pragma omp for schedule(dynamic)
-    for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
-      const struct wiredata &wd = ev.wd_vec_[ii];
+      for (int ii=0; ii < ev.wd_vec_.size(); ii++) {
+        const struct wiredata &wd = ev.wd_vec_[ii];
 
-      //convert wd wire data struct to adcvec ->more like what larsoft has
-      std::vector<float> adcvec(wd.wv.size());
-      for(int iadc=0; iadc<wd.wv.size(); iadc++){
-	adcvec[iadc]=wd.wv[iadc].adc;
-      }
-	  
-      float roiThreshold=MinSigVec[wd.vw];
-      int my_tid = omp_get_thread_num();
-      vector<struct outdata> od;
-      int n=0;
-      found_hc fhc;
-      merged_hc mhc;
+        //convert wd wire data struct to adcvec ->more like what larsoft has
+        std::vector<float> adcvec(wd.wv.size());
+        for(int iadc=0; iadc<wd.wv.size(); iadc++){
+          adcvec[iadc]=wd.wv[iadc].adc;
+        }
+
+        float roiThreshold=MinSigVec[wd.vw];
+        int my_tid = omp_get_thread_num();
+        vector<struct outdata> od;
+        int n=0;
+        found_hc fhc;
+        merged_hc mhc;
 #if DEBUG
-      ti = omp_get_wtime();
-      printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
-      tottimeprint += (omp_get_wtime()-ti);
+        ti = omp_get_wtime();
+        printf("thread %d: hit #%d: nticks=%d\n",omp_get_thread_num(),n,wd.ntck);
+        tottimeprint += (omp_get_wtime()-ti);
 #endif
 
-      findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
+        findHitCandidates(wd,fhc,0,wd.ntck,roiThreshold);
 
-      mergeHitCandidates(fhc, mhc);
-	    
-      int ngausshits=0;
-      //loop over merged hits
-      for(int i=0;i<mhc.size();i++){
+        mergeHitCandidates(fhc, mhc);
 
-	int nhg=mhc[i].size();
+        int ngausshits=0;
+        //loop over merged hits
+        for(int i=0;i<mhc.size();i++){
 
-	std::vector<struct peakparams> pp_vec(nhg);
+          int nhg=mhc[i].size();
 
-	int startTick=mhc[i][0].starttck;
-	int endTick  =mhc[i][nhg-1].stoptck;
-	if(endTick - startTick < 5) continue;
+          std::vector<struct peakparams> pp_vec(nhg);
 
-	float chi2PerNDF=0.;
-	int NDF=0.;
-	int fitStat=-1;
+          int startTick=mhc[i][0].starttck;
+          int endTick  =mhc[i][nhg-1].stoptck;
+          if(endTick - startTick < 5) continue;
 
-	if(nhg <= MaxMultiHit){
-	  findPeakParameters(adcvec,mhc[i],pp_vec,chi2PerNDF, NDF);
+          float chi2PerNDF=0.;
+          int NDF=0.;
+          int fitStat=-1;
 
-	  if(chi2PerNDF <= 1.79769e+308){
-	    ngausshits++;
+          if(nhg <= MaxMultiHit){
+            findPeakParameters(adcvec,mhc[i],pp_vec,chi2PerNDF, NDF);
 
-	    // fill output here
-	    for(int j=0; j<pp_vec.size(); j++){
-	      /* temporary fix for the discontinuous ticks */
-	      int imax=int(pp_vec[j].peakCenter);
-	      float delta=pp_vec[j].peakCenter-float(imax);
-	      if (imax>=wd.wv.size()) continue;
-	      float mytck=wd.wv[imax].tck+delta;
-	      mytck=float(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
-	      float mysigma=pp_vec[j].peakSigma;
-		    
-	      struct outdata outd;
+            if(chi2PerNDF <= 1.79769e+308){
+              ngausshits++;
 
-	      outd.n=n;
-	      outd.imh=i;
-	      outd.ipp=j;
-	      outd.mytck=mytck;
-	      outd.mysigma=mysigma;
-	      outvec_local.push_back(outd);
+              // fill output here
+              for(int j=0; j<pp_vec.size(); j++){
+                /* temporary fix for the discontinuous ticks */
+                int imax=int(pp_vec[j].peakCenter);
+                float delta=pp_vec[j].peakCenter-float(imax);
+                if (imax>=wd.wv.size()) continue;
+                float mytck=wd.wv[imax].tck+delta;
+                mytck=float(int(mytck*100+0.5))/100;       /* round off to 2 decimal places */
+                float mysigma=pp_vec[j].peakSigma;
 
-	    }//for j
-	  }//if !fit stat
-	}//if max mult hit
-      } // for (int i
-      n++;
+                struct outdata outd;
 
-    } // omp for (int ii --
+                outd.n=n;
+                outd.imh=i;
+                outd.ipp=j;
+                outd.mytck=mytck;
+                outd.mysigma=mysigma;
+                outvec_local.push_back(outd);
+
+              }//for j
+            }//if !fit stat
+          }//if max mult hit
+        } // for (int i
+        n++;
+
+      } // omp for (int ii --
 #pragma omp critical
-    {
-      outvec_global.insert(outvec_global.end(),std::make_move_iterator(outvec_local.begin()),std::make_move_iterator(outvec_local.end()));
-    }
+      {
+        outvec_global.insert(outvec_global.end(),std::make_move_iterator(outvec_local.begin()),std::make_move_iterator(outvec_local.end()));
+      }
     } // omp parallel
   } // event loop
-  
+
   double tpi = omp_get_wtime();
   for (auto& ev : ev_vec) {
     printHitCandidates1d(ev.evtID(),ev.rd_vec_,ev.outvector_,fout);
