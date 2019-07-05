@@ -9,6 +9,7 @@
 #include <cstring>
 #include <iomanip>
 #include <limits>
+#include <memory>
 
 #include <omp.h>
 
