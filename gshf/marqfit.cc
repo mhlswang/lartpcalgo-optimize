@@ -2,14 +2,13 @@
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
 void marqfit::fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res){
-  std::vector<float> yf(ndat);
 #pragma omp simd
   for(int i=0;i<ndat;i++){
-    yf[i]=0.;
+    float yf=0.;
     for(int j=0;j<npar;j+=3){
-      yf[i] = yf[i] + p[j]*std::exp(-0.5*std::pow((float(i)-p[j+1])/p[j+2],2));
+      yf = yf + p[j]*std::exp(-0.5*std::pow((float(i)-p[j+1])/p[j+2],2));
     }
-    res[i]=yd[i]-yf[i];
+    res[i]=yd[i]-yf;
   }
 }
 
