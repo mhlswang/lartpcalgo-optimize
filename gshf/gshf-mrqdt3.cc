@@ -267,8 +267,8 @@ int main(int argc, char **argv)
   DataFile in;
   //string fname = "gc-hitfinder.bin";
   //string fname = "hitfinder-mu-25k.bin";
-  string fname = "hitfinder-ovrl-100.bin";
-  //string fname = "hitfinder-ovrl-1k.bin";
+  //string fname = "hitfinder-ovrl-10.bin";
+  string fname = "hitfinder-ovrl-1k.bin";
 
   double t0 = omp_get_wtime();
   double tottime = 0;
