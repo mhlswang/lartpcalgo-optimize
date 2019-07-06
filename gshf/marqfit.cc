@@ -15,7 +15,7 @@ void marqfit::fgauss(const float yd[], const float p[], const int npar, const in
 /* analytic derivatives for multi-Gaussian function in fgauss */
 void marqfit::dgauss(const float p[], const int npar, const int ndat, std::vector<float> &dydp){
 #pragma ivdep
-#pragma omp simd 
+#pragma omp simd
   for(int i=0;i<ndat;i++){
     for(int j=0;j<npar;j+=3){
       const float xmu=float(i)-p[j+1];
@@ -45,17 +45,19 @@ void marqfit::setup_matrix(const std::vector<float> &res, const std::vector<floa
   int i,j,k;
   
   /* ... Calculate beta */
+#pragma omp simd
+#pragma ivdep
   for(j=0;j<npar;j++){
-    beta[j]=0.0;
     for(i=0;i<ndat;i++){
       beta[j]+=res[i]*dydp[i*npar+j];
     }
   }
 
   /* ... Calculate alpha */
+#pragma omp simd
+#pragma ivdep
   for (j = 0; j < npar; j++){
     for (k = j; k < npar; k++){
-      alpha[j*npar+k]=0.0;
       for(i=0;i<ndat;i++){
         alpha[j*npar+k]+=dydp[i*npar+j]*dydp[i*npar+k];
       }
@@ -125,7 +127,7 @@ float marqfit::invrt_matrix(std::vector<float> &alphaf, const int npar)
   */
 
   //turn input alphas into doubles
-  std::vector<double> alpha(npar*npar);
+  std::vector<double> alpha(npar*npar,0);
 
     // double alpha[npar*npar];
   int i, j, k;//, ik[npar], jk[npar];
@@ -136,9 +138,9 @@ float marqfit::invrt_matrix(std::vector<float> &alphaf, const int npar)
   double aMax, save, det;
   float detf;
 
- for (i=0; i<npar*npar; i++){
-      alpha[i]=alphaf[i];
-    }
+  for (i=0; i<npar*npar; i++){
+    alpha[i]=alphaf[i];
+  }
   
   det = 0;
   /* ... search for the largest element which we will then put in the diagonal */
@@ -181,6 +183,8 @@ float marqfit::invrt_matrix(std::vector<float> &alphaf, const int npar)
       if (i != k) alpha[i*npar+k] = -alpha[i*npar+k]/aMax;
     }
     for (i = 0; i < npar; i++){
+#pragma ivdep
+#pragma omp simd
       for (j = 0; j < npar;j++){
   	if ((i != k)&&(j!= k))alpha[i*npar+j]=alpha[i*npar+j]+alpha[i*npar+k]*alpha[k*npar+j];
       }
@@ -230,8 +234,8 @@ int marqfit::cal_perr(float p[], float y[], const int nParam, const int nData, f
 
   std::vector<float> res(nData);
   std::vector<float> dydp(nData*nParam);
-  std::vector<float> beta(nParam);
-  std::vector<float> alpha(nParam*nParam);
+  std::vector<float> beta(nParam,0);
+  std::vector<float> alpha(nParam*nParam,0);
   std::vector<std::vector<float>> alpsav(nParam,std::vector<float>(nParam));
    
   fgauss(y, p, nParam, nData, res);
@@ -262,12 +266,12 @@ int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, con
   float nu,rho,lzmlh,amax,chiSq0;
 
   std::vector<float> res(nData);
-  std::vector<float> beta(nParam);
+  std::vector<float> beta(nParam,0);
   std::vector<float> dp(nParam);
   std::vector<float> alpsav(nParam);
   std::vector<float> psav(nParam);
   std::vector<float> dydp(nData*nParam);
-  std::vector<float> alpha(nParam*nParam);
+  std::vector<float> alpha(nParam*nParam,0);
   
   fgauss(y, p, nParam, nData, res);
   chiSq0=cal_xi2(res, nData);
