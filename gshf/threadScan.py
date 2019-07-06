@@ -16,11 +16,11 @@ vnthevt10 = ['10,2','10,4','10,6','10,8','10,12','10,16','10,20','10,24']
 vnthevt20 = ['20,2','20,3','20,4','20,6','20,8','20,10','20,12']
 
 vnthstr = []
-vnthstr.extend(vnthevt1)
-vnthstr.extend(vnthroi1)
-vnthstr.extend(vnthevt5)
-vnthstr.extend(vnthevt10)
-vnthstr.extend(vnthevt20)
+vnthstr.append(vnthevt1)
+vnthstr.append(vnthroi1)
+vnthstr.append(vnthevt5)
+vnthstr.append(vnthevt10)
+vnthstr.append(vnthevt20)
 
 print(vnthstr)
 
