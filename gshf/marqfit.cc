@@ -382,6 +382,8 @@ CALI_CXX_MARK_FUNCTION;
   nu=2.;
   rho=-1.;
 
+
+  // int it_cnt = 0;
   do{
     for(j=0;j<nParam;j++){
       psav[j] = p[j];
@@ -407,7 +409,11 @@ CALI_CXX_MARK_FUNCTION;
       solve_matrix(beta, alpha, nParam, dp); // re - solve
     }
 
+    // it_cnt++;
+
   } while(rho<0.);
+
+  // std::cout<<it_cnt <<std::endl;
 
   lambda=lambda*fmax(0.333333,1.-pow(2.*rho-1.,3));  
   dchiSqr=chiSqr-chiSq0;

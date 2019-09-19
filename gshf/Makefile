@@ -1,10 +1,11 @@
 
 
-AVX_512 := 1
-#AVX2    := 1
+# AVX_512 := 1
+AVX2    := 1
 
-#USE_CALI := 1
+# USE_CALI := 1
 # USE_MKL  := 1
+# MAKE_PLOTS  := 1
 
 CPPFLAGS := -std=c++11 # this is hwere to add include links 
 # LDFLAGS  := # nothing yet but this is hwere to add library links 
@@ -46,12 +47,18 @@ ifdef USE_MKL
   LDFLAGS  += ${MKL_LINK}
 endif
 
+ifdef MAKE_PLOTS 
+  CPPFLAGS += -DMAKE_PLOTS
+endif
+
 ifdef WITH_ROOT
   CPPFLAGS += $(shell root-config --cflags)
   LDFLAGS  += $(shell root-config --libs)
 else
   CPPFLAGS += -DNO_ROOT
 endif
+
+all: gshf-mrqdt3
 
 gshf-mrqdt3: gshf-mrqdt3.cc marqfit.cc Event.cc
 	${CXX} ${OPT} ${CPPFLAGS} -o gshf-mrqdt3 gshf-mrqdt3.cc marqfit.cc Event.cc  ${LDFLAGS}

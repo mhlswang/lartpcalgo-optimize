@@ -27,18 +27,14 @@ else
     exit
 fi
 
-opt="-g -O3 -qopenmp -qopt-report=5 -xSSE2 -DUSE_CALI -I${CALIPER_DIR}/include"
-# opt="-g -O3 -qopenmp -qopt-report=5 -mtune=skylake -qopt-zmm-usage=high -xSKYLAKE-AVX512 -DUSE_CALI -I${CALIPER_DIR}/include"
-lib="-L${CALIPER_DIR}/lib64 -lcaliper"
-icpc ${opt} -o gshf-mrqdt3 gshf-mrqdt3.cc marqfit.cc Event.cc ${lib}
+make clean
+# make gshf-mrqdt3 USE_MKL:=1 USE_CALI:=1 
+make gshf-mrqdt3 USE_CALI:=1 
 
 ## Common file setup
-out_dir=cali_sse_pragma
+out_dir=cali_avx2_pragma
 mkdir ${out_dir}
 exe="./gshf-mrqdt3"
-
-
-
 
 for thr in "${threads[@]}"
 do

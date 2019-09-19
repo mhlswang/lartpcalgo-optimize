@@ -232,6 +232,10 @@ void printHitCandidates(const vector<struct refdata> &rd_vec,
    f     out:    function value f(x) */
 void fgauss_for_mkl (MKL_INT * m, MKL_INT * n, float *p, float *f, void* data_to_fit)
 {
+      
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
   MKL_INT i,j;
 
   float* y = (float*)data_to_fit;
@@ -250,6 +254,10 @@ void fgauss_for_mkl (MKL_INT * m, MKL_INT * n, float *p, float *f, void* data_to
 
 void gauss_for_mkl (MKL_INT * m, MKL_INT * n, float *p, float *f)
 {
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
   MKL_INT i,j;
 
   #pragma vector
@@ -281,7 +289,7 @@ CALI_CXX_MARK_FUNCTION;
   MKL_INT n = nParams;
   MKL_INT m = roiSize;
   /* precisions for stop-criteria (see manual for more details) */
-  const float eps[6]={0.00001,0.00001,0.00001,0.00001,0.00001,0.00001}; 
+  const float eps[6]={0.00001,0.00001,0.00001,0.00001,0.00001,0.00001};
   /* precision of the Jacobian matrix calculation */
   float jac_eps;
   /* solution vector. contains values x for f(x) */
