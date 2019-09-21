@@ -271,6 +271,27 @@ CALI_CXX_MARK_FUNCTION;
   return;
 }
 
+/* analytic derivatives for multi-Gaussian function in fgauss */
+void dgauss_for_mkl(float * p, MKL_INT npar, MKL_INT ndat, float * dydp){
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
+#pragma ivdep
+#pragma omp simd
+  for(int i=0;i<ndat;i++){
+    for(int j=0;j<npar;j+=3){
+      const float xmu=float(i)-p[j+1];
+      const float xmu_sg=xmu/p[j+2];
+      const float xmu_sg2=xmu_sg*xmu_sg;
+      dydp[i*npar+j] = std::exp(-0.5*xmu_sg2);
+      dydp[i*npar+j+1]=p[j]*dydp[i*npar+j]*xmu_sg/p[j+2];
+      dydp[i*npar+j+2]=dydp[i*npar+j+1]*xmu_sg;
+    }
+  }
+}
+
 int doFit(float &lambda,  // 
           float p[],      // x values for f(x) - needs to hold new values at end?
           float y[],      // y values to be fit
@@ -324,6 +345,10 @@ CALI_CXX_MARK_FUNCTION;
   /* memory allocation flags */
   MKL_INT error;
 
+  int counts = 0;
+  int jac_counts = 0;
+  int fgauss_counts = 0;
+
   error = 1;
 
   /* memory allocation */
@@ -338,12 +363,14 @@ CALI_CXX_MARK_FUNCTION;
   for (i = 0; i < n; i++) mkl_p[i] = p[i];
 
   /* set precision of the Jacobian matrix calculation */
+  // jac_eps = 0.1;
   jac_eps = 0.000001;
 
   /* set initial values */
   fgauss_for_mkl (&m, &n, mkl_p, fvec, y);
   // for (i = 0; i < m; i++) fvec[i] = y[i]-f[i];
-  for (i = 0; i < m * n; i++) fjac[i] = 0.0;
+  // for (i = 0; i < m * n; i++) fjac[i] = 0.0;
+  dgauss_for_mkl(mkl_p, n, m, fjac);
 
   // plot f
   // and y
@@ -409,6 +436,7 @@ CALI_CXX_MARK_FUNCTION;
   // std::cout << "loop..." << endl;
   while (successful == 0)
   {
+    // counts++;
     /* call tr solver
        handle               in/out: tr solver handle
        fvec         in:     Array of size m. Contains the function values at X, where fvec[i] = (yi – fi(x)).
@@ -434,6 +462,7 @@ CALI_CXX_MARK_FUNCTION;
       x            in:     solution vector
       fvec    out:    function value f(x) */
       // std::cout << "RCI 1" <<  endl;
+      // fgauss_counts++;
       fgauss_for_mkl (&m, &n, mkl_p, fvec, y);
       // for (i = 0; i < m; i++) fvec[i] = y[i]-f[i];
     }
@@ -447,14 +476,20 @@ CALI_CXX_MARK_FUNCTION;
       x               in:     solution vector
       jac_eps         in:     jacobi calculation precision */
       // std::cout << "RCI 2" <<  endl;
-      if (sjacobix (fgauss_for_mkl, &n, &m, fjac, mkl_p, &jac_eps, y) !=  TR_SUCCESS)
-      {
-        MKL_Free_Buffers ();
-        std::cout << "| error in sjacobi" << endl; 
-        return error;
-      }
+      // jac_counts++;
+      dgauss_for_mkl(mkl_p, n, m, fjac);
+      // if (sjacobix (fgauss_for_mkl, &n, &m, fjac, mkl_p, &jac_eps, y) !=  TR_SUCCESS)
+      // {
+      //   MKL_Free_Buffers ();
+      //   std::cout << "| error in sjacobi" << endl; 
+      //   return error;
+      // }
     }
-  }
+  } // while successful == 0
+  // std::cout << endl << "while loop counts  = " << counts << endl;
+  // std::cout << "fgauss calc counts = " << fgauss_counts << endl;
+  // std::cout << "jacobi calc counts = " << jac_counts << endl;
+
   /* get solution statuses
   handle            in:        TR solver handle
   iter              out:       number of iterations
