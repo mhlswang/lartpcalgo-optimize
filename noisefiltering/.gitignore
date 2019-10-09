@@ -1,0 +1,16 @@
+*.out
+*.txt
+*.bin
+*.o
+gshf-mrqdt3
+gshf-mrqdt2
+fft.exe
+
+*.optrpt
+
+cali*
+*.json
+*.png
+
+ex_*
+

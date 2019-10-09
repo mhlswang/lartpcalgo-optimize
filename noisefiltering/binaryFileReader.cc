@@ -9,7 +9,12 @@
 int main(int argc, char *argv[])
 {
 
-  FILE* f = fopen("noisefilt_100ev_50k.bin", "r");
+  FILE* f;
+  if (argc > 1) {
+    f = fopen(argv[1], "r");
+  } else {
+    f = fopen("noisefilt_100ev_50k.bin", "r");
+  }
 
   assert(f);
 
