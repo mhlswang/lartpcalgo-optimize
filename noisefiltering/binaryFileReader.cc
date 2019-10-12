@@ -16,10 +16,23 @@
 #include <fftw3.h>
 #endif
 
+#ifdef USE_MKL
+#include "mkl_dfti.h"
+#endif
+
+
+void read_input_vector(std::vector<std::vector<float> > &fFFTInputVec, FILE* f, int nticks, int nwires);
+void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutputVec, FILE* f, int nticks, int nwires);
 
 void print_input_vector(std::vector<std::vector<float> > fFFTInputVec, int nticks);
 void print_output_vector(std::vector<std::vector<std::complex<float>> > fFFTOutputVec, int nticks);
 
+void run_fftw(std::vector<std::vector<float> > &input_vector, 
+              std::vector<std::vector<std::complex<float>> > &computed_output, 
+              int nticks, int nwires);
+void run_mkl(std::vector<std::vector<float> > &input_vector, 
+              std::vector<std::vector<std::complex<float>> > &computed_output, 
+              int nticks, int nwires);
 
 int main(int argc, char *argv[])
 {
@@ -40,23 +53,18 @@ int main(int argc, char *argv[])
   size_t nticks = 4096;
 
   std::vector<std::vector<float> > input_vector;
-  std::vector<std::vector<std::complex<float>> > expected_output;
-  std::vector<std::vector<std::complex<float>> > computed_output;
   input_vector.reserve(nwires);
+
+  std::vector<std::vector<std::complex<float>> > expected_output;
+  expected_output.reserve(nwires);
+
+  std::vector<std::vector<std::complex<float>> > computed_output;
   computed_output.reserve(nwires);
   for (int i = 0; i < nwires; ++i)
     computed_output[i].resize(nticks);
-  expected_output.reserve(nwires);
 
-  for (int iw=0; iw<nwires; ++iw) {
-    std::vector<float> waveform;
-    waveform.resize(nticks);
-    for (int i = 0; i < nticks; ++i) {
-      fread(&waveform[i], sizeof(float), 1, f);
-    }
-    input_vector.push_back(waveform);
-  }
 
+  read_input_vector(input_vector, f, nticks, nwires);
   print_input_vector(input_vector, nticks);
 
 
@@ -64,6 +72,34 @@ int main(int argc, char *argv[])
   std::cout << std::endl;
   std::cout << std::endl;
   std::cout << "Running FFTW.....";
+
+
+#ifdef USE_FFTW
+  run_fftw(input_vector, computed_output, nticks, nwires);
+#endif
+
+
+#ifdef USE_MKL
+  run_mkl(input_vector, computed_output, nticks, nwires);
+#endif
+
+  std::cout << "DONE" << std::endl;
+  std::cout << "======================================================================================";
+  std::cout << std::endl;
+  std::cout << std::endl;
+
+  read_output_vector(expected_output, f, nticks, nwires);
+  print_output_vector(expected_output, nticks);
+
+
+  fclose(f);
+}
+
+
+#ifdef USE_FFTW
+void run_fftw(std::vector<std::vector<float> > &input_vector, 
+              std::vector<std::vector<std::complex<float>> > &computed_output, 
+              int nticks, int nwires) {
 
   float *in;
   fftwf_complex *out;
@@ -81,6 +117,7 @@ int main(int argc, char *argv[])
     fftwf_execute(fftw); /* repeat as needed */
     for (int i = 0; i < nticks; ++i) {
       computed_output[iw][i].real(out[i][0]);
+      computed_output[iw][i].imag(out[i][1]);
     }
   }
   
@@ -88,27 +125,55 @@ int main(int argc, char *argv[])
   fftwf_destroy_plan(fftw);
   fftw_free(in); fftw_free(out);
 
+}
+#endif
 
-  std::cout << "DONE" << std::endl;
-  std::cout << "======================================================================================";
-  std::cout << std::endl;
-  std::cout << std::endl;
+#ifdef USE_MKL
+void run_mkl(std::vector<std::vector<float> > &input_vector, 
+              std::vector<std::vector<std::complex<float>> > &computed_output, 
+              int nticks, int nwires){
 
+  DFTI_DESCRIPTOR_HANDLE descriptor;
+  MKL_LONG status;
+
+  status = DftiCreateDescriptor(&descriptor, DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)nticks); //Specify size and precision
+  status = DftiSetValue(descriptor, DFTI_PLACEMENT, DFTI_NOT_INPLACE); //Out of place FFT
+  status = DftiCommitDescriptor(descriptor); //Finalize the descriptor
+
+  for (int iw=0; iw<nwires; ++iw) {
+
+    status = DftiComputeForward(descriptor, input_vector[iw].data(), computed_output[iw].data()); //Compute the Forward FFT
+
+  }
+
+  status = DftiFreeDescriptor(&descriptor); //Free the descriptor
+
+}
+#endif
+
+
+void read_input_vector(std::vector<std::vector<float> > &fFFTInputVec, FILE* f, int nticks, int nwires) {
+  for (int iw=0; iw<nwires; ++iw) {
+    std::vector<float> waveform;
+    waveform.resize(nticks);
+    for (int i = 0; i < nticks; ++i) {
+      fread(&waveform[i], sizeof(float), 1, f);
+    }
+    fFFTInputVec.push_back(waveform);
+  }
+}
+
+
+void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutputVec, FILE* f, int nticks, int nwires) {
   for (int iw=0; iw<nwires; ++iw) {
     std::vector<std::complex<float>> waveform;
     waveform.resize(nticks);
     for (int i = 0; i < nticks; ++i) {
       fread(&waveform[i], sizeof(std::complex<float>), 1, f);
     }
-    expected_output.push_back(waveform);
+    fFFTOutputVec.push_back(waveform);
   }
-
-  print_output_vector(expected_output, nticks);
-
-
-  fclose(f);
 }
-
 
 void print_input_vector(std::vector<std::vector<float> > fFFTInputVec, int nticks) {
   std::cout << "total input size=" << fFFTInputVec.size() << std::endl;
