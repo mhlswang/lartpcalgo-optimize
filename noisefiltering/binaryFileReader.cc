@@ -39,6 +39,8 @@ void run_mkl(std::vector<std::vector<float> > &input_vector,
               std::vector<std::vector<std::complex<float>> > &computed_output, 
               int nticks, int nwires);
 
+float get_complex_error(std::complex<float> c1, std::complex<float> c2);
+
 int main(int argc, char *argv[])
 {
 
@@ -75,7 +77,7 @@ int main(int argc, char *argv[])
 
 
   read_input_vector(input_vector, f, nticks, nwires);
-  print_input_vector(input_vector, nticks);
+  // print_input_vector(input_vector, nticks);
 
 
   std::cout << "======================================================================================";
@@ -105,15 +107,25 @@ int main(int argc, char *argv[])
   std::cout << std::endl;
 
   read_output_vector(expected_output, f, nticks, nwires);
-  print_output_vector(expected_output, nticks);
+  // print_output_vector(expected_output, nticks);
 
   fclose(f);
+
+  for (int i = 0; i < nwires; i++) {
+      if (i!=0 && i!=(nwires-1)) continue;
+    for (int j = 0; j < nticks; j++) {
+      std::cout << get_complex_error(expected_output[i][j], computed_output[i][j]) << std::endl;
+    }
+  }
+  std::cout << std::endl;
+  std::cout << std::endl;
 
   io_t2 = omp_get_wtime();
 
   std::cout << "total time = " << io_t2 - start_t << "s" << std::endl;
   std::cout << "io time    = " << io_t2 - fft_t + io_t1 - start_t << "s" << std::endl;
   std::cout << "fft time   = " << fft_t - io_t1 << "s" << std::endl;
+  std::cout << std::endl;
 
 }
 
@@ -224,4 +236,21 @@ void print_output_vector(std::vector<std::vector<std::complex<float>> > fFFTOutp
     std::cout << std::endl;
   }
 }
+
+float get_complex_error(std::complex<float> c1, std::complex<float> c2) {
+
+  float mag1 = sqrt( c1.imag()*c1.imag() + c1.real()*c1.real() );
+  float mag2 = sqrt( c2.imag()*c2.imag() + c2.real()*c2.real() );
+  float mag_diff = sqrt( ((c1.imag()-c2.imag()) * (c1.imag()-c2.imag())) +
+                         ((c1.real()-c2.real()) * (c1.real()-c2.real())) );
+
+  float err = mag_diff / std::max(mag1,mag2);
+  return err;
+
+}
+
+
+
+
+
 
