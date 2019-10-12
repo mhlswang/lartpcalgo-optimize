@@ -29,8 +29,11 @@
 void read_input_vector(std::vector<std::vector<float> > &fFFTInputVec, FILE* f, int nticks, int nwires);
 void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutputVec, FILE* f, int nticks, int nwires);
 
-void print_input_vector(std::vector<std::vector<float> > fFFTInputVec, int nticks);
-void print_output_vector(std::vector<std::vector<std::complex<float>> > fFFTOutputVec, int nticks);
+void print_input_vector(std::vector<std::vector<float> > const &fFFTInputVec, int nticks);
+void print_output_vector(std::vector<std::vector<std::complex<float>> > const &fFFTOutputVec, int nticks);
+void print_err(std::vector<std::vector<std::complex<float>> > const &expected, 
+               std::vector<std::vector<std::complex<float>> > const &computed, 
+               int nticks, int nwires);
 
 void run_fftw(std::vector<std::vector<float> > &input_vector, 
               std::vector<std::vector<std::complex<float>> > &computed_output, 
@@ -83,7 +86,14 @@ int main(int argc, char *argv[])
   std::cout << "======================================================================================";
   std::cout << std::endl;
   std::cout << std::endl;
-  std::cout << "Running FFTW.....";
+  #ifdef USE_FFTW
+  std::cout << "Running FFTW.....";    
+  #endif
+
+  #ifdef USE_MKL 
+  std::cout << "Running MKL....."; 
+  #endif
+
 
   io_t1 = omp_get_wtime();
 
@@ -110,15 +120,7 @@ int main(int argc, char *argv[])
   // print_output_vector(expected_output, nticks);
 
   fclose(f);
-
-  for (int i = 0; i < nwires; i++) {
-      if (i!=0 && i!=(nwires-1)) continue;
-    for (int j = 0; j < nticks; j++) {
-      std::cout << get_complex_error(expected_output[i][j], computed_output[i][j]) << std::endl;
-    }
-  }
-  std::cout << std::endl;
-  std::cout << std::endl;
+  print_err(expected_output, computed_output, nticks, nwires);
 
   io_t2 = omp_get_wtime();
 
@@ -209,7 +211,7 @@ void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutp
   }
 }
 
-void print_input_vector(std::vector<std::vector<float> > fFFTInputVec, int nticks) {
+void print_input_vector(std::vector<std::vector<float> > const &fFFTInputVec, int nticks) {
   std::cout << "total input size=" << fFFTInputVec.size() << std::endl;
   for (int k=0;k<fFFTInputVec.size();k++) {
     assert(fFFTInputVec[k].size()==nticks);
@@ -223,7 +225,7 @@ void print_input_vector(std::vector<std::vector<float> > fFFTInputVec, int ntick
   }
 }
 
-void print_output_vector(std::vector<std::vector<std::complex<float>> > fFFTOutputVec, int nticks) {
+void print_output_vector(std::vector<std::vector<std::complex<float>> > const &fFFTOutputVec, int nticks) {
   std::cout << "total output size=" << fFFTOutputVec.size() << std::endl;
   for (int k=0;k<fFFTOutputVec.size();k++) {
     assert(fFFTOutputVec[k].size()==nticks);
@@ -235,6 +237,21 @@ void print_output_vector(std::vector<std::vector<std::complex<float>> > fFFTOutp
     std::cout << std::endl;
     std::cout << std::endl;
   }
+}
+
+void print_err(std::vector<std::vector<std::complex<float>> > const &expected, 
+               std::vector<std::vector<std::complex<float>> > const &computed, 
+               int nticks, int nwires) {
+
+  for (int i = 0; i < expected.size(); i++) {
+    if (i!=0 && i!=(nwires-1)) continue;
+    for (int j = 0; j < expected[i].size(); j++) {
+      std::cout << get_complex_error(expected[i][j], computed[i][j]) << std::endl;
+    }
+  }
+  std::cout << std::endl;
+  std::cout << std::endl;
+
 }
 
 float get_complex_error(std::complex<float> c1, std::complex<float> c2) {

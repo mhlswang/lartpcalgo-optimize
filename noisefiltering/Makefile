@@ -5,8 +5,8 @@
 #NOVEC    := 1
 
 # USE_CALI := 1
-USE_MKL  := 1
-# USE_FFTW := 1
+# USE_MKL  := 1
+USE_FFTW := 1
 # MAKE_PLOTS  := 1
 
 CPPFLAGS := -std=c++11 # this is hwere to add include links 
