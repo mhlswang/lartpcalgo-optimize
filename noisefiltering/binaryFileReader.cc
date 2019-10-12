@@ -11,6 +11,7 @@
 #include <fstream>
 #include <complex>
 #include <assert.h>
+#include <omp.h>
 
 #ifdef USE_FFTW
 #include <fftw3.h>
@@ -18,6 +19,10 @@
 
 #ifdef USE_MKL
 #include "mkl_dfti.h"
+#endif
+
+#ifndef NREPS
+#define NREPS 100
 #endif
 
 
@@ -45,10 +50,15 @@ int main(int argc, char *argv[])
   }
   assert(f);
 
+  double start_t, io_t1, fft_t, io_t2;
+
+  start_t = omp_get_wtime();
+
   size_t nwires;
   fread(&nwires, sizeof(size_t), 1, f);
 
-  std::cout << "found nwires=" << nwires << std::endl;
+  std::cout << "found nwires   =" << nwires << std::endl;
+  std::cout << "number of reps =" << NREPS << std::endl;
 
   size_t nticks = 4096;
 
@@ -73,15 +83,21 @@ int main(int argc, char *argv[])
   std::cout << std::endl;
   std::cout << "Running FFTW.....";
 
+  io_t1 = omp_get_wtime();
 
-#ifdef USE_FFTW
-  run_fftw(input_vector, computed_output, nticks, nwires);
-#endif
+  for (int i = 0; i < NREPS; i++) {
 
+    #ifdef USE_FFTW
+    run_fftw(input_vector, computed_output, nticks, nwires);
+    #endif
 
-#ifdef USE_MKL
-  run_mkl(input_vector, computed_output, nticks, nwires);
-#endif
+    #ifdef USE_MKL
+    run_mkl(input_vector, computed_output, nticks, nwires);
+    #endif
+
+  }
+
+  fft_t = omp_get_wtime();
 
   std::cout << "DONE" << std::endl;
   std::cout << "======================================================================================";
@@ -91,8 +107,14 @@ int main(int argc, char *argv[])
   read_output_vector(expected_output, f, nticks, nwires);
   print_output_vector(expected_output, nticks);
 
-
   fclose(f);
+
+  io_t2 = omp_get_wtime();
+
+  std::cout << "total time = " << io_t2 - start_t << "s" << std::endl;
+  std::cout << "io time    = " << io_t2 - fft_t + io_t1 - start_t << "s" << std::endl;
+  std::cout << "fft time   = " << fft_t - io_t1 << "s" << std::endl;
+
 }
 
 
