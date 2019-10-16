@@ -28,9 +28,12 @@
 
 void read_input_vector(std::vector<std::vector<float> > &fFFTInputVec, FILE* f, int nticks, int nwires);
 void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutputVec, FILE* f, int nticks, int nwires);
+void fix_conjugates(std::vector<std::vector<std::complex<float>> > &computed, 
+                    int nticks, int nwires);
 
 void print_input_vector(std::vector<std::vector<float> > const &fFFTInputVec, int nticks);
 void print_output_vector(std::vector<std::vector<std::complex<float>> > const &fFFTOutputVec, int nticks);
+void print_output_vector_v2(std::vector<std::vector<std::complex<float>> > const &fFFTOutputVec, int nticks);
 void print_err(std::vector<std::vector<std::complex<float>> > const &expected, 
                std::vector<std::vector<std::complex<float>> > const &computed, 
                int nticks, int nwires);
@@ -88,6 +91,7 @@ int main(int argc, char *argv[])
   std::cout << std::endl;
   #ifdef USE_FFTW
   std::cout << "Running FFTW.....";    
+  fftwf_init_threads();
   #endif
 
   #ifdef USE_MKL 
@@ -106,6 +110,8 @@ int main(int argc, char *argv[])
     #ifdef USE_MKL
     run_mkl(input_vector, computed_output, nticks, nwires);
     #endif
+
+    fix_conjugates(computed_output, nticks, nwires);
 
   }
 
@@ -142,7 +148,7 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
   fftwf_plan fftw;
 
   in  = (float*) fftw_malloc(sizeof(float) * nticks);
-  out = (fftwf_complex*) fftw_malloc(sizeof(fftw_complex) * nticks);
+  out = (fftwf_complex*) fftw_malloc(sizeof(fftwf_complex) * nticks);
   // p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
   fftw = fftwf_plan_dft_r2c_1d(nticks, in, out, FFTW_MEASURE);
   
@@ -172,7 +178,7 @@ void run_mkl(std::vector<std::vector<float> > &input_vector,
   DFTI_DESCRIPTOR_HANDLE descriptor;
   MKL_LONG status;
 
-  status = DftiCreateDescriptor(&descriptor, DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)nticks); //Specify size and precision
+  status = DftiCreateDescriptor(&descriptor, DFTI_SINGLE, DFTI_REAL, 1, nticks); //Specify size and precision
   status = DftiSetValue(descriptor, DFTI_PLACEMENT, DFTI_NOT_INPLACE); //Out of place FFT
   status = DftiCommitDescriptor(descriptor); //Finalize the descriptor
 
@@ -232,23 +238,75 @@ void print_output_vector(std::vector<std::vector<std::complex<float>> > const &f
     if (k!=0 && k!=(fFFTOutputVec.size()-1)) continue;
     std::cout << "output #=" << k  << " size=" << fFFTOutputVec[k].size()<< std::endl;
     for (int kk=0;kk<fFFTOutputVec[k].size();kk++) {
-      std::cout << fFFTOutputVec[k][kk] << " ";
+      std::cout << fFFTOutputVec[k][kk] << " " << std::endl;
+      std::cout << std::endl;
     }
     std::cout << std::endl;
     std::cout << std::endl;
   }
 }
 
+
+void print_output_vector_v2(std::vector<std::vector<std::complex<float>> > const &fFFTOutputVec, int nticks) {
+  std::cout << "total output size=" << fFFTOutputVec.size() << std::endl;
+  for (int k=0;k<fFFTOutputVec.size();k++) {
+    assert(fFFTOutputVec[k].size()==nticks);
+    if (k!=0 && k!=(fFFTOutputVec.size()-1)) continue;
+    std::cout << "output #=" << k  << " size=" << fFFTOutputVec[k].size()<< std::endl;
+    for (int kk=0;kk<(fFFTOutputVec[k].size()/2)+1;kk++) {
+      std::cout << fFFTOutputVec[k][(fFFTOutputVec[k].size()/2)-kk] << " " << std::endl;
+      std::cout << fFFTOutputVec[k][(fFFTOutputVec[k].size()/2)+kk] << " " << std::endl;
+      std::cout << std::endl;
+    }
+    std::cout << fFFTOutputVec[k][0] << " " << std::endl;
+    std::cout << fFFTOutputVec[k][fFFTOutputVec[k].size()] << " " << std::endl;
+    std::cout << std::endl;
+    std::cout << fFFTOutputVec[k][1] << " " << std::endl;
+    std::cout << fFFTOutputVec[k][fFFTOutputVec[k].size()-1] << " " << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+  }
+}
+
+void fix_conjugates(std::vector<std::vector<std::complex<float>> > &computed, 
+                    int nticks, int nwires) {
+
+  float err;
+  int num_crap = 0;
+  int num_tot  = 0;
+
+  for (int i = 0; i < nwires; i++) {
+    for (int j = 0; j < (nticks/2)+1; j++) {
+      computed[i][(nticks/2)+j] = std::conj(computed[i][(nticks/2)-j]);
+    }
+  }
+
+}
+
+
 void print_err(std::vector<std::vector<std::complex<float>> > const &expected, 
                std::vector<std::vector<std::complex<float>> > const &computed, 
                int nticks, int nwires) {
 
+  float err;
+  int num_crap = 0;
+  int num_tot  = 0;
+
   for (int i = 0; i < expected.size(); i++) {
     if (i!=0 && i!=(nwires-1)) continue;
     for (int j = 0; j < expected[i].size(); j++) {
-      std::cout << get_complex_error(expected[i][j], computed[i][j]) << std::endl;
+      err = get_complex_error(expected[i][j], computed[i][j]);
+      std::cout << err << std::endl;
+      if (err >= 1.0) {
+      // if (err < 1.0) {
+        std::cout << expected[i][j] << std::endl;
+        std::cout << computed[i][j] << std::endl;
+        num_crap++;
+      }
+      num_tot++;
     }
   }
+
   std::cout << std::endl;
   std::cout << std::endl;
 
@@ -256,12 +314,15 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
 
 float get_complex_error(std::complex<float> c1, std::complex<float> c2) {
 
-  float mag1 = sqrt( c1.imag()*c1.imag() + c1.real()*c1.real() );
-  float mag2 = sqrt( c2.imag()*c2.imag() + c2.real()*c2.real() );
-  float mag_diff = sqrt( ((c1.imag()-c2.imag()) * (c1.imag()-c2.imag())) +
-                         ((c1.real()-c2.real()) * (c1.real()-c2.real())) );
+  // float mag1 = sqrt( c1.imag()*c1.imag() + c1.real()*c1.real() );
+  float mag1 = norm(c1);
+  // float mag2 = sqrt( c2.imag()*c2.imag() + c2.real()*c2.real() );
+  float mag2 = norm(c2);
+  // float mag_diff = sqrt( ((c1.imag()-c2.imag()) * (c1.imag()-c2.imag())) +
+  //                        ((c1.real()-c2.real()) * (c1.real()-c2.real())) );
+  float mag_diff = norm(c1-c2);
 
-  float err = mag_diff / std::max(mag1,mag2);
+  float err = mag_diff / std::max(std::abs(mag1),std::abs(mag2));
   return err;
 
 }
