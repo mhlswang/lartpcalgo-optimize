@@ -6,7 +6,8 @@
 
 # USE_CALI := 1
 USE_MKL  := 1
-# USE_FFTW := 1s
+# USE_FFTW := 1
+THREAD_WIRES := 1
 # MAKE_PLOTS  := 1
 
 CPPFLAGS := -std=c++11 # this is hwere to add include links 
@@ -56,6 +57,10 @@ ifdef USE_MKL
   LDFLAGS  += ${MKL_LINK}
 endif
 
+ifdef THREAD_WIRES 
+  CPPFLAGS += -DTHREAD_WIRES
+endif
+
 ifdef USE_FFTW 
   CPPFLAGS += ${FFTW_OPT}
   CPPFLAGS += -DUSE_FFTW
@@ -69,8 +74,8 @@ endif
 
 all: fft
 
-fft: binaryFileReader.cc Makefile
-	$(CXX) $(CPPFLAGS) $(OPT)  binaryFileReader.cc -o fft.exe  $(LDFLAGS)
+fft: fft_comparison.cc Makefile
+	$(CXX) $(CPPFLAGS) $(OPT)  fft_comparison.cc -o fft.exe  $(LDFLAGS)
 
 clean:	
 	rm -f fft.exe *.optrpt *.o

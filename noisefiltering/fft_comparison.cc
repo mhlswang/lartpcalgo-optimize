@@ -15,16 +15,19 @@
 
 #ifdef USE_FFTW
 #include <fftw3.h>
+#define PLOTS_FILE "fftw_output.csv"
 #endif
 
 #ifdef USE_MKL
 #include "mkl_dfti.h"
+#define PLOTS_FILE "mkl_output.csv"
 #endif
 
 #ifndef NREPS
 #define NREPS 100
 #endif
 
+#define TOL 0.001
 
 void read_input_vector(std::vector<std::vector<float> > &fFFTInputVec, FILE* f, int nticks, int nwires);
 void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutputVec, FILE* f, int nticks, int nwires);
@@ -34,16 +37,20 @@ void fix_conjugates(std::vector<std::vector<std::complex<float>> > &computed,
 void print_input_vector(std::vector<std::vector<float> > const &fFFTInputVec, int nticks);
 void print_output_vector(std::vector<std::vector<std::complex<float>> > const &fFFTOutputVec, int nticks);
 void print_output_vector_v2(std::vector<std::vector<std::complex<float>> > const &fFFTOutputVec, int nticks);
+void print_for_plots(char* file_name,
+               std::vector<std::vector<std::complex<float>> > const &expected, 
+               std::vector<std::vector<std::complex<float>> > const &computed, 
+               int nticks, int nwires);
 void print_err(std::vector<std::vector<std::complex<float>> > const &expected, 
                std::vector<std::vector<std::complex<float>> > const &computed, 
                int nticks, int nwires);
 
 void run_fftw(std::vector<std::vector<float> > &input_vector, 
               std::vector<std::vector<std::complex<float>> > &computed_output, 
-              int nticks, int nwires);
+              int nticks, int nwires, int nthr);
 void run_mkl(std::vector<std::vector<float> > &input_vector, 
               std::vector<std::vector<std::complex<float>> > &computed_output, 
-              int nticks, int nwires);
+              int nticks, int nwires, int nthr);
 
 float get_complex_error(std::complex<float> c1, std::complex<float> c2);
 
@@ -51,11 +58,16 @@ int main(int argc, char *argv[])
 {
 
   FILE* f;
-  if (argc > 1) {
-    f = fopen(argv[1], "r");
-  } else {
-    f = fopen("noisefilt_100ev_50k.bin", "r");
-  }
+  int nthr = 1;
+  if (argc > 1) nthr = std::atoi(argv[1]);
+
+  // if (argc > 1) {
+  //   f = fopen(argv[1], "r");
+  // } else {
+  //   f = fopen("noisefilt_100ev_50k.bin", "r");
+  // }
+  
+  f = fopen("noisefilt_100ev_50k.bin", "r");
   assert(f);
 
   double start_t, io_t1, fft_t, io_t2;
@@ -104,11 +116,11 @@ int main(int argc, char *argv[])
   for (int i = 0; i < NREPS; i++) {
 
     #ifdef USE_FFTW
-    run_fftw(input_vector, computed_output, nticks, nwires);
+    run_fftw(input_vector, computed_output, nticks, nwires, nthr);
     #endif
 
     #ifdef USE_MKL
-    run_mkl(input_vector, computed_output, nticks, nwires);
+    run_mkl(input_vector, computed_output, nticks, nwires, nthr);
     #endif
 
     fix_conjugates(computed_output, nticks, nwires);
@@ -126,10 +138,16 @@ int main(int argc, char *argv[])
   // print_output_vector(expected_output, nticks);
 
   fclose(f);
+
+  #ifdef MAKE_PLOTS
+  print_for_plots(PLOTS_FILE, expected_output, computed_output, nticks, nwires);
+  #else
   print_err(expected_output, computed_output, nticks, nwires);
+  #endif
 
   io_t2 = omp_get_wtime();
 
+  std::cout << "number thr = " << nthr << std::endl;
   std::cout << "total time = " << io_t2 - start_t << "s" << std::endl;
   std::cout << "io time    = " << io_t2 - fft_t + io_t1 - start_t << "s" << std::endl;
   std::cout << "fft time   = " << fft_t - io_t1 << "s" << std::endl;
@@ -141,7 +159,7 @@ int main(int argc, char *argv[])
 #ifdef USE_FFTW
 void run_fftw(std::vector<std::vector<float> > &input_vector, 
               std::vector<std::vector<std::complex<float>> > &computed_output, 
-              int nticks, int nwires) {
+              int nticks, int nwires, int nthr) {
 
   float *in;
   fftwf_complex *out;
@@ -150,6 +168,7 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
   in  = (float*) fftw_malloc(sizeof(float) * nticks);
   out = (fftwf_complex*) fftw_malloc(sizeof(fftwf_complex) * nticks);
   // p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+  fftwf_plan_with_nthreads(nthr);
   fftw = fftwf_plan_dft_r2c_1d(nticks, in, out, FFTW_MEASURE);
   
   for (int iw=0; iw<nwires; ++iw) {
@@ -173,7 +192,7 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
 #ifdef USE_MKL
 void run_mkl(std::vector<std::vector<float> > &input_vector, 
               std::vector<std::vector<std::complex<float>> > &computed_output, 
-              int nticks, int nwires){
+              int nticks, int nwires, int nthr){
 
   DFTI_DESCRIPTOR_HANDLE descriptor;
   MKL_LONG status;
@@ -284,6 +303,24 @@ void fix_conjugates(std::vector<std::vector<std::complex<float>> > &computed,
 }
 
 
+void print_for_plots(char* file_name,
+               std::vector<std::vector<std::complex<float>> > const &expected, 
+               std::vector<std::vector<std::complex<float>> > const &computed, 
+               int nticks, int nwires) {
+
+  std::ofstream ofile;
+  ofile.open (file_name);
+
+  for (int i = 0; i < expected.size(); i++) {
+    for (int j = 0; j < expected[i].size(); j++) {
+      ofile << expected[i][j] << ",";
+      ofile << computed[i][j] << std::endl;
+    }
+  }
+
+  ofile.close();
+}
+
 void print_err(std::vector<std::vector<std::complex<float>> > const &expected, 
                std::vector<std::vector<std::complex<float>> > const &computed, 
                int nticks, int nwires) {
@@ -293,12 +330,12 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
   int num_tot  = 0;
 
   for (int i = 0; i < expected.size(); i++) {
-    if (i!=0 && i!=(nwires-1)) continue;
+    // if (i!=0 && i!=(nwires-1)) continue;
     for (int j = 0; j < expected[i].size(); j++) {
       err = get_complex_error(expected[i][j], computed[i][j]);
-      std::cout << err << std::endl;
-      if (err >= 1.0) {
+      if (err >= TOL) {
       // if (err < 1.0) {
+        std::cout << err << std::endl;
         std::cout << expected[i][j] << std::endl;
         std::cout << computed[i][j] << std::endl;
         num_crap++;
@@ -306,7 +343,10 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
       num_tot++;
     }
   }
-
+  if (num_crap > 0) {
+    std::cout << "Count errors over tolerance: " << num_crap << std::endl;
+    std::cout << "Count of total points:       " << num_tot << std::endl;
+  }
   std::cout << std::endl;
   std::cout << std::endl;
 

@@ -6,6 +6,8 @@ gshf-mrqdt3
 gshf-mrqdt2
 fft.exe
 
+*.csv
+
 *.optrpt
 
 cali*
