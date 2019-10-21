@@ -10,6 +10,7 @@ public:
   
   int cal_perr(float p[], float y[], const int nParam, const int nData, float perr[]);
   int mrqdtfit(float &lambda, float p[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr);
+  int mrqdtfit(float &lambda, float p[], float plimmin[], float plimmax[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr);
   
 private:
   //these functions are  called by the public functions
