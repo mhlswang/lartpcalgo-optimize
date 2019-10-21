@@ -1,4 +1,5 @@
 #include "marqfit.h"
+#include <limits>
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
 void marqfit::fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res){
@@ -267,7 +268,7 @@ int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, con
   return mrqdtfit(lambda, p, &plimmin[0], &plimmax[0], y, nParam, nData, chiSqr, dchiSqr);
 }
 
-int MarqFitAlg::mrqdtfit(float &lambda, float p[], float plimmin[], float plimmax[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
+int marqfit::mrqdtfit(float &lambda, float p[], float plimmin[], float plimmax[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
 {
   int i,j;
   float nu,rho,lzmlh,amax,chiSq0;

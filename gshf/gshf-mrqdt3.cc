@@ -209,8 +209,8 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
 
   std::vector<float> y(roiSize);
   std::vector<float> p(3*mhc_vec.size());
-  std::vector<float> plimmin(3*fhc_vec.size());
-  std::vector<float> plimmax(3*fhc_vec.size());
+  std::vector<float> plimmin(3*mhc_vec.size());
+  std::vector<float> plimmax(3*mhc_vec.size());
   std::vector<float> perr(3*mhc_vec.size());
 
   /* choose the fit function and set the parameters */
@@ -221,7 +221,7 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
     float peakWidth  = mhc_vec[imh].sig;
     float amplitude  = mhc_vec[imh].hgt;
 
-    float meanLowLim = fmax(peakMean - PeakRange * peakWidth,       0.);
+    float meanLowLim = fmax(peakMean - PeakRange * peakWidth,       0.f);
     float meanHiLim  = fmin(peakMean + PeakRange * peakWidth, (float)roiSize);
     p[0+nParams]=amplitude;
     p[1+nParams]=peakMean;
@@ -229,7 +229,7 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
 
     plimmin[0+nParams]=amplitude*0.1;
     plimmin[1+nParams]=meanLowLim;
-    plimmin[2+nParams]=std::max(MinWidth, 0.1 * peakWidth);
+    plimmin[2+nParams]=fmax(MinWidth, 0.1f * peakWidth);
     plimmax[0+nParams]=amplitude*AmpRange;
     plimmax[1+nParams]=meanHiLim;
     plimmax[2+nParams]=MaxWidthMult * peakWidth;
