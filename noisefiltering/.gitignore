@@ -7,6 +7,9 @@ gshf-mrqdt2
 fft.exe
 
 *.csv
+*.png
+.tau
+r0*
 
 *.optrpt
 

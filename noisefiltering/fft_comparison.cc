@@ -15,7 +15,7 @@
 
 #ifdef USE_FFTW
 #include <fftw3.h>
-#define PLOTS_FILE "fftw_output.csv"
+#define PLOTS_FILE "fftw_output_omp.csv"
 #endif
 
 #ifdef USE_MKL
@@ -40,7 +40,8 @@ void print_output_vector_v2(std::vector<std::vector<std::complex<float>> > const
 void print_for_plots(char* file_name,
                std::vector<std::vector<std::complex<float>> > const &expected, 
                std::vector<std::vector<std::complex<float>> > const &computed, 
-               int nticks, int nwires);
+               int nticks, int nwires,
+               bool error);
 void print_err(std::vector<std::vector<std::complex<float>> > const &expected, 
                std::vector<std::vector<std::complex<float>> > const &computed, 
                int nticks, int nwires);
@@ -60,6 +61,10 @@ int main(int argc, char *argv[])
   FILE* f;
   int nthr = 1;
   if (argc > 1) nthr = std::atoi(argv[1]);
+  // #ifdef THREAD_WIRES
+  // omp_set_num_threads(nthr);
+  // #endif
+  omp_set_num_threads(nthr);
 
   // if (argc > 1) {
   //   f = fopen(argv[1], "r");
@@ -102,8 +107,10 @@ int main(int argc, char *argv[])
   std::cout << std::endl;
   std::cout << std::endl;
   #ifdef USE_FFTW
-  std::cout << "Running FFTW.....";    
+  std::cout << "Running FFTW.....";   
+  #ifndef THREAD_WIRES
   fftwf_init_threads();
+  #endif
   #endif
 
   #ifdef USE_MKL 
@@ -138,9 +145,14 @@ int main(int argc, char *argv[])
   // print_output_vector(expected_output, nticks);
 
   fclose(f);
+  #ifdef USE_FFTW
+  #ifndef THREAD_WIRES
+  fftwf_cleanup_threads();
+  #endif
+  #endif
 
   #ifdef MAKE_PLOTS
-  print_for_plots(PLOTS_FILE, expected_output, computed_output, nticks, nwires);
+  print_for_plots(PLOTS_FILE, expected_output, computed_output, nticks, nwires, true);
   #else
   print_err(expected_output, computed_output, nticks, nwires);
   #endif
@@ -163,14 +175,27 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
 
   float *in;
   fftwf_complex *out;
-  fftwf_plan fftw;
 
+  // p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+  
+  #ifdef THREAD_WIRES 
+  #pragma omp parallel private(in, out)
+  {
+  #endif
+
+  #ifndef THREAD_WIRES
+  fftwf_plan_with_nthreads(nthr);
+  #endif
+
+  fftwf_plan fftw;
   in  = (float*) fftw_malloc(sizeof(float) * nticks);
   out = (fftwf_complex*) fftw_malloc(sizeof(fftwf_complex) * nticks);
-  // p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
-  fftwf_plan_with_nthreads(nthr);
+  #pragma omp critical
   fftw = fftwf_plan_dft_r2c_1d(nticks, in, out, FFTW_MEASURE);
-  
+
+  #ifdef THREAD_WIRES
+  #pragma omp for
+  #endif
   for (int iw=0; iw<nwires; ++iw) {
 
     for (int i = 0; i < nticks; ++i) in[i] = input_vector[iw][i];
@@ -181,10 +206,16 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
       computed_output[iw][i].imag(out[i][1]);
     }
   }
+
+  #pragma omp critical
+  fftwf_destroy_plan(fftw);
+
+  fftw_free(in); fftw_free(out);
+  #ifdef THREAD_WIRES
+  } // parallel section
+  #endif
   
 
-  fftwf_destroy_plan(fftw);
-  fftw_free(in); fftw_free(out);
 
 }
 #endif
@@ -197,10 +228,18 @@ void run_mkl(std::vector<std::vector<float> > &input_vector,
   DFTI_DESCRIPTOR_HANDLE descriptor;
   MKL_LONG status;
 
+  #ifdef THREAD_WIRES
+  #pragma omp parallel private (descriptor, status)
+  {
+  #endif
+
   status = DftiCreateDescriptor(&descriptor, DFTI_SINGLE, DFTI_REAL, 1, nticks); //Specify size and precision
   status = DftiSetValue(descriptor, DFTI_PLACEMENT, DFTI_NOT_INPLACE); //Out of place FFT
   status = DftiCommitDescriptor(descriptor); //Finalize the descriptor
 
+  #ifdef THREAD_WIRES
+  #pragma omp for
+  #endif
   for (int iw=0; iw<nwires; ++iw) {
 
     status = DftiComputeForward(descriptor, input_vector[iw].data(), computed_output[iw].data()); //Compute the Forward FFT
@@ -208,6 +247,10 @@ void run_mkl(std::vector<std::vector<float> > &input_vector,
   }
 
   status = DftiFreeDescriptor(&descriptor); //Free the descriptor
+
+  #ifdef THREAD_WIRES 
+  }
+  #endif
 
 }
 #endif
@@ -306,15 +349,20 @@ void fix_conjugates(std::vector<std::vector<std::complex<float>> > &computed,
 void print_for_plots(char* file_name,
                std::vector<std::vector<std::complex<float>> > const &expected, 
                std::vector<std::vector<std::complex<float>> > const &computed, 
-               int nticks, int nwires) {
+               int nticks, int nwires,
+               bool error) {
 
   std::ofstream ofile;
   ofile.open (file_name);
 
   for (int i = 0; i < expected.size(); i++) {
     for (int j = 0; j < expected[i].size(); j++) {
-      ofile << expected[i][j] << ",";
-      ofile << computed[i][j] << std::endl;
+      if (error) {
+        ofile << get_complex_error(expected[i][j], computed[i][j]) << std::endl;
+      } else {
+        ofile << expected[i][j] << ",";
+        ofile << computed[i][j] << std::endl;
+      }
     }
   }
 

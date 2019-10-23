@@ -8,7 +8,7 @@
 USE_MKL  := 1
 # USE_FFTW := 1
 THREAD_WIRES := 1
-# MAKE_PLOTS  := 1
+MAKE_PLOTS  := 1
 
 CPPFLAGS := -std=c++11 # this is hwere to add include links 
 # LDFLAGS  := # nothing yet but this is where to add library links 
@@ -18,8 +18,12 @@ CPPFLAGS := -std=c++11 # this is hwere to add include links
 MKL_LINK = -L${MKLROOT}/lib/intel64 -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_avx512 -lmkl_core -liomp5 -lpthread -lm -ldl #
 MKL_OPT  = -DMKL_ILP64 -I${MKLROOT}/include #
 
-FFTW_LINK = -L/home/users/gravelle/soft/fftw-3.3.8-gcc/lib -lfftw3f -lfftw3 -lfftw3f_threads -lm #
-FFTW_OPT  = -I/home/users/gravelle/soft/fftw-3.3.8-gcc/include #
+# FFTW_DIR = /home/users/gravelle/soft/fftw-3.3.8-gcc
+# FFTW_LINK = -L${FFTW_DIR}/lib -lfftw3f -lfftw3 -lfftw3f_threads -lm #
+# FFTW_OPT  = -I${FFTW_DIR}/include #
+
+FFTW_LINK = -L${FFTW_DIR}/lib -lfftw3f -lfftw3 -lfftw3f_omp -lm #
+FFTW_OPT  = -I${FFTW_DIR}/include #
 
 ifdef INTEL_LICENSE_FILE
 	CXX=icpc
