@@ -12,15 +12,16 @@
 #include <complex>
 #include <assert.h>
 #include <omp.h>
+#include <mpi.h>
 
 #ifdef USE_FFTW
 #include <fftw3.h>
-#define PLOTS_FILE "fftw_output_omp.csv"
+#define PLOTS_FILE "fftw_output_mpi.csv"
 #endif
 
 #ifdef USE_MKL
 #include "mkl_dfti.h"
-#define PLOTS_FILE "mkl_output.csv"
+#define PLOTS_FILE "mkl_output_mpi.csv"
 #endif
 
 #ifndef NREPS
@@ -62,112 +63,159 @@ float get_complex_error(std::complex<float> c1, std::complex<float> c2);
 int main(int argc, char *argv[])
 {
 
-  FILE* f;
-  int nthr = 1;
-  if (argc > 1) nthr = std::atoi(argv[1]);
-  // #ifdef THREAD_WIRES
-  // omp_set_num_threads(nthr);
-  // #endif
-  omp_set_num_threads(nthr);
+  MPI_Init(NULL, NULL);
 
-  // if (argc > 1) {
-  //   f = fopen(argv[1], "r");
-  // } else {
-  //   f = fopen("noisefilt_100ev_50k.bin", "r");
-  // }
-  
-  f = fopen("noisefilt_100ev_50k.bin", "r");
-  assert(f);
+  int np;
+  MPI_Comm_size(MPI_COMM_WORLD, &np);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  int nthr = 1;
 
   double start_t, io_t1, fft_t, io_t2;
-
-  start_t = omp_get_wtime();
-
   size_t nwires;
-  fread(&nwires, sizeof(size_t), 1, f);
-
-  std::cout << "found nwires   =" << nwires << std::endl;
-  std::cout << "number of reps =" << NREPS << std::endl;
-
   size_t nticks = 4096;
 
+  FILE* f;  
+
   std::vector<std::vector<float> > input_vector;
-  input_vector.reserve(nwires);
-
   std::vector<std::vector<std::complex<float>> > expected_output;
-  expected_output.reserve(nwires);
-
   std::vector<std::vector<std::complex<float>> > computed_output;
-  computed_output.reserve(nwires);
-  for (int i = 0; i < nwires; ++i)
-    computed_output[i].resize(nticks);
+
+  if (rank == 0) {
+
+    if (argc > 1) nthr = std::atoi(argv[1]);
+    // #ifdef THREAD_WIRES
+    // omp_set_num_threads(nthr);
+    // #endif
+    omp_set_num_threads(nthr);
+
+    // if (argc > 1) {
+    //   f = fopen(argv[1], "r");
+    // } else {
+    //   f = fopen("noisefilt_100ev_50k.bin", "r");
+    // }
+    
+    f = fopen("noisefilt_100ev_50k.bin", "r");
+    assert(f);
+
+    start_t = omp_get_wtime();
+
+    fread(&nwires, sizeof(size_t), 1, f);
+
+    std::cout << "found nwires   =" << nwires << std::endl;
+    std::cout << "number of reps =" << NREPS << std::endl;
+
+    input_vector.reserve(nwires);
+    expected_output.reserve(nwires);
+    computed_output.reserve(nwires);
+    for (int i = 0; i < nwires; ++i)
+      computed_output[i].resize(nticks);
 
 
-  read_input_vector(input_vector, f, nticks, nwires);
-  // print_input_vector(input_vector, nticks);
+    read_input_vector(input_vector, f, nticks, nwires);
+    // print_input_vector(input_vector, nticks);
 
 
-  std::cout << "======================================================================================";
-  std::cout << std::endl;
-  std::cout << std::endl;
-  #ifdef USE_FFTW
-  std::cout << "Running FFTW.....";   
-  #ifndef THREAD_WIRES
-  fftwf_init_threads();
-  #endif
-  #endif
+    std::cout << "======================================================================================";
+    std::cout << std::endl;
+    std::cout << std::endl;
+    #ifdef USE_FFTW
+    std::cout << "Running FFTW.....";   
+    #ifndef THREAD_WIRES
+    fftwf_init_threads();
+    #endif
+    #endif
 
-  #ifdef USE_MKL 
-  std::cout << "Running MKL....."; 
-  #endif
+    #ifdef USE_MKL 
+    std::cout << "Running MKL....."; 
+    #endif
+
+    io_t1 = omp_get_wtime();
 
 
-  io_t1 = omp_get_wtime();
+    if( (nwires%nthr) != 0) {
+      std::cout << std::endl << "MPI Ranks are messed up" << std::endl << std::endl;
+      exit(1);
+    }
+
+  } // rank 0
+  
+  MPI_Bcast( &nwires, 1, MPI_INT, 0, MPI_COMM_WORLD );
 
   for (int i = 0; i < NREPS; i++) {
 
+
+    int chunk_size = nwires/np;
+
+    std::vector<std::vector<float> > partial_input;
+    input_vector.reserve(chunk_size);
+    std::vector<std::vector<std::complex<float>> > partial_output;
+    partial_output.reserve(chunk_size);
+    for (int i = 0; i < nwires; ++i)
+      partial_output[i].resize(nticks);
+
+    MPI_Scatter(input_vector.data(),  chunk_size, MPI_FLOAT, 
+                partial_input.data(), chunk_size, MPI_COMPLEX, 
+                0, MPI_COMM_WORLD);
+
     #ifdef USE_FFTW
-    run_fftw(input_vector, computed_output, nticks, nwires, nthr);
+    run_fftw(partial_input, partial_output, nticks, chunk_size, nthr);
     #endif
 
     #ifdef USE_MKL
-    run_mkl(input_vector, computed_output, nticks, nwires, nthr);
+    run_mkl(partial_input, partial_output, nticks, chunk_size, nthr);
     #endif
 
+    MPI_Gather(partial_output.data(),  chunk_size, MPI_FLOAT, 
+               computed_output.data(), chunk_size, MPI_COMPLEX, 
+               0, MPI_COMM_WORLD);
+
+
+    //TODO make sure that this isn't the scaling problem
     fix_conjugates(computed_output, nticks, nwires);
 
-  }
+  } // REPS
 
   fft_t = omp_get_wtime();
 
-  std::cout << "DONE" << std::endl;
-  std::cout << "======================================================================================";
-  std::cout << std::endl;
-  std::cout << std::endl;
+  if (rank == 0) {
+    std::cout << "DONE" << std::endl;
+    std::cout << "======================================================================================";
+    std::cout << std::endl;
+    std::cout << std::endl;
 
-  read_output_vector(expected_output, f, nticks, nwires);
-  // print_output_vector(expected_output, nticks);
+    read_output_vector(expected_output, f, nticks, nwires);
+    // print_output_vector(expected_output, nticks);
 
-  fclose(f);
-  #ifdef USE_FFTW
-  #ifndef THREAD_WIRES
-  fftwf_cleanup_threads();
-  #endif
-  #endif
+    fclose(f);
+    #ifdef USE_FFTW
+    #ifndef THREAD_WIRES
+    fftwf_cleanup_threads();
+    #endif
+    #endif
 
-  #ifdef MAKE_PLOTS
-  print_for_plots(PLOTS_FILE, expected_output, computed_output, nticks, nwires, true);
-  #else
-  print_err(expected_output, computed_output, nticks, nwires);
-  #endif
+    #ifdef MAKE_PLOTS
+    print_for_plots(PLOTS_FILE, expected_output, computed_output, nticks, nwires, true);
+    #else
+    print_err(expected_output, computed_output, nticks, nwires);
+    #endif
 
-  io_t2 = omp_get_wtime();
+    io_t2 = omp_get_wtime();
 
-  std::cout << "number thr = " << nthr << std::endl;
-  std::cout << "total time = " << io_t2 - start_t << "s" << std::endl;
-  std::cout << "io time    = " << io_t2 - fft_t + io_t1 - start_t << "s" << std::endl;
-  std::cout << "fft time   = " << fft_t - io_t1 << "s" << std::endl;
-  std::cout << std::endl;
+    std::cout << "number proc = " << np << std::endl;
+    std::cout << "number thr  = " << nthr << std::endl;
+    std::cout << "total time  = " << io_t2 - start_t << "s" << std::endl;
+    std::cout << "io time     = " << io_t2 - fft_t + io_t1 - start_t << "s" << std::endl;
+    std::cout << "fft time    = " << fft_t - io_t1 << "s" << std::endl;
+    std::cout << std::endl;
+  }
+
+
+#ifdef USE_MPI
+  MPI_Finalize();
+#endif
 
 }
 
@@ -259,6 +307,30 @@ void run_mkl(std::vector<std::vector<float> > &input_vector,
 }
 #endif
 
+#ifdef USE_MPI
+void run_mpi(std::vector<std::vector<float> > &input_vector, 
+              std::vector<std::vector<std::complex<float>> > &computed_output, 
+              int nticks, int nwires){
+
+  DFTI_DESCRIPTOR_HANDLE descriptor;
+  MKL_LONG status;
+
+  status = DftiCreateDescriptor(&descriptor, DFTI_SINGLE, DFTI_REAL, 1, nticks); //Specify size and precision
+  status = DftiSetValue(descriptor, DFTI_PLACEMENT, DFTI_NOT_INPLACE); //Out of place FFT
+  status = DftiCommitDescriptor(descriptor); //Finalize the descriptor
+
+  for (int iw=0; iw<nwires; ++iw) {
+
+    status = DftiComputeForward(descriptor, input_vector[iw].data(), computed_output[iw].data()); //Compute the Forward FFT
+
+  }
+
+  status = DftiFreeDescriptor(&descriptor); //Free the descriptor
+
+
+}
+#endif
+
 
 void read_input_vector(std::vector<std::vector<float> > &fFFTInputVec, FILE* f, int nticks, int nwires) {
   for (int iw=0; iw<nwires; ++iw) {
@@ -341,7 +413,6 @@ void fix_conjugates(std::vector<std::vector<std::complex<float>> > &computed,
   int num_crap = 0;
   int num_tot  = 0;
 
-  #pragma omp parallel for
   for (int i = 0; i < nwires; i++) {
     for (int j = 0; j < (nticks/2)+1; j++) {
       computed[i][(nticks/2)+j] = std::conj(computed[i][(nticks/2)-j]);

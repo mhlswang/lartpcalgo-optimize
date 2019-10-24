@@ -6,9 +6,10 @@
 
 # USE_CALI := 1
 USE_MKL  := 1
+USE_MPI  := 1
 # USE_FFTW := 1
 THREAD_WIRES := 1
-MAKE_PLOTS  := 1
+# MAKE_PLOTS  := 1
 
 CPPFLAGS := -std=c++11 # this is hwere to add include links 
 # LDFLAGS  := # nothing yet but this is where to add library links 
@@ -81,8 +82,11 @@ all: fft
 fft: fft_comparison.cc Makefile
 	$(CXX) $(CPPFLAGS) $(OPT)  fft_comparison.cc -o fft.exe  $(LDFLAGS)
 
+mpi: fft_comparison_mpi.cc Makefile
+	mpiicc $(CPPFLAGS) $(OPT)  fft_comparison_mpi.cc -o fft_mpi.exe  $(LDFLAGS)
+
 clean:	
-	rm -f fft.exe *.optrpt *.o
+	rm -f fft.exe fft_mpi.exe *.optrpt *.o
 
 clena: clean
 

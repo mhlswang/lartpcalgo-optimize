@@ -5,6 +5,7 @@
 gshf-mrqdt3
 gshf-mrqdt2
 fft.exe
+fft_mpi.exe
 
 *.csv
 *.png
