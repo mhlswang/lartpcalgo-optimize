@@ -5,9 +5,8 @@
 #NOVEC    := 1
 
 # USE_CALI := 1
-USE_MKL  := 1
-USE_MPI  := 1
-# USE_FFTW := 1
+# USE_MKL  := 1
+USE_FFTW := 1
 THREAD_WIRES := 1
 # MAKE_PLOTS  := 1
 

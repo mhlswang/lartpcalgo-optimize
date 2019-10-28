@@ -29,6 +29,7 @@
 
 #ifndef OMP_SCEHD
 #define OMP_SCEHD dynamic
+// #define OMP_SCEHD static
 #endif
 
 #define TOL 0.001
@@ -134,7 +135,7 @@ int main(int argc, char *argv[])
     run_mkl(input_vector, computed_output, nticks, nwires, nthr);
     #endif
 
-    fix_conjugates(computed_output, nticks, nwires);
+    // fix_conjugates(computed_output, nticks, nwires);
 
   }
 
@@ -205,9 +206,12 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
     for (int i = 0; i < nticks; ++i) in[i] = input_vector[iw][i];
 
     fftwf_execute(fftw); /* repeat as needed */
-    for (int i = 0; i < nticks; ++i) {
+    for (int i = 0; i < nticks/2+1; ++i) {
       computed_output[iw][i].real(out[i][0]);
       computed_output[iw][i].imag(out[i][1]);
+    }
+    for (int j = 0; j < (nticks/2)+1; j++) {
+      computed_output[iw][(nticks/2)+j] = std::conj(computed_output[iw][(nticks/2)-j]);
     }
   }
 
@@ -219,8 +223,6 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
   } // parallel section
   #endif
   
-
-
 }
 #endif
 
@@ -247,6 +249,10 @@ void run_mkl(std::vector<std::vector<float> > &input_vector,
   for (int iw=0; iw<nwires; ++iw) {
 
     status = DftiComputeForward(descriptor, input_vector[iw].data(), computed_output[iw].data()); //Compute the Forward FFT
+
+    for (int j = 0; j < (nticks/2)+1; j++) {
+      computed_output[iw][(nticks/2)+j] = std::conj(computed_output[iw][(nticks/2)-j]);
+    }
 
   }
 
