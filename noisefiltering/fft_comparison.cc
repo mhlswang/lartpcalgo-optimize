@@ -16,6 +16,8 @@
 #ifdef USE_FFTW
 #include <fftw3.h>
 #define PLOTS_FILE "fftw_output_omp.csv"
+#define RE(c) c[0]
+#define IM(c) c[1]
 #endif
 
 #ifdef USE_MKL
@@ -23,13 +25,18 @@
 #define PLOTS_FILE "mkl_output.csv"
 #endif
 
+
+#ifdef USE_CALI
+#include <caliper/cali.h>
+#endif
+
 #ifndef NREPS
 #define NREPS 100
 #endif
 
 #ifndef OMP_SCEHD
-#define OMP_SCEHD dynamic
-// #define OMP_SCEHD static
+// #define OMP_SCEHD dynamic
+#define OMP_SCEHD static
 #endif
 
 #define TOL 0.001
@@ -62,6 +69,17 @@ float get_complex_error(std::complex<float> c1, std::complex<float> c2);
 
 int main(int argc, char *argv[])
 {
+
+  
+#ifdef USE_CALI
+// CALI_CXX_MARK_FUNCTION;
+
+cali_id_t thread_attr = cali_create_attribute("thread_id", CALI_TYPE_INT, CALI_ATTR_ASVALUE | CALI_ATTR_SKIP_EVENTS);
+#pragma omp parallel
+{
+cali_set_int(thread_attr, omp_get_thread_num());
+}
+#endif
 
   FILE* f;
   int nthr = 1;
@@ -178,6 +196,10 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
               std::vector<std::vector<std::complex<float>> > &computed_output, 
               int nticks, int nwires, int nthr) {
 
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
   float *in;
   fftwf_complex *out;
 
@@ -193,10 +215,15 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
   #endif
 
   fftwf_plan fftw;
+  fftwf_plan ifftw;
   in  = (float*) fftw_malloc(sizeof(float) * nticks);
+  // out = (fftwf_complex*) fftw_malloc(sizeof(fftwf_complex) * (nticks/2)+1);
   out = (fftwf_complex*) fftw_malloc(sizeof(fftwf_complex) * nticks);
   #pragma omp critical
-  fftw = fftwf_plan_dft_r2c_1d(nticks, in, out, FFTW_MEASURE);
+  {
+  fftw  = fftwf_plan_dft_r2c_1d(nticks, in, out, FFTW_MEASURE);
+  ifftw = fftwf_plan_dft_c2r_1d(nticks, out, in, FFTW_MEASURE);
+  } 
 
   #ifdef THREAD_WIRES
   #pragma omp for schedule (OMP_SCEHD)
@@ -207,16 +234,20 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
 
     fftwf_execute(fftw); /* repeat as needed */
     for (int i = 0; i < nticks/2+1; ++i) {
-      computed_output[iw][i].real(out[i][0]);
-      computed_output[iw][i].imag(out[i][1]);
+      computed_output[iw][i].real(RE(out[i]));
+      computed_output[iw][i].imag(IM(out[i]));
     }
     for (int j = 0; j < (nticks/2)+1; j++) {
       computed_output[iw][(nticks/2)+j] = std::conj(computed_output[iw][(nticks/2)-j]);
     }
+    fftwf_execute(ifftw); /* repeat as needed */
   }
 
   #pragma omp critical
+  {
   fftwf_destroy_plan(fftw);
+  fftwf_destroy_plan(ifftw);
+  }
 
   fftw_free(in); fftw_free(out);
   #ifdef THREAD_WIRES
@@ -230,6 +261,10 @@ void run_fftw(std::vector<std::vector<float> > &input_vector,
 void run_mkl(std::vector<std::vector<float> > &input_vector, 
               std::vector<std::vector<std::complex<float>> > &computed_output, 
               int nticks, int nwires, int nthr){
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
 
   DFTI_DESCRIPTOR_HANDLE descriptor;
   MKL_LONG status;
@@ -253,6 +288,8 @@ void run_mkl(std::vector<std::vector<float> > &input_vector,
     for (int j = 0; j < (nticks/2)+1; j++) {
       computed_output[iw][(nticks/2)+j] = std::conj(computed_output[iw][(nticks/2)-j]);
     }
+    
+    status = DftiComputeBackward(descriptor, computed_output[iw].data(), input_vector[iw].data());
 
   }
 
