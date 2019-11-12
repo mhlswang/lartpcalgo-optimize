@@ -29,7 +29,7 @@ ifdef INTEL_LICENSE_FILE
 	CXX=icpc
 	CPPFLAGS += -qopenmp
 else
-	CXX=g++
+	CXX=g++-9
 	CPPFLAGS += -fopenmp
 endif
 
@@ -78,11 +78,14 @@ endif
 
 all: fft
 
-fft: fft_comparison.cc Makefile
-	$(CXX) $(CPPFLAGS) $(OPT)  fft_comparison.cc -o fft.exe  $(LDFLAGS)
+fft: fft_comparison.cc utilities.cc Makefile
+	$(CXX) $(CPPFLAGS) $(OPT) fft_comparison.cc utilities.cc -o fft.exe  $(LDFLAGS)
 
 mpi: fft_comparison_mpi.cc Makefile
 	mpiicc $(CPPFLAGS) $(OPT)  fft_comparison_mpi.cc -o fft_mpi.exe  $(LDFLAGS)
+
+cufft: fft.cu Makefile
+	mpiicc $(CPPFLAGS) $(OPT) fft.cu -o cufft.exe  $(LDFLAGS)
 
 clean:	
 	rm -f fft.exe fft_mpi.exe *.optrpt *.o
