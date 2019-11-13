@@ -85,7 +85,7 @@ mpi: fft_comparison_mpi.cc Makefile
 	mpiicc $(CPPFLAGS) $(OPT)  fft_comparison_mpi.cc -o fft_mpi.exe  $(LDFLAGS)
 
 cufft: fft.cu Makefile
-	mpiicc $(CPPFLAGS) $(OPT) fft.cu -o cufft.exe  $(LDFLAGS)
+	nvcc -g -I/usr/local/cuda/inc fft.cu utilities.cc -o cufft.exe -L/usr/local/cuda/lib -lcufft
 
 clean:	
 	rm -f fft.exe fft_mpi.exe *.optrpt *.o
