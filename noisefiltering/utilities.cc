@@ -136,7 +136,7 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
     for (int j = 0; j < expected[i].size(); j++) {
       err = get_complex_error(expected[i][j], computed[i][j]);
       if (err >= TOL) {
-      // if (err < 1.0) {
+      // if (err < 0.01) {
         std::cout << err << std::endl;
         std::cout << expected[i][j] << std::endl;
         std::cout << computed[i][j] << std::endl;
