@@ -32,7 +32,7 @@
 #endif
 
 #ifndef NREPS
-#define NREPS 2
+#define NREPS 1
 // #define NREPS 100
 #endif
 
@@ -69,5 +69,6 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
                int nticks, int nwires);
 
 float get_complex_error(std::complex<float> c1, std::complex<float> c2);
+
 
 #endif

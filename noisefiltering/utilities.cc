@@ -240,4 +240,3 @@ float get_complex_error(std::complex<float> c1, std::complex<float> c2) {
 
 }
 
-

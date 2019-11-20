@@ -8,6 +8,9 @@
 
 void run_cufft(float* in, cufftComplex* out, 
               int nticks, int nwires, int nthr);
+//https://github.com/NVIDIA-developer-blog/code-samples
+cudaError_t checkCuda(cudaError_t result);
+
 
 int main(int argc, char *argv[])
 {
@@ -73,11 +76,11 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   float *cu_in;
   cufftComplex *cu_out;
-  cudaMalloc((void**)&cu_in,  sizeof(float) * nticks * nwires * NREPS);
-  cudaMalloc((void**)&cu_out, sizeof(cufftComplex) * nticks * nwires * NREPS);
+  checkCuda( cudaMalloc((void**)&cu_in,  sizeof(float) * nticks * nwires * NREPS) );
+  checkCuda( cudaMalloc((void**)&cu_out, sizeof(cufftComplex) * nticks * nwires * NREPS) );
 
   // print_input_vector(input_vector, nticks);
-  cudaMemcpy(cu_in, in, sizeof(float) * nticks * nwires * NREPS, cudaMemcpyHostToDevice);
+  checkCuda( cudaMemcpy(cu_in, in, sizeof(float) * nticks * nwires * NREPS, cudaMemcpyHostToDevice) );
   
   std::cout << "======================================================================================";
   std::cout << std::endl;
@@ -95,7 +98,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
   std::cout << std::endl;
   std::cout << std::endl;
 
-  cudaMemcpy(out,cu_out,sizeof(cufftComplex)*nticks*nwires*NREPS,cudaMemcpyDeviceToHost);  
+  checkCuda( cudaMemcpy(out,cu_out,sizeof(cufftComplex)*nticks*nwires*NREPS,cudaMemcpyDeviceToHost) );  
 
   cudaEventRecord(cp_t2);
 
@@ -151,7 +154,7 @@ CALI_CXX_MARK_FUNCTION;
 
 #define RANK 1
 
-
+  cufftResult r;
   cufftHandle plan;
   // cufftHandle iplan;
 
@@ -161,10 +164,21 @@ CALI_CXX_MARK_FUNCTION;
   int onembed[] = { 0 };                  // --- Output size with pitch (ignored for 1D transforms)
     
   // cufftPlan1d(&plan, nticks, CUFFT_R2C, nwires);
-  cufftPlanMany(&plan, RANK, &nticks, 
+  r=cufftPlanMany(&plan, RANK, &nticks, 
                 inembed, istride, idist, 
                 onembed, ostride, odist, 
                 CUFFT_R2C, nwires*NREPS);
+  std::cout << std::endl;
+  if(r != CUFFT_SUCCESS) 
+    std::cout << "ERROR: cufftPlanMany" << std::endl;
+  if(r == CUFFT_ALLOC_FAILED) 
+    std::cout << "-- CUFFT_ALLOC_FAILED" << std::endl;
+  if(r == CUFFT_INVALID_VALUE) 
+    std::cout << "-- CUFFT_INVALID_VALUE" << std::endl;
+  if(r == CUFFT_INTERNAL_ERROR) 
+    std::cout << "-- CUFFT_INTERNAL_ERROR" << std::endl;
+  if(r == CUFFT_SETUP_FAILED) 
+    std::cout << "-- CUFFT_SETUP_FAILED" << std::endl;
   // cufftPlanMany(&iplan, RANK, &nticks, NULL, 0, 0, NULL, 0, 0, CUFFT_C2R, nwires);
 
 
@@ -172,7 +186,20 @@ CALI_CXX_MARK_FUNCTION;
 
     // for (long i = 0; i < nticks; ++i) in[i] = input_vector[iw][i];
 
-  cufftExecR2C(plan, in, out); // R2C?
+  r=cufftExecR2C(plan, in, out); // R2C?
+  std::cout << std::endl;
+  if(r != CUFFT_SUCCESS) 
+    std::cout << "ERROR: cufftPlanMany" << std::endl;
+  if(r == CUFFT_INVALID_PLAN) 
+    std::cout << "-- CUFFT_INVALID_PLAN" << std::endl;
+  if(r == CUFFT_INVALID_VALUE) 
+    std::cout << "-- CUFFT_INVALID_VALUE" << std::endl;
+  if(r == CUFFT_INTERNAL_ERROR) 
+    std::cout << "-- CUFFT_INTERNAL_ERROR" << std::endl;
+  if(r == CUFFT_EXEC_FAILED) 
+    std::cout << "-- CUFFT_EXEC_FAILED" << std::endl;
+  if(r == CUFFT_SETUP_FAILED) 
+    std::cout << "-- CUFFT_SETUP_FAILED" << std::endl;
   cudaDeviceSynchronize();
 
     // cufftExecC2R(iplan, out, in); // C2R?
@@ -183,3 +210,20 @@ CALI_CXX_MARK_FUNCTION;
   // cufftDestroy(iplan);
   
 }
+
+
+// Convenience function for checking CUDA runtime API results
+// can be wrapped around any runtime API call. No-op in release builds.
+// https://github.com/NVIDIA-developer-blog/code-samples
+inline
+cudaError_t checkCuda(cudaError_t result)
+{
+#if defined(DEBUG) || defined(_DEBUG)
+  if (result != cudaSuccess) {
+    fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
+    assert(result == cudaSuccess);
+  }
+#endif
+  return result;
+}
+
