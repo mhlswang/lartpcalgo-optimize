@@ -9,17 +9,88 @@
 
 
 
-void read_input_vector(std::vector<std::vector<float> > &fFFTInputVec, FILE* f, int nticks, int nwires) {
-  for (int iw=0; iw<nwires; ++iw) {
+void read_input_vector(std::vector<std::vector<float> > &in_vec, FILE* f, size_t nticks, size_t nwires) {
+
+  in_vec.reserve(nwires * NREPS);
+
+  for (size_t iw=0; iw<nwires; ++iw) {
     std::vector<float> waveform;
     waveform.resize(nticks);
-    for (int i = 0; i < nticks; ++i) {
+    for (size_t i = 0; i < nticks; ++i) {
       fread(&waveform[i], sizeof(float), 1, f);
     }
-    fFFTInputVec.push_back(waveform);
+    in_vec.push_back(waveform);
   }
+
+  for (size_t iw=nwires; iw<nwires * NREPS; ++iw) {
+    std::vector<float> waveform;
+    waveform.resize(nticks);
+    for (size_t i = 0; i < nticks; ++i) {
+      waveform[i] = in_vec[iw%nwires][i];
+    }
+    in_vec.push_back(waveform);
+  }
+
 }
 
+#ifdef USE_FFTW
+void read_input_array_2D(float** &in_array, FILE* f, size_t nticks, size_t nwires) {
+
+  in_array = (float**) fftw_malloc(sizeof(float*) * nwires * NREPS);
+  if(in_array == NULL) std::cout << "in_array is NULL" << std::endl;
+
+  for (size_t iw=0; iw<nwires; ++iw) {
+    in_array[iw] = (float*) fftw_malloc(sizeof(float) * nticks);
+    if(in_array[iw] == NULL) std::cout << "in_array is NULL" << std::endl;
+    for (size_t i = 0; i < nticks; ++i) {
+      fread(&in_array[iw][i], sizeof(float), 1, f);
+    }
+  }
+
+  for (size_t iw=nwires; iw<nwires * NREPS; ++iw) {
+    in_array[iw] = (float*) fftw_malloc(sizeof(float) * nticks);
+    if(in_array[iw] == NULL) std::cout << "in_array is NULL" << std::endl;
+    for (size_t i = 0; i < nticks; ++i) {
+      in_array[iw][i] = in_array[iw%nwires][i];
+    }
+  }
+
+}
+
+void free_input_array_2D(float** &in_array, size_t nticks, size_t nwires) {
+  for (size_t iw=0; iw<nwires * NREPS; ++iw) {
+    fftw_free(in_array[iw]);
+  }
+  fftw_free(in_array);
+}
+#endif
+
+
+#ifdef USE_CUDA
+void read_input_array_1D(float* &in_array, FILE* f, size_t nticks, size_t nwires) {
+
+  in_array = (float*) malloc(sizeof(float*) * nwires * nticks * NREPS);
+  if(in_array == NULL) std::cout << "in_array is NULL" << std::endl;
+
+  for (size_t iw = 0; iw < nwires; ++iw) {
+    for (size_t i = 0; i < nticks; ++i) {
+      fread(&in_array[iw * nticks + i], sizeof(float), 1, f);
+    }
+  }
+
+  for (size_t iw = nwires; iw < nwires * NREPS; ++iw) {
+    for (size_t i = 0; i < nticks; ++i) {
+      float a = in_array[(iw%nwires) * nticks + i];
+      in_array[iw * nticks + i] = a;
+    }
+  }
+
+}
+
+void free_input_array_1D(float* &in_array, size_t nticks, size_t nwires) {
+  free(in_array);
+}
+#endif
 
 void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutputVec, FILE* f, int nticks, int nwires) {
   for (int iw=0; iw<nwires; ++iw) {
@@ -109,8 +180,8 @@ void print_for_plots(char* file_name,
   std::ofstream ofile;
   ofile.open (file_name);
 
-  for (int i = 0; i < expected.size(); i++) {
-    for (int j = 0; j < expected[i].size(); j++) {
+  for (int i = 0; i < nwires; i++) {
+    for (int j = 0; j < nticks; j++) {
       if (error) {
         ofile << get_complex_error(expected[i][j], computed[i][j]) << std::endl;
       } else {
@@ -131,15 +202,15 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
   int num_crap = 0;
   int num_tot  = 0;
 
-  for (int i = 0; i < expected.size(); i++) {
+  for (int i = 0; i < nwires; i++) {
     // if (i!=0 && i!=(nwires-1)) continue;
-    for (int j = 0; j < expected[i].size(); j++) {
+    for (int j = 0; j < nticks; j++) {
       err = get_complex_error(expected[i][j], computed[i][j]);
       if (err >= TOL) {
       // if (err < 0.01) {
-        std::cout << err << std::endl;
-        std::cout << expected[i][j] << std::endl;
-        std::cout << computed[i][j] << std::endl;
+        // std::cout << err << std::endl;
+        // std::cout << expected[i][j] << std::endl;
+        // std::cout << computed[i][j] << std::endl;
         num_crap++;
       }
       num_tot++;

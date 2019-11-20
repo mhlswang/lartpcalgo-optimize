@@ -32,7 +32,8 @@
 #endif
 
 #ifndef NREPS
-#define NREPS 100
+#define NREPS 2
+// #define NREPS 100
 #endif
 
 #ifndef OMP_SCEHD
@@ -42,7 +43,15 @@
 
 #define TOL 0.001
 
-void read_input_vector(std::vector<std::vector<float> > &fFFTInputVec, FILE* f, int nticks, int nwires);
+void read_input_vector(std::vector<std::vector<float> > &in_vec, FILE* f, size_t nticks, size_t nwires);
+#ifdef USE_FFTW
+void read_input_array_2D(float** &in_array, FILE* f, size_t nticks, size_t nwires);
+void free_input_array_2D(float** &in_array, size_t nticks, size_t nwires);
+#endif
+#ifdef USE_CUDA
+void read_input_array_1D(float* &in_array, FILE* f, size_t nticks, size_t nwires);
+void free_input_array_1D(float* &in_array, size_t nticks, size_t nwires);
+#endif
 void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutputVec, FILE* f, int nticks, int nwires);
 void fix_conjugates(std::vector<std::vector<std::complex<float>> > &computed, 
                     int nticks, int nwires);

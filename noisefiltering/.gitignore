@@ -12,6 +12,7 @@ cufft.exe
 *.png
 .tau
 r0*
+*.data
 
 *.optrpt
 

@@ -5,8 +5,8 @@
 #NOVEC    := 1
 
 # USE_CALI := 1
-# USE_MKL  := 1
-USE_FFTW := 1
+USE_MKL  := 1
+# USE_FFTW := 1
 THREAD_WIRES := 1
 # MAKE_PLOTS  := 1
 
@@ -78,14 +78,14 @@ endif
 
 all: fft
 
-fft: fft_comparison.cc utilities.cc Makefile
-	$(CXX) $(CPPFLAGS) $(OPT) fft_comparison.cc utilities.cc -o fft.exe  $(LDFLAGS)
+fft: fftw_fft.cc utilities.cc Makefile
+	$(CXX) $(CPPFLAGS) $(OPT) fftw_fft.cc utilities.cc -o fft.exe  $(LDFLAGS)
 
 mpi: fft_comparison_mpi.cc Makefile
 	mpiicc $(CPPFLAGS) $(OPT)  fft_comparison_mpi.cc -o fft_mpi.exe  $(LDFLAGS)
 
 cufft: fft.cu Makefile
-	nvcc -g -I/usr/local/cuda/inc fft.cu utilities.cc -o cufft.exe -L/usr/local/cuda/lib -lcufft
+	nvcc -g -DUSE_CUDA -I/usr/local/cuda/inc fft.cu utilities.cc -o cufft.exe -L/usr/local/cuda/lib -lcufft
 
 clean:	
 	rm -f fft.exe fft_mpi.exe *.optrpt *.o
