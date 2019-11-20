@@ -19,6 +19,7 @@ r0*
 cali*
 *.json
 *.png
+.metadata/
 
 ex_*
 
