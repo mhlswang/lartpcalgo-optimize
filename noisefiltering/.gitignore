@@ -20,6 +20,7 @@ cali*
 *.json
 *.png
 .metadata/
+RemoteSystemsTempFiles.
 
 ex_*
 
