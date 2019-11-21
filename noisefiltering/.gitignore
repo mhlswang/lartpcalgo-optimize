@@ -13,6 +13,7 @@ cufft.exe
 .tau
 r0*
 *.data
+*.nsight-cuprof-report
 
 *.optrpt
 
