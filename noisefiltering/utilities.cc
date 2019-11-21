@@ -69,19 +69,12 @@ void free_input_array_2D(float** &in_array, size_t nticks, size_t nwires) {
 #ifdef USE_CUDA
 void read_input_array_1D(float* &in_array, FILE* f, size_t nticks, size_t nwires) {
 
-  in_array = (float*) malloc(sizeof(float*) * nwires * nticks * NREPS);
+  in_array = (float*) malloc(sizeof(float*) * nwires * nticks);
   if(in_array == NULL) std::cout << "in_array is NULL" << std::endl;
 
   for (size_t iw = 0; iw < nwires; ++iw) {
     for (size_t i = 0; i < nticks; ++i) {
       fread(&in_array[iw * nticks + i], sizeof(float), 1, f);
-    }
-  }
-
-  for (size_t iw = nwires; iw < nwires * NREPS; ++iw) {
-    for (size_t i = 0; i < nticks; ++i) {
-      float a = in_array[(iw%nwires) * nticks + i];
-      in_array[iw * nticks + i] = a;
     }
   }
 
