@@ -9,24 +9,9 @@
 //will need to be tuned but needs to be < NREPS currently
 #define N_STREAMS 2
 
-void allocate_host_memory(size_t wires_per_stream, size_t nticks, float** &in, cufftComplex** &out);
-void free_host_memory(size_t wires_per_stream, float** &in, cufftComplex** &out);
-void fill_host_memory(size_t wires_per_stream, float** in_data, size_t nwires, size_t nticks, float* from_file);
-
-void prepare_memory_for_gpu(size_t wires_per_stream, size_t nticks, 
-                            float** host_in,  cufftComplex** host_out,
-                            float** &devi_in, cufftComplex** &devi_out);
-
 void make_plans(cufftHandle* &plans, cudaStream_t streams[], size_t wires_per_stream, size_t nticks);
-
-void cleanup_cuda(size_t wires_per_stream, size_t nticks, 
-                  float** host_in,  cufftComplex** host_out,
-                  float** &devi_in, cufftComplex** &devi_out,
-                  cufftHandle* plans, cudaStream_t streams[]);
-
-void run_cufft(float** in, cufftComplex** out, 
-              size_t nticks, size_t nwires, size_t wires_per_stream);
-
+void run_cufft(cufftComplex* in, size_t nticks, size_t nwires);
+void read_input_array_1D(cufftReal* in_array, FILE* f, size_t nticks, size_t nwires);
 
 //https://github.com/NVIDIA-developer-blog/code-samples
 cudaError_t checkCuda(cudaError_t result);
@@ -70,14 +55,9 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   size_t nwires;
   fread(&nwires, sizeof(size_t), 1, f);
-  assert( (NREPS*nwires)%N_STREAMS == 0);
-
-  size_t wires_per_stream = (NREPS*nwires)/N_STREAMS;
 
   std::cout << "found nwires     = " << nwires << std::endl;
   std::cout << "number of reps   = " << NREPS << std::endl;
-  std::cout << "number streams   = " << N_STREAMS << std::endl;
-  std::cout << "wires per stream = " << wires_per_stream << std::endl;
 
 
   std::vector<std::vector<std::complex<float>> > expected_output;
@@ -88,21 +68,15 @@ cali_set_int(thread_attr, omp_get_thread_num());
   for (int i = 0; i < nwires; ++i)
     computed_output[i].resize(nticks);
 
-  float *in_temp;
-  read_input_array_1D(in_temp, f, nticks, nwires);
+  cufftComplex* in;
+  cudaMallocManaged(&in, sizeof(cufftComplex) * nwires * (nticks/2+1) * NREPS);
+  read_input_array_1D((cufftReal*)in, f, nticks, nwires);
   read_output_vector(expected_output, f, nticks, nwires);
   fclose(f);
   // print_output_vector(expected_output, nticks);
 
-  float** in;
-  cufftComplex** out;
-  allocate_host_memory(wires_per_stream, nticks, in, out);
-  fill_host_memory(wires_per_stream, in, nwires, nticks, in_temp);
-
-  free_input_array_1D(in_temp, nticks, nwires);
-
   cudaEventRecord(io_t1);
-  
+
   std::cout << "======================================================================================";
   std::cout << std::endl;
   std::cout << std::endl;
@@ -110,7 +84,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   cudaEventRecord(cp_t1);
 
-  run_cufft(in, out, nticks, nwires, wires_per_stream);
+  run_cufft(in, nticks, nwires);
 
   cudaEventRecord(fft_t);
 
@@ -121,17 +95,19 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   cudaEventRecord(cp_t2);
 
+
   for (long iw=0; iw<nwires; ++iw) {
     for (long i = 0; i < nticks/2+1; ++i) {
-      computed_output[iw][i].real(cuCrealf(out[0][iw*nticks+i]));
-      computed_output[iw][i].imag(cuCimagf(out[0][iw*nticks+i]));
+      int idx = nwires * (nticks/2+1) * 5 + iw*(nticks/2+1)+i; // 5 is an arbitrary REP to grab
+      computed_output[iw][i].real(cuCrealf(in[idx])); 
+      computed_output[iw][i].imag(cuCimagf(in[idx]));
     }
     for (long j = 0; j < (nticks/2)+1; j++) {
       computed_output[iw][(nticks/2)+j] = std::conj(computed_output[iw][(nticks/2)-j]);
     }
   }
 
-  free_host_memory(wires_per_stream, in, out);
+  cudaFree(in);
  
   #ifdef MAKE_PLOTS
   print_for_plots(PLOTS_FILE, expected_output, computed_output, nticks, nwires, true);
@@ -160,204 +136,54 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
 }
 
-void allocate_host_memory(size_t wires_per_stream, size_t nticks, float** &in, cufftComplex** &out) {
+
+void run_cufft(cufftComplex* in,  
+              size_t nticks, size_t nwires) {
 
 #ifdef USE_CALI
 CALI_CXX_MARK_FUNCTION;
 #endif
-
-  out = (cufftComplex**) malloc(sizeof(cufftComplex*) * N_STREAMS);
-  if(out == NULL) std::cout << "in allocate_host_memory 'out' is NULL" << std::endl;
-  in  = (float**) malloc(sizeof(float*) * N_STREAMS);
-  if(in == NULL) std::cout << "in allocate_host_memory 'in' is NULL" << std::endl;
-
-  for (int i = 0; i < N_STREAMS; i++) {
-
-    out[i] = (cufftComplex*) malloc(sizeof(cufftComplex) * nticks * wires_per_stream);
-    if(out[i] == NULL) std::cout << "in allocate_host_memory 'out' is NULL" << std::endl;
-    in[i]  = (float*) malloc(sizeof(float) * nticks * wires_per_stream);
-    if(in[i] == NULL) std::cout << "in allocate_host_memory 'in' is NULL" << std::endl;
-
-  }
-
-}
-
-
-void free_host_memory(size_t wires_per_stream, float** &in, cufftComplex** &out) {
-
-#ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
-#endif
-
-  for (int i = 0; i < N_STREAMS; i++) {
-    free(out[i]);
-    free(in[i]);
-  }
-  free(out);
-  free(in);
-
-}
-
-
-// fill the memory on the host side
-// from_file is a flattened array of fft inputs
-//    nwires x nticks
-// in_data is an array of flattened arrays
-//    N_STREAMS arrays that are wires_per_stream x nticks
-// wires_per_stream is nwires*NREPS/NSTREAMS
-// each array in in_data is filled from from_file, repeating if necessary
-void fill_host_memory(size_t wires_per_stream, float** in_data, size_t nwires, size_t nticks, float* from_file) {
-
-#ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
-#endif
-
-  for (int s = 0; s < N_STREAMS; s++) {
-
-    for (size_t iw = 0; iw < wires_per_stream; ++iw) {
-      for (size_t i = 0; i < nticks; ++i) {
-        in_data[s][iw * nticks + i] = from_file[(iw%nwires) * nticks + i];
-      }
-    }
-
-  }
-
-}
-
-
-// allocate device memory and register host memory with device
-void prepare_memory_for_gpu(size_t wires_per_stream, size_t nticks, 
-                            float** host_in,  cufftComplex** host_out,
-                            float** &devi_in, cufftComplex** &devi_out) {
-
-#ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
-#endif
-
-  size_t N = wires_per_stream*nticks;
-
-  // checkCuda( cudaMalloc((void**)&devi_in,  N_STREAMS*sizeof(float*))        );
-  // checkCuda( cudaMalloc((void**)&devi_out, N_STREAMS*sizeof(cufftComplex*)) );
-  devi_out = (cufftComplex**) malloc(sizeof(cufftComplex*) * N_STREAMS);
-  if(devi_out == NULL) std::cout << "in prepare_memory_for_gpu 'devi_out' is NULL" << std::endl;
-  devi_in  = (float**) malloc(sizeof(float*) * N_STREAMS);
-  if(devi_in == NULL) std::cout << "in prepare_memory_for_gpu 'devi_in' is NULL" << std::endl;
-
-
-  for (int s = 0; s < N_STREAMS; s++) {
-    checkCuda( cudaHostRegister(host_in[s],  N*sizeof(float),        cudaHostRegisterPortable) );
-    checkCuda( cudaHostRegister(host_out[s], N*sizeof(cufftComplex), cudaHostRegisterPortable) );
-
-    checkCuda( cudaMalloc((void**)&devi_in[s],  N*sizeof(float))        );
-    checkCuda( cudaMalloc((void**)&devi_out[s], N*sizeof(cufftComplex)) );
-  }
-
-
-}
-
-// create the plans and streams
-void make_plans(cufftHandle* &plans, cudaStream_t streams[], size_t wires_per_stream, size_t nticks) {
-
-#ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
-#endif
-
-  int n = nticks;
-  int istride = 1, ostride = 1;           // --- Distance between two successive input/output elements
-  int idist = nticks, odist = nticks; // --- Distance between batches
-  int inembed[] = { 0 };                  // --- Input size with pitch (ignored for 1D transforms)
-  int onembed[] = { 0 };                  // --- Output size with pitch (ignored for 1D transforms)
-  int batches = wires_per_stream;
-
-    // --- Creates cuFFT plans and sets them in streams
-  plans = (cufftHandle*) malloc(sizeof(cufftHandle)*N_STREAMS);
-
-  for (int i = 0; i < N_STREAMS; i++) {
-    checkCuda( cudaStreamCreate(&streams[i]) );
-  }
-
-  for (int i = 0; i < N_STREAMS; i++) {
-    // cufftPlan1d(&plans[i], N, CUFFT_C2C, 1);
-
-    checkCuFFT( cufftPlanMany(&plans[i], 1, &n, 
-                inembed, istride, idist, 
-                onembed, ostride, odist, 
-                CUFFT_R2C, batches) );
-
-    checkCuFFT( cufftSetStream(plans[i], streams[i]) );
-  }
-
-}
-
-void cleanup_cuda(size_t wires_per_stream, size_t nticks, 
-                  float** host_in,  cufftComplex** host_out,
-                  float** &devi_in, cufftComplex** &devi_out,
-                  cufftHandle* plans, cudaStream_t streams[]) {
-
-
-#ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
-#endif
-
-  for (int s = 0; s < N_STREAMS; s++) {
-    checkCuda( cudaHostUnregister(host_in[s]) );
-    checkCuda( cudaHostUnregister(host_out[s]) );
-
-    checkCuda( cudaFree(devi_in)  );
-    checkCuda( cudaFree(devi_out) );
-  }
-
-  checkCuda( cudaFree(devi_in) );
-  checkCuda( cudaFree(devi_out) );
-
-  for(int i = 0; i < N_STREAMS; i++) {
-    checkCuda( cudaStreamDestroy(streams[i]) );
-    checkCuFFT( cufftDestroy(plans[i]) );
-  }
-
-}
-
-void run_cufft(float** in, cufftComplex** out, 
-              size_t nticks, size_t nwires, size_t wires_per_stream) {
-
-#ifdef USE_CALI
-CALI_CXX_MARK_FUNCTION;
-#endif
-
-  float** devi_in;
-  cufftComplex** devi_out;
 
   // Make CUDA plans and streams
-  cufftHandle* plans;
-  cudaStream_t streams[N_STREAMS];
-  size_t N = wires_per_stream*nticks;
-
-  prepare_memory_for_gpu(wires_per_stream, nticks, 
-                         in,       out,
-                         devi_in,  devi_out);
-
-  make_plans(plans, streams, wires_per_stream, nticks);
-
-  //***** DO NOT FUSE THESE ****//
-
-  for(int s = 0; s < N_STREAMS; s++)
-    checkCuda( cudaMemcpyAsync(devi_in[s], in[s], N*sizeof(float), cudaMemcpyHostToDevice, streams[s]) );
-
-  for(int s = 0; s < N_STREAMS; s++)
-    checkCuFFT( cufftExecR2C(plans[s], devi_in[s], devi_out[s]) );
-
-  for(int s = 0; s < N_STREAMS; s++)
-    checkCuda( cudaMemcpyAsync(out[s], devi_out[s], N*sizeof(cufftComplex), cudaMemcpyDeviceToHost, streams[s]) );
-
-  for(int s = 0; s < N_STREAMS; s++)
-    checkCuda( cudaStreamSynchronize(streams[s]) );
-
-  cleanup_cuda(wires_per_stream, nticks, 
-               in, out,
-               devi_in, devi_out,
-               plans, streams);
+  cufftHandle plan;
   
+
+  int n = nticks;
+  int istride = 1, ostride = 1;             // --- Distance between two successive input/output elements
+  int idist = nticks+1, odist = nticks/2+1; // --- Distance between batches
+  int inembed[] = { 0 };                    // --- Input size with pitch (ignored for 1D transforms)
+  int onembed[] = { 0 };                    // --- Output size with pitch (ignored for 1D transforms)
+  int batches = nwires*NREPS;
+
+  
+  checkCuFFT( cufftPlanMany(&plan, 1, &n, 
+              inembed, istride, idist, 
+              onembed, ostride, odist, 
+              CUFFT_R2C, batches) );
+  
+  checkCuFFT( cufftExecR2C(plan, (cufftReal*)in, in) );
+  cudaDeviceSynchronize();  
+ 
 }
+
+void read_input_array_1D(cufftReal* in_array, FILE* f, size_t nticks, size_t nwires) {
+
+  if(in_array == NULL) std::cout << "in_array is NULL" << std::endl;
+
+  for (size_t iw = 0; iw < nwires; ++iw) {
+    for (size_t i = 0; i < nticks; ++i) {
+      fread(&in_array[iw * (nticks+1) + i], sizeof(float), 1, f);
+    }
+  }
+
+  for (size_t iw = nwires; iw < nwires * NREPS; ++iw) {
+    for (size_t i = 0; i < nticks; ++i) {
+      in_array[iw * (nticks+1) + i] = in_array[iw%nwires * (nticks+1) + i];
+    }
+  }
+
+}
+
 
 
 // Convenience function for checking CUDA runtime API results
@@ -396,4 +222,5 @@ cufftResult checkCuFFT(cufftResult r)
 #endif
   return r;
 }
+
 
