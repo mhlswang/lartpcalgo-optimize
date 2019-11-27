@@ -2,16 +2,15 @@
 #include "cufft.h"
 #include "utilities.h"
 
-// cuda stuff for copy
-#define TILE_DIM   32
-#define BLOCK_ROWS 8
+// cuda stuff
+#define NREPS_PER_GPU 20
 
 //will need to be tuned but needs to be < NREPS currently
 #define N_STREAMS 2
 
 void make_plans(cufftHandle* &plans, cudaStream_t streams[], size_t wires_per_stream, size_t nticks);
-void run_cufft(cufftComplex* in, size_t nticks, size_t nwires);
-void read_input_array_1D(cufftReal* in_array, FILE* f, size_t nticks, size_t nwires);
+void run_cufft(cufftComplex* in, size_t nticks, int batches);
+void read_input_array_1D(cufftReal** in_array, FILE* f, size_t nticks, size_t nwires, size_t nbatches);
 
 //https://github.com/NVIDIA-developer-blog/code-samples
 cudaError_t checkCuda(cudaError_t result);
@@ -53,12 +52,14 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   cudaEventRecord(start_t);
 
+  size_t nbatches = (int)std::trunc(NREPS/NREPS_PER_GPU) + 1;
   size_t nwires;
   fread(&nwires, sizeof(size_t), 1, f);
 
-  std::cout << "found nwires     = " << nwires << std::endl;
-  std::cout << "number of reps   = " << NREPS << std::endl;
-
+  std::cout << "found nwires = " << nwires << std::endl;
+  std::cout << "num reps     = " << NREPS << std::endl;
+  std::cout << "num reps/gpu = " << NREPS_PER_GPU << std::endl;
+  std::cout << "num batches  = " << nbatches << std::endl;
 
   std::vector<std::vector<std::complex<float>> > expected_output;
   expected_output.reserve(nwires);
@@ -68,9 +69,22 @@ cali_set_int(thread_attr, omp_get_thread_num());
   for (int i = 0; i < nwires; ++i)
     computed_output[i].resize(nticks);
 
-  cufftComplex* in;
-  cudaMallocManaged(&in, sizeof(cufftComplex) * nwires * (nticks/2+1) * NREPS);
-  read_input_array_1D((cufftReal*)in, f, nticks, nwires);
+  bool bad_mem = false;
+  cufftComplex** in;
+  in = (cufftComplex**)malloc(sizeof(cufftComplex*) * nbatches);
+  for(size_t r = 0; r < nbatches-1; r++) {
+    checkCuda( cudaMallocManaged(&in[r], sizeof(cufftComplex) * nwires * (nticks/2+1) * NREPS_PER_GPU) );
+    bad_mem = bad_mem || (in[r] == NULL);
+  }
+  checkCuda( cudaMallocManaged(&in[nbatches-1], sizeof(cufftComplex) * nwires * (nticks/2+1) * (NREPS%NREPS_PER_GPU)) );
+  bad_mem = bad_mem || (in[nbatches-1] == NULL);
+  
+  if (bad_mem) {
+    std::cout << "ERROR: failed to malloc data" << std::endl;
+    exit(1);
+  }
+  
+  read_input_array_1D((cufftReal**)in, f, nticks, nwires, nbatches);
   read_output_vector(expected_output, f, nticks, nwires);
   fclose(f);
   // print_output_vector(expected_output, nticks);
@@ -84,7 +98,9 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   cudaEventRecord(cp_t1);
 
-  run_cufft(in, nticks, nwires);
+  for(size_t r = 0; r < nbatches-1; r++)
+    run_cufft(in[r], nticks, nwires*NREPS_PER_GPU);
+  run_cufft(in[nbatches-1], nticks, nwires*(NREPS%NREPS_PER_GPU));
 
   cudaEventRecord(fft_t);
 
@@ -95,12 +111,13 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   cudaEventRecord(cp_t2);
 
-
+  int rep_to_check = 25;
+  std::cout << "rep_to_check = " << rep_to_check << std::endl;
   for (long iw=0; iw<nwires; ++iw) {
     for (long i = 0; i < nticks/2+1; ++i) {
-      int idx = nwires * (nticks/2+1) * 5 + iw*(nticks/2+1)+i; // 5 is an arbitrary REP to grab
-      computed_output[iw][i].real(cuCrealf(in[idx])); 
-      computed_output[iw][i].imag(cuCimagf(in[idx]));
+      long idx = nwires * (nticks/2+1) * (rep_to_check%NREPS_PER_GPU) + iw*(nticks/2+1)+i; // 5 is an arbitrary REP to grab
+      computed_output[iw][i].real(cuCrealf(in[rep_to_check/NREPS_PER_GPU][idx])); 
+      computed_output[iw][i].imag(cuCimagf(in[rep_to_check/NREPS_PER_GPU][idx]));
     }
     for (long j = 0; j < (nticks/2)+1; j++) {
       computed_output[iw][(nticks/2)+j] = std::conj(computed_output[iw][(nticks/2)-j]);
@@ -138,7 +155,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
 
 void run_cufft(cufftComplex* in,  
-              size_t nticks, size_t nwires) {
+              size_t nticks, int batches) {
 
 #ifdef USE_CALI
 CALI_CXX_MARK_FUNCTION;
@@ -153,7 +170,6 @@ CALI_CXX_MARK_FUNCTION;
   int idist = nticks+1, odist = nticks/2+1; // --- Distance between batches
   int inembed[] = { 0 };                    // --- Input size with pitch (ignored for 1D transforms)
   int onembed[] = { 0 };                    // --- Output size with pitch (ignored for 1D transforms)
-  int batches = nwires*NREPS;
 
   
   checkCuFFT( cufftPlanMany(&plan, 1, &n, 
@@ -166,19 +182,34 @@ CALI_CXX_MARK_FUNCTION;
  
 }
 
-void read_input_array_1D(cufftReal* in_array, FILE* f, size_t nticks, size_t nwires) {
+void read_input_array_1D(cufftReal** in_array, FILE* f, size_t nticks, size_t nwires, size_t nbatches) {
 
   if(in_array == NULL) std::cout << "in_array is NULL" << std::endl;
 
   for (size_t iw = 0; iw < nwires; ++iw) {
     for (size_t i = 0; i < nticks; ++i) {
-      fread(&in_array[iw * (nticks+1) + i], sizeof(float), 1, f);
+      fread(&in_array[0][iw * (nticks+1) + i], sizeof(float), 1, f);
+    }
+  }
+  
+  for (size_t iw = nwires; iw < nwires * NREPS_PER_GPU; ++iw) {
+    for (size_t i = 0; i < nticks; ++i) {
+      in_array[0][iw * (nticks+1) + i] = in_array[0][(iw%nwires) * (nticks+1) + i];
     }
   }
 
-  for (size_t iw = nwires; iw < nwires * NREPS; ++iw) {
+  size_t r = 1;
+  for (r = 1; r < nbatches-1; r++) {
+    for (size_t iw = 0; iw < nwires * NREPS_PER_GPU; ++iw) {
+      for (size_t i = 0; i < nticks; ++i) {
+        in_array[r][iw * (nticks+1) + i] = in_array[0][iw * (nticks+1) + i];
+      }
+    }
+  }
+  r = nbatches-1;
+  for (size_t iw = 0; iw < nwires * (NREPS%NREPS_PER_GPU); ++iw) {
     for (size_t i = 0; i < nticks; ++i) {
-      in_array[iw * (nticks+1) + i] = in_array[iw%nwires * (nticks+1) + i];
+      in_array[r][iw * (nticks+1) + i] = in_array[0][iw * (nticks+1) + i];
     }
   }
 
