@@ -3,7 +3,7 @@
 #include "utilities.h"
 
 // cuda stuff
-#define NREPS_PER_GPU 20
+#define NREPS_PER_GPU 4
 
 //will need to be tuned but needs to be < NREPS currently
 #define N_STREAMS 2
@@ -32,12 +32,13 @@ cali_set_int(thread_attr, omp_get_thread_num());
   int nthr = 1;
   // omp_set_num_threads(nthr);
 
-  if (argc > 1) {
-    f = fopen(argv[1], "r");
-  } else {
-    f = fopen("noisefilt_100ev_50k.bin", "r");
-  }
-  
+  int rep_to_check = 2;
+  if (argc > 1) { rep_to_check = std::atoi(argv[1]); }
+  //  f = fopen(argv[1], "r");
+  // } else {
+  //  f = fopen("noisefilt_100ev_50k.bin", "r");
+  // }
+  f = fopen("noisefilt_100ev_50k.bin", "r");
   assert(f);
 
   size_t nticks = 4096;
@@ -54,6 +55,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   size_t nbatches = (int)std::trunc(NREPS/NREPS_PER_GPU) + 1;
   size_t nwires;
+
   fread(&nwires, sizeof(size_t), 1, f);
 
   std::cout << "found nwires = " << nwires << std::endl;
@@ -62,21 +64,22 @@ cali_set_int(thread_attr, omp_get_thread_num());
   std::cout << "num batches  = " << nbatches << std::endl;
 
   std::vector<std::vector<std::complex<float>> > expected_output;
-  expected_output.reserve(nwires);
+  // expected_output.reserve(nwires);
 
   std::vector<std::vector<std::complex<float>> > computed_output;
   computed_output.reserve(nwires);
   for (int i = 0; i < nwires; ++i)
-    computed_output[i].resize(nticks);
+    computed_output[i].reserve(nticks);
 
   bool bad_mem = false;
   cufftComplex** in;
   in = (cufftComplex**)malloc(sizeof(cufftComplex*) * nbatches);
   for(size_t r = 0; r < nbatches-1; r++) {
-    checkCuda( cudaMallocManaged(&in[r], sizeof(cufftComplex) * nwires * (nticks/2+1) * NREPS_PER_GPU) );
+    checkCuda( cudaMallocManaged(&in[r], sizeof(cufftComplex) * nwires * NREPS_PER_GPU * (nticks/2+1)) );
     bad_mem = bad_mem || (in[r] == NULL);
   }
-  checkCuda( cudaMallocManaged(&in[nbatches-1], sizeof(cufftComplex) * nwires * (nticks/2+1) * (NREPS%NREPS_PER_GPU)) );
+  int leftover_wires = nwires * ( NREPS-NREPS_PER_GPU*(nbatches-1) );
+  checkCuda( cudaMallocManaged(&in[nbatches-1], sizeof(cufftComplex) * leftover_wires * (nticks/2+1) ) );
   bad_mem = bad_mem || (in[nbatches-1] == NULL);
   
   if (bad_mem) {
@@ -99,8 +102,9 @@ cali_set_int(thread_attr, omp_get_thread_num());
   cudaEventRecord(cp_t1);
 
   for(size_t r = 0; r < nbatches-1; r++)
-    run_cufft(in[r], nticks, nwires*NREPS_PER_GPU);
-  run_cufft(in[nbatches-1], nticks, nwires*(NREPS%NREPS_PER_GPU));
+   run_cufft(in[r], nticks, nwires*NREPS_PER_GPU);
+  run_cufft(in[nbatches-1], nticks, leftover_wires);
+  // run_cufft(in[0], nticks, nwires*NREPS_PER_GPU); 
 
   cudaEventRecord(fft_t);
 
@@ -111,11 +115,10 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   cudaEventRecord(cp_t2);
 
-  int rep_to_check = 25;
   std::cout << "rep_to_check = " << rep_to_check << std::endl;
   for (long iw=0; iw<nwires; ++iw) {
     for (long i = 0; i < nticks/2+1; ++i) {
-      long idx = nwires * (nticks/2+1) * (rep_to_check%NREPS_PER_GPU) + iw*(nticks/2+1)+i; // 5 is an arbitrary REP to grab
+      long idx = nwires * (nticks/2+1) * (rep_to_check%NREPS_PER_GPU) + iw*(nticks/2+1)+i; 
       computed_output[iw][i].real(cuCrealf(in[rep_to_check/NREPS_PER_GPU][idx])); 
       computed_output[iw][i].imag(cuCimagf(in[rep_to_check/NREPS_PER_GPU][idx]));
     }
@@ -154,8 +157,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
 }
 
 
-void run_cufft(cufftComplex* in,  
-              size_t nticks, int batches) {
+void run_cufft(cufftComplex* in, size_t nticks, int batches) {
 
 #ifdef USE_CALI
 CALI_CXX_MARK_FUNCTION;
@@ -178,7 +180,9 @@ CALI_CXX_MARK_FUNCTION;
               CUFFT_R2C, batches) );
   
   checkCuFFT( cufftExecR2C(plan, (cufftReal*)in, in) );
-  cudaDeviceSynchronize();  
+  checkCuda( cudaDeviceSynchronize() );  
+
+  cufftDestroy(plan);
  
 }
 
@@ -207,7 +211,8 @@ void read_input_array_1D(cufftReal** in_array, FILE* f, size_t nticks, size_t nw
     }
   }
   r = nbatches-1;
-  for (size_t iw = 0; iw < nwires * (NREPS%NREPS_PER_GPU); ++iw) {
+  int leftover_wires = nwires * ( NREPS-NREPS_PER_GPU*(nbatches-1) ); 
+  for (size_t iw = 0; iw < leftover_wires; ++iw) {
     for (size_t i = 0; i < nticks; ++i) {
       in_array[r][iw * (nticks+1) + i] = in_array[0][iw * (nticks+1) + i];
     }
