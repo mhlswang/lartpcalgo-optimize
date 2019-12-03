@@ -8,7 +8,9 @@
 #include "utilities.h"
 
 
-
+// read input vector
+// fills in_vec with data on nwires*NREPS
+// each element in in_vec is a vector of nticks points
 void read_input_vector(std::vector<std::vector<float> > &in_vec, FILE* f, size_t nticks, size_t nwires) {
 
   in_vec.reserve(nwires * NREPS);

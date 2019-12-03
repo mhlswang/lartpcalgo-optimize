@@ -76,10 +76,13 @@ ifdef MAKE_PLOTS
 endif
 
 
-all: fft
+all: fftw
 
-fft: fftw_fft.cc utilities.cc Makefile
+fftw: fftw_fft.cc utilities.cc Makefile
 	$(CXX) $(CPPFLAGS) $(OPT) fftw_fft.cc utilities.cc -o fft.exe  $(LDFLAGS)
+
+mkl: mkl_fft.cc utilities.cc Makefile
+	$(CXX) $(CPPFLAGS) $(OPT) mkl_fft.cc utilities.cc -o fft.exe  $(LDFLAGS)
 
 mpi: fft_comparison_mpi.cc Makefile
 	mpiicc $(CPPFLAGS) $(OPT)  fft_comparison_mpi.cc -o fft_mpi.exe  $(LDFLAGS)
