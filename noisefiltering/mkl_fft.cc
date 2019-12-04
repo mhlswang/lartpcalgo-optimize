@@ -10,6 +10,9 @@
 void run_mkl(std::vector<std::vector<float> > &input_vector, 
               std::vector<std::vector<std::complex<float>> > &computed_output, 
               int nticks, int nwires, int nthr);
+void run_mkl_inplace(std::vector<std::vector<float> > &input_vector, 
+              std::vector<std::vector<std::complex<float>> > &computed_output, 
+              int nticks, int nwires, int nthr);
 
 int main(int argc, char *argv[])
 {
@@ -83,10 +86,22 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
 
   io_t1 = omp_get_wtime();
-
   run_mkl(input_vector, computed_output, nticks, nwires*NREPS, nthr);
-
+  // run_mkl_inplace(input_vector, computed_output, nticks, nwires*NREPS, nthr);
   fft_t = omp_get_wtime();
+
+  // this is only for inplace
+  // #pragma omp parallel for
+  // for (int iw=0; iw<nwires*NREPS; ++iw) {
+  //   for (int j = 0; j < nticks; j+=2) {
+  //     std::complex<double> c = std::complex<double>(input_vector[iw][j], input_vector[iw][j+1]);
+  //     computed_output[iw][j/2] = c;
+  //   }
+  //   for (int j = 0; j < (nticks/2)+1; j++) {
+  //     computed_output[iw][(nticks/2)+j] = std::conj(computed_output[iw][(nticks/2)-j]);
+  //   }
+  // }
+
 
   std::cout << "DONE" << std::endl;
   std::cout << "======================================================================================";
@@ -145,6 +160,47 @@ CALI_CXX_MARK_FUNCTION;
     }
     
     status = DftiComputeBackward(descriptor, computed_output[iw].data(), input_vector[iw].data());
+
+  }
+
+  status = DftiFreeDescriptor(&descriptor); //Free the descriptor
+
+  #ifdef THREAD_WIRES 
+  }
+  #endif
+
+}
+
+void run_mkl_inplace(std::vector<std::vector<float> > &input_vector, 
+              std::vector<std::vector<std::complex<float>> > &computed_output, 
+              int nticks, int nwires, int nthr){
+
+#ifdef USE_CALI
+CALI_CXX_MARK_FUNCTION;
+#endif
+
+  DFTI_DESCRIPTOR_HANDLE descriptor;
+  MKL_LONG status;
+
+  #ifdef THREAD_WIRES
+  #pragma omp parallel private (descriptor, status)
+  {
+  #endif
+
+  /* Configure a Descriptor */
+  status = DftiCreateDescriptor(&descriptor, DFTI_SINGLE, DFTI_REAL, 1, nticks);
+  status = DftiSetValue(descriptor, DFTI_CONJUGATE_EVEN_STORAGE,  DFTI_COMPLEX_COMPLEX);
+  status = DftiSetValue(descriptor, DFTI_PACKED_FORMAT, DFTI_CCE_FORMAT);
+  status = DftiCommitDescriptor(descriptor);
+
+  #ifdef THREAD_WIRES
+  #pragma omp for schedule (OMP_SCEHD)
+  #endif
+  for (int iw=0; iw<nwires; ++iw) {
+
+    status = DftiComputeForward(descriptor, input_vector[iw].data()); //Compute the Forward FFT
+    
+    // status = DftiComputeBackward(descriptor, input_vector[iw].data());
 
   }
 
