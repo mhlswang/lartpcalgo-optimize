@@ -52,9 +52,9 @@ cali_set_int(thread_attr, omp_get_thread_num());
   size_t nwires;
   fread(&nwires, sizeof(size_t), 1, f);
 
-  std::cout << "found nwires   = " << nwires << std::endl;
-  std::cout << "number of reps = " << NREPS << std::endl;
-  std::cout << "number of thr  = " << nthr << std::endl;
+  // std::cout << "found nwires   = " << nwires << std::endl;
+  // std::cout << "number of reps = " << NREPS << std::endl;
+  // std::cout << "number of thr  = " << nthr << std::endl;
 
   size_t nticks = 4096;
 
@@ -77,11 +77,11 @@ cali_set_int(thread_attr, omp_get_thread_num());
   // print_input_vector(input_vector, nticks);
 
 
-  std::cout << "======================================================================================";
-  std::cout << std::endl;
-  std::cout << std::endl;
+  // std::cout << "======================================================================================";
+  // std::cout << std::endl;
+  // std::cout << std::endl;
 
-  std::cout << "Running MKL....."; 
+  // std::cout << "Running MKL....."; 
 
 
 
@@ -103,10 +103,10 @@ cali_set_int(thread_attr, omp_get_thread_num());
   // }
 
 
-  std::cout << "DONE" << std::endl;
-  std::cout << "======================================================================================";
-  std::cout << std::endl;
-  std::cout << std::endl;
+  // std::cout << "DONE" << std::endl;
+  // std::cout << "======================================================================================";
+  // std::cout << std::endl;
+  // std::cout << std::endl;
 
 
   #ifdef MAKE_PLOTS
@@ -118,11 +118,12 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   io_t2 = omp_get_wtime();
 
-  std::cout << "number thr = " << nthr << std::endl;
-  std::cout << "total time = " << io_t2 - start_t << "s" << std::endl;
-  std::cout << "io time    = " << io_t2 - fft_t + io_t1 - start_t << "s" << std::endl;
-  std::cout << "fft time   = " << fft_t - io_t1 << "s" << std::endl;
-  std::cout << std::endl;
+  std::cout << fft_t - io_t1 << ", ";
+  // std::cout << "number thr = " << nthr << std::endl;
+  // std::cout << "total time = " << io_t2 - start_t << "s" << std::endl;
+  // std::cout << "io time    = " << io_t2 - fft_t + io_t1 - start_t << "s" << std::endl;
+  // std::cout << "fft time   = " << fft_t - io_t1 << "s" << std::endl;
+  // std::cout << std::endl;
 
 }
 
@@ -130,7 +131,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
 void run_mkl(std::vector<std::vector<float> > &input_vector, 
               std::vector<std::vector<std::complex<float>> > &computed_output, 
-              int nticks, int nwires, int nthr){
+              const int nticks, const int nwires, const int nthr){
 
 #ifdef USE_CALI
 CALI_CXX_MARK_FUNCTION;
@@ -144,9 +145,12 @@ CALI_CXX_MARK_FUNCTION;
   {
   #endif
 
+  #pragma omp critical
+  {
   status = DftiCreateDescriptor(&descriptor, DFTI_SINGLE, DFTI_REAL, 1, nticks); //Specify size and precision
   status = DftiSetValue(descriptor, DFTI_PLACEMENT, DFTI_NOT_INPLACE); //Out of place FFT
   status = DftiCommitDescriptor(descriptor); //Finalize the descriptor
+  }
 
   #ifdef THREAD_WIRES
   #pragma omp for schedule (OMP_SCEHD)

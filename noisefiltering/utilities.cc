@@ -200,8 +200,8 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
     std::cout << "Count errors over tolerance: " << num_crap << std::endl;
     std::cout << "Count of total points:       " << num_tot << std::endl;
   }
-  std::cout << std::endl;
-  std::cout << std::endl;
+  // std::cout << std::endl;
+  // std::cout << std::endl;
 
 }
 

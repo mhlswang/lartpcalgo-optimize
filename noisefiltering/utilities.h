@@ -38,8 +38,9 @@
 #endif
 
 #ifndef OMP_SCEHD
-// #define OMP_SCEHD dynamic
+//#define OMP_SCEHD dynamic
 #define OMP_SCEHD static
+// #define OMP_SCEHD guided
 #endif
 
 #define TOL 0.001
