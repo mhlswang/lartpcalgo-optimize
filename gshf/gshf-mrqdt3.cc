@@ -179,14 +179,14 @@ void printHitCandidates1d(int evid,const vector<struct refdata> &rd_vec, vector<
   }
 }
 
-int doFit(float &lambda, float p[], float y[], int &nParams, int &roiSize, float &chiSqr, float &dchiSqr){
+int doFit(float &lambda, float p[], float plimmin[], float plimmax[], float y[], int &nParams, int &roiSize, float &chiSqr, float &dchiSqr){
   const float chiCut   = 1e-3;
   int fitResult=-1;
 
   int trial=0;
   lambda=-1.;   /* initialize lambda on first call */
   do{
-    fitResult=fmarqfit->marqfit::mrqdtfit(lambda, p, y, nParams, roiSize, chiSqr, dchiSqr);
+    fitResult=fmarqfit->marqfit::mrqdtfit(lambda, p, plimmin, plimmax, y, nParams, roiSize, chiSqr, dchiSqr);
     trial++;
     if(fitResult||(trial>100))break;
   }
@@ -209,21 +209,30 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
 
   std::vector<float> y(roiSize);
   std::vector<float> p(3*mhc_vec.size());
+  std::vector<float> plimmin(3*mhc_vec.size());
+  std::vector<float> plimmax(3*mhc_vec.size());
   std::vector<float> perr(3*mhc_vec.size());
 
   /* choose the fit function and set the parameters */
   nParams = 0;
 
   for(int imh=0; imh<mhc_vec.size();imh++){
-    float peakMean   = mhc_vec[imh].cen - (float)startTime;
+    float peakMean   = mhc_vec[imh].cen - 0.5 - (float)startTime; //shift by 0.5 to account for bin width
     float peakWidth  = mhc_vec[imh].sig;
     float amplitude  = mhc_vec[imh].hgt;
 
-    float meanLowLim = fmax(peakMean - PeakRange * peakWidth,       0.);
+    float meanLowLim = fmax(peakMean - PeakRange * peakWidth,       0.f);
     float meanHiLim  = fmin(peakMean + PeakRange * peakWidth, (float)roiSize);
     p[0+nParams]=amplitude;
     p[1+nParams]=peakMean;
     p[2+nParams]=peakWidth;
+
+    plimmin[0+nParams]=amplitude*0.1;
+    plimmin[1+nParams]=meanLowLim;
+    plimmin[2+nParams]=fmax(MinWidth, 0.1f * peakWidth);
+    plimmax[0+nParams]=amplitude*AmpRange;
+    plimmax[1+nParams]=meanHiLim;
+    plimmax[2+nParams]=MaxWidthMult * peakWidth;
 
     nParams += 3;
   }
@@ -237,7 +246,7 @@ void findPeakParameters(const std::vector<float> &adc_vec, const std::vector<str
     y[idx]=adc;
   }
 
-  fitResult=doFit(lambda, &p[0], &y[0], nParams, roiSize, chiSqr, dchiSqr);
+  fitResult=doFit(lambda, &p[0], &plimmin[0], &plimmax[0], &y[0], nParams, roiSize, chiSqr, dchiSqr);
 
   if (!fitResult){
     int fitResult2=fmarqfit->marqfit::cal_perr(&p[0],&y[0],nParams,roiSize,&perr[0]);
