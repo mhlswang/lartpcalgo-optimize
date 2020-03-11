@@ -7,12 +7,14 @@ gshf-mrqdt2
 fft.exe
 fft_mpi.exe
 cufft.exe
+*.sh
 
 *.csv
 *.png
 .tau
 r0*
 *.data
+*.nsight-cuprof-report
 
 *.optrpt
 

@@ -1,8 +1,7 @@
 
-
-# AVX_512 := 1
-#AVX2    := 1
-#NOVEC    := 1
+AVX_512 := 1
+# AVX2    := 1
+# NOVEC    := 1
 
 # USE_CALI := 1
 USE_MKL  := 1
@@ -13,9 +12,9 @@ THREAD_WIRES := 1
 CPPFLAGS := -std=c++11 # this is hwere to add include links 
 # LDFLAGS  := # nothing yet but this is where to add library links 
 
-# MKL_LINK = -L${MKLROOT}/lib/intel64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl #
+MKL_LINK = -L${MKLROOT}/lib/intel64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_avx512 -lmkl_core -lm -ldl #
 # MKL_LINK = -L${MKLROOT}/lib/intel64 -mkl -liomp5 -lpthread -lm -ldl #
-MKL_LINK = -L${MKLROOT}/lib/intel64 -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_avx512 -lmkl_core -liomp5 -lpthread -lm -ldl #
+# MKL_LINK = -L${MKLROOT}/lib/intel64 -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_avx512 -lmkl_core -liomp5 -lpthread -lm -ldl #
 MKL_OPT  = -DMKL_ILP64 -I${MKLROOT}/include #
 
 # FFTW_DIR = /home/users/gravelle/soft/fftw-3.3.8-gcc
@@ -43,7 +42,7 @@ ifdef AVX_512
 else ifdef AVX2
 	OPT  += -mavx2
 else ifdef NOVEC
-	OPT  += -no-vec
+# 	OPT  += -no-vec
 else
 	OPT  += -mavx
 endif
@@ -76,10 +75,13 @@ ifdef MAKE_PLOTS
 endif
 
 
-all: fft
+all: fftw
 
-fft: fftw_fft.cc utilities.cc Makefile
+fftw: fftw_fft.cc utilities.cc Makefile
 	$(CXX) $(CPPFLAGS) $(OPT) fftw_fft.cc utilities.cc -o fft.exe  $(LDFLAGS)
+
+mkl: mkl_fft.cc utilities.cc Makefile
+	$(CXX) $(CPPFLAGS) $(OPT) mkl_fft.cc utilities.cc -o fft.exe  $(LDFLAGS)
 
 mpi: fft_comparison_mpi.cc Makefile
 	mpiicc $(CPPFLAGS) $(OPT)  fft_comparison_mpi.cc -o fft_mpi.exe  $(LDFLAGS)

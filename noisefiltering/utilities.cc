@@ -8,7 +8,9 @@
 #include "utilities.h"
 
 
-
+// read input vector
+// fills in_vec with data on nwires*NREPS
+// each element in in_vec is a vector of nticks points
 void read_input_vector(std::vector<std::vector<float> > &in_vec, FILE* f, size_t nticks, size_t nwires) {
 
   in_vec.reserve(nwires * NREPS);
@@ -65,32 +67,6 @@ void free_input_array_2D(float** &in_array, size_t nticks, size_t nwires) {
 }
 #endif
 
-
-#ifdef USE_CUDA
-void read_input_array_1D(float* &in_array, FILE* f, size_t nticks, size_t nwires) {
-
-  in_array = (float*) malloc(sizeof(float*) * nwires * nticks * NREPS);
-  if(in_array == NULL) std::cout << "in_array is NULL" << std::endl;
-
-  for (size_t iw = 0; iw < nwires; ++iw) {
-    for (size_t i = 0; i < nticks; ++i) {
-      fread(&in_array[iw * nticks + i], sizeof(float), 1, f);
-    }
-  }
-
-  for (size_t iw = nwires; iw < nwires * NREPS; ++iw) {
-    for (size_t i = 0; i < nticks; ++i) {
-      float a = in_array[(iw%nwires) * nticks + i];
-      in_array[iw * nticks + i] = a;
-    }
-  }
-
-}
-
-void free_input_array_1D(float* &in_array, size_t nticks, size_t nwires) {
-  free(in_array);
-}
-#endif
 
 void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutputVec, FILE* f, int nticks, int nwires) {
   for (int iw=0; iw<nwires; ++iw) {
@@ -208,9 +184,13 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
       err = get_complex_error(expected[i][j], computed[i][j]);
       if (err >= TOL) {
       // if (err < 0.01) {
-        // std::cout << err << std::endl;
-        // std::cout << expected[i][j] << std::endl;
-        // std::cout << computed[i][j] << std::endl;
+      /*      
+        std::cout << "wire: " << i << std::endl;
+        std::cout << "tick: " << j << std::endl;
+        std::cout << err << std::endl;
+        std::cout << expected[i][j] << std::endl;
+        std::cout << computed[i][j] << std::endl;
+      */
         num_crap++;
       }
       num_tot++;
@@ -220,8 +200,8 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
     std::cout << "Count errors over tolerance: " << num_crap << std::endl;
     std::cout << "Count of total points:       " << num_tot << std::endl;
   }
-  std::cout << std::endl;
-  std::cout << std::endl;
+  // std::cout << std::endl;
+  // std::cout << std::endl;
 
 }
 

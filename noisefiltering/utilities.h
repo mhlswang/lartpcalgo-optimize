@@ -27,18 +27,20 @@
 #define PLOTS_FILE "mkl_output.csv"
 #endif
 
+
 #ifdef USE_CALI
 #include <caliper/cali.h>
 #endif
 
 #ifndef NREPS
-#define NREPS 1
-// #define NREPS 100
+// #define NREPS 30 
+#define NREPS 100
 #endif
 
 #ifndef OMP_SCEHD
-// #define OMP_SCEHD dynamic
+//#define OMP_SCEHD dynamic
 #define OMP_SCEHD static
+// #define OMP_SCEHD guided
 #endif
 
 #define TOL 0.001
@@ -47,10 +49,6 @@ void read_input_vector(std::vector<std::vector<float> > &in_vec, FILE* f, size_t
 #ifdef USE_FFTW
 void read_input_array_2D(float** &in_array, FILE* f, size_t nticks, size_t nwires);
 void free_input_array_2D(float** &in_array, size_t nticks, size_t nwires);
-#endif
-#ifdef USE_CUDA
-void read_input_array_1D(float* &in_array, FILE* f, size_t nticks, size_t nwires);
-void free_input_array_1D(float* &in_array, size_t nticks, size_t nwires);
 #endif
 void read_output_vector(std::vector<std::vector<std::complex<float>> > &fFFTOutputVec, FILE* f, int nticks, int nwires);
 void fix_conjugates(std::vector<std::vector<std::complex<float>> > &computed, 
