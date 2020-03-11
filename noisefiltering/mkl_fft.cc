@@ -43,7 +43,10 @@ cali_set_int(thread_attr, omp_get_thread_num());
   // }
   
   f = fopen("noisefilt_100ev_50k.bin", "r");
-  assert(f);
+  if (f == NULL) {
+    perror("Failed to open file: ");
+    return 1;
+  }
 
   double start_t, io_t1, fft_t, io_t2;
 
