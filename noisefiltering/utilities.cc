@@ -8,7 +8,9 @@
 #include "utilities.h"
 
 
-
+// read input vector
+// fills in_vec with data on nwires*NREPS
+// each element in in_vec is a vector of nticks points
 void read_input_vector(std::vector<std::vector<float> > &in_vec, FILE* f, size_t nticks, size_t nwires) {
 
   in_vec.reserve(nwires * NREPS);
@@ -198,8 +200,8 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
     std::cout << "Count errors over tolerance: " << num_crap << std::endl;
     std::cout << "Count of total points:       " << num_tot << std::endl;
   }
-  std::cout << std::endl;
-  std::cout << std::endl;
+  // std::cout << std::endl;
+  // std::cout << std::endl;
 
 }
 

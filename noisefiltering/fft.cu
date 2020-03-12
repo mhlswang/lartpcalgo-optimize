@@ -3,10 +3,10 @@
 #include "utilities.h"
 
 // cuda stuff
-#define NREPS_PER_GPU 4
+#define NREPS_PER_GPU 2
 
 //will need to be tuned but needs to be < NREPS currently
-#define N_STREAMS 2
+#define N_STREAMS 1
 
 void make_plans(cufftHandle* &plans, cudaStream_t streams[], size_t wires_per_stream, size_t nticks);
 void run_cufft(cufftComplex* in, size_t nticks, int batches);
@@ -39,7 +39,10 @@ cali_set_int(thread_attr, omp_get_thread_num());
   //  f = fopen("noisefilt_100ev_50k.bin", "r");
   // }
   f = fopen("noisefilt_100ev_50k.bin", "r");
-  assert(f);
+  if (f == NULL) {
+    perror("Failed to open file: ");
+    return 1;
+  }
 
   size_t nticks = 4096;
 

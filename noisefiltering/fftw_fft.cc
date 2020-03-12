@@ -41,7 +41,10 @@ cali_set_int(thread_attr, omp_get_thread_num());
   // }
   
   f = fopen("noisefilt_100ev_50k.bin", "r");
-  assert(f);
+  if (f == NULL) {
+    perror("Failed to open file: ");
+    return 1;
+  }
 
   double start_t, io_t1, fft_t, io_t2;
 
@@ -50,8 +53,8 @@ cali_set_int(thread_attr, omp_get_thread_num());
   size_t nwires;
   fread(&nwires, sizeof(size_t), 1, f);
 
-  std::cout << "found nwires   =" << nwires << std::endl;
-  std::cout << "number of reps =" << NREPS << std::endl;
+  // std::cout << "found nwires   =" << nwires << std::endl;
+  // std::cout << "number of reps =" << NREPS << std::endl;
 
   size_t nticks = 4096;
 
@@ -72,10 +75,10 @@ cali_set_int(thread_attr, omp_get_thread_num());
   fclose(f);
 
 
-  std::cout << "======================================================================================";
-  std::cout << std::endl;
-  std::cout << std::endl;
-  std::cout << "Running FFTW.....";   
+  // std::cout << "======================================================================================";
+  // std::cout << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "Running FFTW.....";   
   #ifndef THREAD_WIRES
   fftwf_init_threads();
   #endif
@@ -84,10 +87,10 @@ cali_set_int(thread_attr, omp_get_thread_num());
   run_fftw(input_array, computed_output, nticks, nwires*NREPS, nthr);
   fft_t = omp_get_wtime();
 
-  std::cout << "DONE" << std::endl;
-  std::cout << "======================================================================================";
-  std::cout << std::endl;
-  std::cout << std::endl;
+  // std::cout << "DONE" << std::endl;
+  // std::cout << "======================================================================================";
+  // std::cout << std::endl;
+  // std::cout << std::endl;
 
   fftwf_cleanup_threads();
 
@@ -101,11 +104,13 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   io_t2 = omp_get_wtime();
 
-  std::cout << "number thr = " << nthr << std::endl;
-  std::cout << "total time = " << io_t2 - start_t << "s" << std::endl;
-  std::cout << "io time    = " << io_t2 - fft_t + io_t1 - start_t << "s" << std::endl;
-  std::cout << "fft time   = " << fft_t - io_t1 << "s" << std::endl;
-  std::cout << std::endl;
+  // std::cout << "number thr = " << nthr << std::endl;
+  // std::cout << "total time = " << io_t2 - start_t << "s" << std::endl;
+  // std::cout << "io time    = " << io_t2 - fft_t + io_t1 - start_t << "s" << std::endl;
+  // std::cout << "fft time   = " << fft_t - io_t1 << "s" << std::endl;
+
+  std::cout << fft_t - io_t1 << ", ";
+  // std::cout << std::endl;
 
 }
 

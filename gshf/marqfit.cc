@@ -1,4 +1,5 @@
 #include "marqfit.h"
+#include <limits>
 
 /* multi-Gaussian function, number of Gaussians is npar divided by 3 */
 void marqfit::fgauss(const float yd[], const float p[], const int npar, const int ndat, std::vector<float> &res){
@@ -262,6 +263,13 @@ int marqfit::cal_perr(float p[], float y[], const int nParam, const int nData, f
 
 int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
 {
+  std::vector<float> plimmin(nParam,std::numeric_limits<float>::lowest());
+  std::vector<float> plimmax(nParam,std::numeric_limits<float>::max());
+  return mrqdtfit(lambda, p, &plimmin[0], &plimmax[0], y, nParam, nData, chiSqr, dchiSqr);
+}
+
+int marqfit::mrqdtfit(float &lambda, float p[], float plimmin[], float plimmax[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
+{
   int i,j;
   float nu,rho,lzmlh,amax,chiSq0;
 
@@ -273,6 +281,13 @@ int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, con
   std::vector<float> dydp(nData*nParam);
   std::vector<float> alpha(nParam*nParam,0);
   
+  bool haslimits = false;
+  for(j=0;j<nParam;j++){
+    if (plimmin[j]>std::numeric_limits<float>::lowest() || plimmax[j]<std::numeric_limits<float>::max()) {
+      haslimits = true;
+      break;
+    }
+  }
   fgauss(y, p, nParam, nData, res);
   chiSq0=cal_xi2(res, nData);
   dgauss(p, nParam, nData, dydp);
@@ -300,6 +315,11 @@ int marqfit::mrqdtfit(float &lambda, float p[], float y[], const int nParam, con
     }
     fgauss(y, p, nParam, nData, res);
     chiSqr = cal_xi2(res, nData);
+    if (haslimits) {
+      for(j=0;j<nParam;j++){
+        if (p[j]<=plimmin[j] || p[j]>=plimmax[j]) chiSqr*=10000;//penalty for going out of limits!
+      }
+    }
 
     lzmlh=0.;
     for(j=0;j<nParam;j++){
