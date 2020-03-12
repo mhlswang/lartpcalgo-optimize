@@ -43,15 +43,13 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   size_t nticks = 4096;
 
-  cudaEvent_t start_t, io_t1, cp_t1, fft_t, io_t2, cp_t2; 
-  cudaEventCreate(&start_t);
-  cudaEventCreate(&io_t1);
-  cudaEventCreate(&cp_t1);
-  cudaEventCreate(&fft_t);
-  cudaEventCreate(&cp_t2);
-  cudaEventCreate(&io_t2);
+  // cudaEvent_t start_t, io_t1, fft_t, io_t2; 
+  // cudaEventCreate(&start_t);
+  // cudaEventCreate(&io_t1);
+  // cudaEventCreate(&fft_t);
+  // cudaEventCreate(&io_t2);
 
-  cudaEventRecord(start_t);
+  // cudaEventRecord(start_t);
 
   size_t nbatches = (int)std::trunc(NREPS/NREPS_PER_GPU) + 1;
   size_t nwires;
@@ -75,11 +73,11 @@ cali_set_int(thread_attr, omp_get_thread_num());
   cufftComplex** in;
   in = (cufftComplex**)malloc(sizeof(cufftComplex*) * nbatches);
   for(size_t r = 0; r < nbatches-1; r++) {
-    checkCuda( cudaMallocManaged(&in[r], sizeof(cufftComplex) * nwires * NREPS_PER_GPU * (nticks/2+1)) );
+    checkCuda( cudaMallocManaged(&in[r], sizeof(cufftComplex) * nwires * NREPS_PER_GPU * ((nticks/2+1))) );
     bad_mem = bad_mem || (in[r] == NULL);
   }
   int leftover_wires = nwires * ( NREPS-NREPS_PER_GPU*(nbatches-1) );
-  checkCuda( cudaMallocManaged(&in[nbatches-1], sizeof(cufftComplex) * leftover_wires * (nticks/2+1) ) );
+  checkCuda( cudaMallocManaged(&in[nbatches-1], sizeof(cufftComplex) * leftover_wires * ((nticks/2+1)) ) );
   bad_mem = bad_mem || (in[nbatches-1] == NULL);
   
   if (bad_mem) {
@@ -92,28 +90,24 @@ cali_set_int(thread_attr, omp_get_thread_num());
   fclose(f);
   // print_output_vector(expected_output, nticks);
 
-  cudaEventRecord(io_t1);
+  // cudaEventRecord(io_t1);
 
   std::cout << "======================================================================================";
   std::cout << std::endl;
   std::cout << std::endl;
   std::cout << "Running cuFFT.....";   
 
-  cudaEventRecord(cp_t1);
-
   for(size_t r = 0; r < nbatches-1; r++)
    run_cufft(in[r], nticks, nwires*NREPS_PER_GPU);
   run_cufft(in[nbatches-1], nticks, leftover_wires);
   // run_cufft(in[0], nticks, nwires*NREPS_PER_GPU); 
 
-  cudaEventRecord(fft_t);
+  // cudaEventRecord(fft_t);
 
   std::cout << "DONE" << std::endl;
   std::cout << "======================================================================================";
   std::cout << std::endl;
   std::cout << std::endl;
-
-  cudaEventRecord(cp_t2);
 
   std::cout << "rep_to_check = " << rep_to_check << std::endl;
   for (long iw=0; iw<nwires; ++iw) {
@@ -135,18 +129,15 @@ cali_set_int(thread_attr, omp_get_thread_num());
   print_err(expected_output, computed_output, nticks, nwires);
   #endif
   
-  cudaEventRecord(io_t2);
+  // cudaEventRecord(io_t2);
 
-  float t_tot = 0; cudaEventElapsedTime(&t_tot, start_t, io_t2);
-  float t_io1 = 0; cudaEventElapsedTime(&t_io1, start_t, io_t1);
-  float t_io2 = 0; cudaEventElapsedTime(&t_io2, cp_t2,   io_t2);
-  float t_cp1 = 0; cudaEventElapsedTime(&t_cp1, io_t1,   cp_t1);
-  float t_cp2 = 0; cudaEventElapsedTime(&t_cp2, fft_t,   cp_t2);
-  float t_fft = 0; cudaEventElapsedTime(&t_fft, cp_t1,   fft_t);
+  float t_tot = 0; //cudaEventElapsedTime(&t_tot, start_t, io_t2);
+  float t_io1 = 0; //cudaEventElapsedTime(&t_io1, start_t, io_t1);
+  float t_io2 = 0; //cudaEventElapsedTime(&t_io2, fft_t,   io_t2);
+  float t_fft = 0; //cudaEventElapsedTime(&t_fft, io_t1,   fft_t);
   std::cout << "number thr = " << nthr << std::endl;
   std::cout << "total time = " << t_tot << "ms" << std::endl;
   std::cout << "io time    = " << t_io1 + t_io2 << "ms" << std::endl;
-  std::cout << "copy time  = " << t_cp1 + t_cp2 << "ms" << std::endl;
   std::cout << "fft time   = " << t_fft << "ms" << std::endl;
   std::cout << std::endl;
 
