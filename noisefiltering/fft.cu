@@ -3,7 +3,7 @@
 #include "utilities.h"
 
 // cuda stuff
-#define NREPS_PER_GPU 2
+#define NREPS_PER_GPU 6
 
 //will need to be tuned but needs to be < NREPS currently
 #define N_STREAMS 1
@@ -103,6 +103,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
   for(size_t r = 0; r < nbatches-1; r++)
    run_cufft(in[r], nticks, nwires*NREPS_PER_GPU);
   run_cufft(in[nbatches-1], nticks, leftover_wires);
+  checkCuda( cudaDeviceSynchronize() ); 
   // run_cufft(in[0], nticks, nwires*NREPS_PER_GPU); 
 
   // cudaEventRecord(fft_t);
@@ -174,7 +175,7 @@ CALI_CXX_MARK_FUNCTION;
               CUFFT_R2C, batches) );
   
   checkCuFFT( cufftExecR2C(plan, (cufftReal*)in, in) );
-  checkCuda( cudaDeviceSynchronize() );  
+  // checkCuda( cudaDeviceSynchronize() );  
 
   cufftDestroy(plan);
  
