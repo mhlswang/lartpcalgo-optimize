@@ -33,7 +33,7 @@
 #endif
 
 #ifndef NREPS
-#define NREPS 10
+#define NREPS 5
 // #define NREPS 100
 #endif
 
