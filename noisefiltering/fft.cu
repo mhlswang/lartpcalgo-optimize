@@ -153,6 +153,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
   for(size_t r = 0; r < nbatches; r++) 
     checkCuda( cudaStreamDestroy(streams[r]) );
   cudaFree(in);
+  cudaFree(d_in);
  
   #ifdef MAKE_PLOTS
   print_for_plots(PLOTS_FILE, expected_output, computed_output, nticks, nwires, true);
@@ -194,8 +195,7 @@ CALI_CXX_MARK_FUNCTION;
   int inembed[] = { 0 };                    // --- Input size with pitch (ignored for 1D transforms)
   int onembed[] = { 0 };                    // --- Output size with pitch (ignored for 1D transforms)
 
-  // cudaMemcpyAsync((void*)d_in, (void*)in, sizeof(cufftComplex) * batches * (nticks/2+1), cudaMemcpyHostToDevice, stream);
-  
+
   checkCuFFT( cufftPlanMany(&plan, 1, &n, 
               inembed, istride, idist, 
               onembed, ostride, odist, 
@@ -203,8 +203,6 @@ CALI_CXX_MARK_FUNCTION;
   checkCuFFT( cufftSetStream(plan, stream) );
 
   checkCuFFT( cufftExecR2C(plan, (cufftReal*)d_in, d_in) );
-
-  // cudaMemcpyAsync((void*)in, (void*)d_in, sizeof(cufftComplex) * batches * (nticks/2+1), cudaMemcpyDeviceToHost, stream);
 
   cufftDestroy(plan);
  
