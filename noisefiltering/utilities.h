@@ -33,8 +33,8 @@
 #endif
 
 #ifndef NREPS
-#define NREPS 5
-// #define NREPS 100
+// #define NREPS 5
+#define NREPS 100
 #endif
 
 #ifndef OMP_SCEHD
