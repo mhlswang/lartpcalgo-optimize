@@ -4,7 +4,7 @@
 
 // cuda stuff
 #define NREPS_PER_GPU 30
-#define N_STREAMS 1
+#define N_STREAMS 4
 
 void make_plans(cufftHandle* &plans, cudaStream_t streams[], size_t wires_per_stream, size_t nticks);
 void run_cufft(cufftComplex* in, cudaStream_t streams[], size_t nticks, int nwires, int nreps);
@@ -110,8 +110,6 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   checkCuda( cudaDeviceSynchronize() ); 
 
-  for(size_t r = 0; r < N_STREAMS; r++) 
-    checkCuda( cudaStreamDestroy(streams[r]) );
   // cudaEventRecord(fft_t);
 
   std::cout << "DONE" << std::endl;
@@ -132,6 +130,8 @@ cali_set_int(thread_attr, omp_get_thread_num());
   }
 
   cudaFree(in);
+  for(size_t r = 0; r < N_STREAMS; r++) 
+    checkCuda( cudaStreamDestroy(streams[r]) );
  
   #ifdef MAKE_PLOTS
   print_for_plots(PLOTS_FILE, expected_output, computed_output, nticks, nwires, true);
@@ -217,10 +217,10 @@ CALI_CXX_MARK_FUNCTION;
 
     checkCuFFT( cufftExecR2C(plans[s], (cufftReal*)d_in[s], d_in[s]) );
 
-    cufftDestroy(plans[s]);
 
   }
-
+  for(size_t r = 0; r < N_STREAMS; r++)
+    checkCuda( cudaStreamSynchronize(streams[r]) );
 
   for(size_t r = 0; r < N_STREAMS-1; r++){
     size   = sizeof(cufftComplex) * nwires * reps_per_stream * ((nticks/2+1));
@@ -229,11 +229,14 @@ CALI_CXX_MARK_FUNCTION;
   }
   size = sizeof(cufftComplex) * nwires * extra_reps * (nticks/2+1);
   offset = nwires * reps_per_stream * ((nticks/2+1)) * (N_STREAMS-1);
-  cudaMemcpyAsync((void*)&in[N_STREAMS-1], (void*)d_in[N_STREAMS-1], size, cudaMemcpyDeviceToHost, streams[N_STREAMS-1]);
+  cudaMemcpyAsync((void*)&in[offset], (void*)d_in[N_STREAMS-1], size, cudaMemcpyDeviceToHost, streams[N_STREAMS-1]);
+
+  for(size_t r = 0; r < N_STREAMS; r++)
+    checkCuda( cudaStreamSynchronize(streams[r]) );
 
   for(size_t r = 0; r < N_STREAMS; r++) {
-    checkCuda( cudaStreamSynchronize(streams[r]) );
     cudaFree(d_in[r]);
+    cufftDestroy(plans[r]);
   }
   cudaFree(d_in);
  

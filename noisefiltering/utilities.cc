@@ -184,13 +184,13 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
       err = get_complex_error(expected[i][j], computed[i][j]);
       if (err >= TOL) {
       // if (err < 0.01) {
-      /*      
-        std::cout << "wire: " << i << std::endl;
-        std::cout << "tick: " << j << std::endl;
-        std::cout << err << std::endl;
+            
+        // std::cout << "wire: " << i << std::endl;
+        // std::cout << "tick: " << j << std::endl;
+        // std::cout << err << std::endl;
         std::cout << expected[i][j] << std::endl;
         std::cout << computed[i][j] << std::endl;
-      */
+      
         num_crap++;
       }
       num_tot++;
