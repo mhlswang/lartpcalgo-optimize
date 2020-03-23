@@ -3,11 +3,11 @@
 #include "utilities.h"
 
 // cuda stuff
-#define NREPS_PER_GPU 30
+#define NREPS_PER_GPU 15
 #define N_STREAMS 1
 
 void make_plans(cufftHandle* &plans, cudaStream_t streams[], size_t wires_per_stream, size_t nticks);
-void run_cufft(cufftComplex* in, cudaStream_t stream, size_t nticks, int nwires, int nreps);
+void run_cufft(cufftComplex* in, cufftComplex* d_in, cufftHandle *plan, size_t nticks, int nwires, int nreps);
 void read_input_array_1D(cufftReal** in_array, FILE* f, size_t nticks, size_t nwires, size_t nbatches);
 
 //https://github.com/NVIDIA-developer-blog/code-samples
@@ -42,7 +42,6 @@ cali_set_int(thread_attr, omp_get_thread_num());
     return 1;
   }
 
-  size_t nticks = 4096;
 
   // cudaEvent_t start_t, io_t1, fft_t, io_t2; 
   // cudaEventCreate(&start_t);
@@ -52,11 +51,13 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   // cudaEventRecord(start_t);
 
+  size_t nticks = 4096;
   size_t nbatches = (int)std::trunc(NREPS/NREPS_PER_GPU) + 1;
-  int leftover_reps = ( NREPS-NREPS_PER_GPU*(nbatches-1) );
+  size_t leftover_reps = ( NREPS-NREPS_PER_GPU*(nbatches-1) );
   size_t nwires;
-
   fread(&nwires, sizeof(size_t), 1, f);
+
+  cufftHandle  plans[nbatches];
 
   std::cout << "found nwires    = " << nwires << std::endl;
   std::cout << "num reps        = " << NREPS << std::endl;
@@ -65,8 +66,6 @@ cali_set_int(thread_attr, omp_get_thread_num());
   std::cout << "num batches     = " << nbatches << std::endl;
 
   std::vector<std::vector<std::complex<float>> > expected_output;
-  // expected_output.reserve(nwires);
-
   std::vector<std::vector<std::complex<float>> > computed_output;
   computed_output.reserve(nwires);
   for (int i = 0; i < nwires; ++i)
@@ -92,6 +91,16 @@ cali_set_int(thread_attr, omp_get_thread_num());
   fclose(f);
   // print_output_vector(expected_output, nticks);
 
+  cufftComplex* d_in;
+  bad_mem = false;
+  checkCuda( cudaMalloc(&d_in, sizeof(cufftComplex) * nwires * NREPS_PER_GPU * (nticks/2+1)) );
+  bad_mem = bad_mem || (d_in == NULL);
+
+  if (bad_mem) {
+    std::cout << "ERROR: failed to malloc device data" << std::endl;
+    exit(1);
+  }
+
   // cudaEventRecord(io_t1);
 
   std::cout << "======================================================================================";
@@ -99,15 +108,12 @@ cali_set_int(thread_attr, omp_get_thread_num());
   std::cout << std::endl;
   std::cout << "Running cuFFT.....";   
 
-
-  cudaStream_t streams[N_STREAMS];
-  for(size_t s = 0; s < N_STREAMS; s++) 
-    checkCuda( cudaStreamCreate(&streams[s]) );
- 
   for(size_t r = 0; r < nbatches-1; r++){
-    run_cufft(in[r], streams[0], nticks, nwires, NREPS_PER_GPU);
+    run_cufft(in[r], d_in, &plans[r], nticks, nwires, NREPS_PER_GPU);
+    checkCuda( cudaDeviceSynchronize() ); 
   }
-  run_cufft(in[nbatches-1], streams[0], nticks, nwires, leftover_reps);
+  run_cufft(in[nbatches-1], d_in, &plans[nbatches-1], nticks, nwires, leftover_reps);
+  checkCuda( cudaDeviceSynchronize() ); 
 
   // cudaEventRecord(fft_t);
 
@@ -146,10 +152,6 @@ cali_set_int(thread_attr, omp_get_thread_num());
       computed_output[iw][(nticks/2)+j] = std::conj(computed_output[iw][(nticks/2)-j]);
     }
   }
-
-  cudaFree(in);
-  for(size_t r = 0; r < N_STREAMS; r++) 
-    checkCuda( cudaStreamDestroy(streams[r]) );
  
   #ifdef MAKE_PLOTS
   print_for_plots(PLOTS_FILE, expected_output, computed_output, nticks, nwires, true);
@@ -170,59 +172,45 @@ cali_set_int(thread_attr, omp_get_thread_num());
   std::cout << std::endl;
 
 
+  for(size_t r = 0; r < nbatches; r++){
+    free(in[r]);
+    checkCuFFT( cufftDestroy(plans[r]) );
+  }
+  free(in);
+  cudaFree(d_in);
   cudaDeviceReset();
   return 0;
 
 }
 
 
-void run_cufft(cufftComplex* in, cudaStream_t stream, size_t nticks, int nwires, int nreps) {
+void run_cufft(cufftComplex* in, cufftComplex* d_in, cufftHandle* plan, size_t nticks, int nwires, int nreps) {
 
 #ifdef USE_CALI
 CALI_CXX_MARK_FUNCTION;
 #endif
 
-  cufftHandle  plan;
-  cufftComplex* d_in;
   size_t size = sizeof(cufftComplex) * nwires * nreps * ((nticks/2+1));
-  checkCuda(cudaHostRegister(in, size, cudaHostRegisterPortable));
-  bool bad_mem = false;
-  checkCuda( cudaMalloc(&d_in, size) );
-  bad_mem = bad_mem || (d_in == NULL);
-
-  if (bad_mem) {
-    std::cout << "ERROR: failed to malloc device data" << std::endl;
-    std::cout << "size = " << size << std::endl;
-    std::cout << "size = " << nreps << std::endl;
-    std::cout << "size = " << nwires << std::endl;
-    exit(1);
-  }
 
   // Make CUDA plans and streams
 
   int n = nticks;
   int istride = 1, ostride = 1;             // --- Distance between two successive input/output elements
-  int idist = nticks+1, odist = nticks/2+1; // --- Distance between batches
+  int idist = nticks+2, odist = nticks/2+1; // --- Distance between batches
   int inembed[] = { 0 };                    // --- Input size with pitch (ignored for 1D transforms)
   int onembed[] = { 0 };                    // --- Output size with pitch (ignored for 1D transforms)
 
-  cudaMemcpyAsync((void*)d_in, (void*)in, size, cudaMemcpyHostToDevice, stream);
+  cudaMemcpy((void*)d_in, (void*)in, size, cudaMemcpyHostToDevice);
 
-  checkCuFFT( cufftPlanMany(&plan, 1, &n, 
+  checkCuFFT( cufftPlanMany(plan, 1, &n, 
               inembed, istride, idist, 
               onembed, ostride, odist, 
               CUFFT_R2C, nwires*nreps) );
-  checkCuFFT( cufftSetStream(plan, stream) );
 
-  checkCuFFT( cufftExecR2C(plan, (cufftReal*)d_in, d_in) );
+  checkCuFFT( cufftExecR2C(*plan, (cufftReal*)d_in, d_in) );
 
-  cudaMemcpyAsync((void*)in, (void*)d_in, size, cudaMemcpyDeviceToHost, stream);
-  checkCuda( cudaStreamSynchronize(stream) );
+  cudaMemcpy((void*)in, (void*)d_in, size, cudaMemcpyDeviceToHost);
 
-  // cufftDestroy(plan);
-
-  checkCuda(cudaHostUnregister(in));
-  cudaFree(d_in);
  
 }
 
