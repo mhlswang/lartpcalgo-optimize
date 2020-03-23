@@ -188,8 +188,8 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
         // std::cout << "wire: " << i << std::endl;
         // std::cout << "tick: " << j << std::endl;
         // std::cout << err << std::endl;
-        std::cout << expected[i][j] << std::endl;
-        std::cout << computed[i][j] << std::endl;
+        // std::cout << expected[i][j] << std::endl;
+        // std::cout << computed[i][j] << std::endl;
       
         num_crap++;
       }
@@ -206,6 +206,8 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
 }
 
 float get_complex_error(std::complex<float> c1, std::complex<float> c2) {
+
+  // c1 = std::complex<float>(1000,1000); // for testing purposes
 
   // float mag1 = sqrt( c1.imag()*c1.imag() + c1.real()*c1.real() );
   float mag1 = norm(c1);
