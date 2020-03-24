@@ -180,11 +180,12 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
 
   for (int i = 0; i < nwires; i++) {
     // if (i!=0 && i!=(nwires-1)) continue;
+    // bool p = false;
     for (int j = 0; j < nticks; j++) {
       err = get_complex_error(expected[i][j], computed[i][j]);
       if (err >= TOL) {
       // if (err < 0.01) {
-            
+        // p = true;
         // std::cout << "wire: " << i << std::endl;
         // std::cout << "tick: " << j << std::endl;
         // std::cout << err << std::endl;
@@ -195,6 +196,9 @@ void print_err(std::vector<std::vector<std::complex<float>> > const &expected,
       }
       num_tot++;
     }
+    // if(p){
+    //   std::cout << "wire: " << i << std::endl;
+    // }
   }
   if (num_crap > 0) {
     std::cout << "Count errors over tolerance: " << num_crap << std::endl;
