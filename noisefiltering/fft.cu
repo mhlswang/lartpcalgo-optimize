@@ -4,11 +4,11 @@
 
 // cuda stuff
 #define NREPS_PER_GPU 1
-#define N_STREAMS 1
+#define N_STREAMS 4
 
-void make_plans(cufftHandle* &plans, cudaStream_t streams[], size_t wires_per_stream, size_t nticks);
+// void make_plans(cufftHandle* &plans, cudaStream_t streams[], size_t wires_per_stream, size_t nticks);
 void malloc_data(cufftReal*** in, cufftReal** d_in, cufftComplex*** out, cufftComplex** d_out, size_t nticks, int nwires, int nbatches);
-void run_cufft(cufftReal* in, cufftReal* d_in, cufftComplex* out, cufftComplex* d_out, cufftHandle *plan, size_t nticks, int nwires, int nreps);
+void run_cufft(cufftReal* in, cufftReal* d_in, cufftComplex* out, cufftComplex* d_out, cufftHandle *plan, cudaStream_t *stream_1, size_t nticks, int nwires, int nreps);
 void read_input_array_1D(cufftReal** in_array, FILE* f, size_t nticks, size_t nwires, size_t nbatches);
 
 //https://github.com/NVIDIA-developer-blog/code-samples
@@ -59,6 +59,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
   size_t nbatches = (int)std::trunc(NREPS/NREPS_PER_GPU) + 1;
   size_t leftover_reps = ( NREPS-NREPS_PER_GPU*(nbatches-1) );
   size_t nwires;
+  int n_streams = (int)std::min((size_t)N_STREAMS, nbatches-1);
   fread(&nwires, sizeof(size_t), 1, f);
 
   cufftHandle  plans[nbatches];
@@ -76,16 +77,23 @@ cali_set_int(thread_attr, omp_get_thread_num());
   std::cout << "num reps/gpu    = " << NREPS_PER_GPU << std::endl;
   std::cout << "extra reps      = " << leftover_reps << std::endl;
   std::cout << "num batches     = " << nbatches << std::endl;
+  std::cout << "num streams     = " << n_streams << std::endl;
 
   std::vector<std::vector<std::complex<float>> > expected_output;
+
+  read_input_array_1D((cufftReal**)in, f, nticks, nwires, nbatches);
+  read_output_vector(expected_output, f, nticks, nwires);
+  fclose(f);
+
   std::vector<std::vector<std::complex<float>> > computed_output;
   computed_output.reserve(nwires);
   for (int i = 0; i < nwires; ++i)
     computed_output[i].reserve(nticks);
 
-  read_input_array_1D((cufftReal**)in, f, nticks, nwires, nbatches);
-  read_output_vector(expected_output, f, nticks, nwires);
-  fclose(f);
+  cudaStream_t streams[n_streams];
+  for(int s = 0; s < n_streams; s++)
+    checkCuda( cudaStreamCreate(&streams[s]) );
+
 
   cudaEventRecord(io_t1);
 
@@ -93,11 +101,28 @@ cali_set_int(thread_attr, omp_get_thread_num());
   std::cout << std::endl;
   std::cout << std::endl;
   std::cout << "Running cuFFT....." << std::endl;   
+  
+  size_t r = 0;
+  for(r = 0; r < nbatches-1; r+=n_streams){
 
-  for(size_t r = 0; r < nbatches-1; r++){
-    run_cufft(in[r], d_in, out[r], d_out, &plans[r], nticks, nwires, NREPS_PER_GPU);
+    for(int s = 0; s < n_streams; s++){
+      run_cufft(in[r], d_in, out[r], d_out, &plans[r], &streams[s], nticks, nwires, NREPS_PER_GPU);
+    }
+    for(int s = 0; s < n_streams; s++){
+      checkCuda(cudaStreamSynchronize(streams[s]));
+    }
   }
-  run_cufft(in[nbatches-1], d_in, out[nbatches-1], d_out, &plans[nbatches-1], nticks, nwires, leftover_reps);
+  int s = 0;
+  for(r-=(n_streams-1); r < nbatches-1; r++){
+    run_cufft(in[r], d_in, out[r], d_out, &plans[r], &streams[s++], nticks, nwires, NREPS_PER_GPU);
+  }
+  for(int s = 0; s < n_streams; s++){
+    checkCuda(cudaStreamSynchronize(streams[s]));
+  }
+  run_cufft(in[nbatches-1], d_in, out[nbatches-1], d_out, &plans[nbatches-1], &streams[0], nticks, nwires, leftover_reps);
+  for(int s = 0; s < n_streams; s++){
+    checkCuda(cudaStreamSynchronize(streams[s]));
+  }
   checkCuda( cudaDeviceSynchronize() ); 
 
   cudaEventRecord(fft_t);
@@ -168,13 +193,15 @@ cali_set_int(thread_attr, omp_get_thread_num());
   free(out);
   checkCuda( cudaFree(d_in) );
   checkCuda( cudaFree(d_out) );
+  for(int s = 0; s < n_streams; s++)
+    checkCuda( cudaStreamDestroy(streams[s]) ); 
   checkCuda( cudaDeviceReset() );
   return 0;
 
 }
 
 
-void run_cufft(cufftReal* in, cufftReal* d_in, cufftComplex* out, cufftComplex* d_out, cufftHandle* plan, size_t nticks, int nwires, int nreps) {
+void run_cufft(cufftReal* in, cufftReal* d_in, cufftComplex* out, cufftComplex* d_out, cufftHandle* plan, cudaStream_t* stream_1, size_t nticks, int nwires, int nreps) {
 
 #ifdef USE_CALI
 CALI_CXX_MARK_FUNCTION;
@@ -192,7 +219,10 @@ CALI_CXX_MARK_FUNCTION;
   int onembed[] = { 0 };                    // --- Output size with pitch (ignored for 1D transforms)
 
   if(nreps > 0) {
-    checkCuda( cudaMemcpy(d_in, in, in_size, cudaMemcpyHostToDevice) );
+    checkCuda( cudaHostRegister(in,  in_size,  cudaHostRegisterPortable) );
+    checkCuda( cudaHostRegister(out, out_size, cudaHostRegisterPortable) );
+    checkCuda( cudaMemcpyAsync(d_in, in, in_size, cudaMemcpyHostToDevice, *stream_1) );
+    // checkCuda(cudaStreamSynchronize(*stream_1));
 
     // std::cout << std::endl;
     // printFunc<<<1,10>>>(d_out);
@@ -201,9 +231,13 @@ CALI_CXX_MARK_FUNCTION;
                 inembed, istride, idist, 
                 onembed, ostride, odist, 
                 CUFFT_R2C, nwires*nreps) );
+    cufftSetStream(*plan, *stream_1);
 
     checkCuFFT( cufftExecR2C(*plan, d_in, d_out) );
-    checkCuda( cudaMemcpy(out, d_out, out_size, cudaMemcpyDeviceToHost) );
+    // checkCuda(cudaStreamSynchronize(*stream_1));
+    checkCuda( cudaMemcpyAsync(out, d_out, out_size, cudaMemcpyDeviceToHost, *stream_1) );
+    cudaHostUnregister(in);
+    cudaHostUnregister(out);
     // checkCuFFT( cufftDestroy(*plan) );
     // std::cout << std::endl;
     // printFunc<<<1,10>>>(d_out);
@@ -226,7 +260,7 @@ void malloc_data(cufftReal*** in, cufftReal** d_in, cufftComplex*** out, cufftCo
     (*in)[r]  = (cufftReal*)   malloc(in_size  * NREPS_PER_GPU);
     (*out)[r] = (cufftComplex*)malloc(out_size * NREPS_PER_GPU);
     bad_mem = bad_mem || ((*in)[r] == NULL) || ((*out)[r] == NULL);
-    if (bad_mem) std::cout << "bull shit  " << r << std::endl;
+    if (bad_mem) std::cout << "failed rep:  " << r << std::endl;
   }
   (*in)[nbatches-1]  = (cufftReal*)   malloc(in_size  * leftover_reps);
   (*out)[nbatches-1] = (cufftComplex*)malloc(out_size * leftover_reps);
