@@ -3,7 +3,7 @@
 #include "utilities.h"
 
 // cuda stuff
-#define NREPS_PER_GPU 6
+#define NREPS_PER_GPU 1
 #define N_STREAMS 1
 
 void make_plans(cufftHandle* &plans, cudaStream_t streams[], size_t wires_per_stream, size_t nticks);
@@ -47,13 +47,13 @@ cali_set_int(thread_attr, omp_get_thread_num());
     return 1;
   }
 
-  // cudaEvent_t start_t, io_t1, fft_t, io_t2; 
-  // cudaEventCreate(&start_t);
-  // cudaEventCreate(&io_t1);
-  // cudaEventCreate(&fft_t);
-  // cudaEventCreate(&io_t2);
+  cudaEvent_t start_t, io_t1, fft_t, io_t2; 
+  cudaEventCreate(&start_t);
+  cudaEventCreate(&io_t1);
+  cudaEventCreate(&fft_t);
+  cudaEventCreate(&io_t2);
 
-  // cudaEventRecord(start_t);
+  cudaEventRecord(start_t);
 
   size_t nticks = 4096;
   size_t nbatches = (int)std::trunc(NREPS/NREPS_PER_GPU) + 1;
@@ -87,7 +87,7 @@ cali_set_int(thread_attr, omp_get_thread_num());
   read_output_vector(expected_output, f, nticks, nwires);
   fclose(f);
 
-  // cudaEventRecord(io_t1);
+  cudaEventRecord(io_t1);
 
   std::cout << "======================================================================================";
   std::cout << std::endl;
@@ -96,12 +96,11 @@ cali_set_int(thread_attr, omp_get_thread_num());
 
   for(size_t r = 0; r < nbatches-1; r++){
     run_cufft(in[r], d_in, out[r], d_out, &plans[r], nticks, nwires, NREPS_PER_GPU);
-    // checkCuda( cudaDeviceSynchronize() ); 
   }
   run_cufft(in[nbatches-1], d_in, out[nbatches-1], d_out, &plans[nbatches-1], nticks, nwires, leftover_reps);
   checkCuda( cudaDeviceSynchronize() ); 
 
-  // cudaEventRecord(fft_t);
+  cudaEventRecord(fft_t);
 
   std::cout << "DONE" << std::endl;
   std::cout << "======================================================================================";
@@ -147,12 +146,12 @@ cali_set_int(thread_attr, omp_get_thread_num());
   print_err(expected_output, computed_output, nticks, nwires);
   #endif
   
-  // cudaEventRecord(io_t2);
+  cudaEventRecord(io_t2);
 
-  float t_tot = 0; //cudaEventElapsedTime(&t_tot, start_t, io_t2);
-  float t_io1 = 0; //cudaEventElapsedTime(&t_io1, start_t, io_t1);
-  float t_io2 = 0; //cudaEventElapsedTime(&t_io2, fft_t,   io_t2);
-  float t_fft = 0; //cudaEventElapsedTime(&t_fft, io_t1,   fft_t);
+  float t_tot = 0; cudaEventElapsedTime(&t_tot, start_t, io_t2);
+  float t_io1 = 0; cudaEventElapsedTime(&t_io1, start_t, io_t1);
+  float t_io2 = 0; cudaEventElapsedTime(&t_io2, fft_t,   io_t2);
+  float t_fft = 0; cudaEventElapsedTime(&t_fft, io_t1,   fft_t);
   std::cout << "number thr = " << nthr << std::endl;
   std::cout << "total time = " << t_tot << "ms" << std::endl;
   std::cout << "io time    = " << t_io1 + t_io2 << "ms" << std::endl;
@@ -227,6 +226,7 @@ void malloc_data(cufftReal*** in, cufftReal** d_in, cufftComplex*** out, cufftCo
     (*in)[r]  = (cufftReal*)   malloc(in_size  * NREPS_PER_GPU);
     (*out)[r] = (cufftComplex*)malloc(out_size * NREPS_PER_GPU);
     bad_mem = bad_mem || ((*in)[r] == NULL) || ((*out)[r] == NULL);
+    if (bad_mem) std::cout << "bull shit  " << r << std::endl;
   }
   (*in)[nbatches-1]  = (cufftReal*)   malloc(in_size  * leftover_reps);
   (*out)[nbatches-1] = (cufftComplex*)malloc(out_size * leftover_reps);
@@ -234,6 +234,13 @@ void malloc_data(cufftReal*** in, cufftReal** d_in, cufftComplex*** out, cufftCo
 
   if (bad_mem) {
     std::cout << "ERROR: failed to malloc host data" << std::endl;
+    std::cout << "in             " << (in[nbatches-1] == NULL) << std::endl;
+    std::cout << "nticks         " << nticks << std::endl;
+    std::cout << "nwires         " << nwires << std::endl;
+    std::cout << "nbatches       " << nbatches << std::endl;
+    std::cout << "in_size        " << in_size << std::endl;
+    std::cout << "out_size       " << out_size << std::endl;
+    std::cout << "leftover_reps  " << leftover_reps << std::endl;
     exit(1);
   }
 
